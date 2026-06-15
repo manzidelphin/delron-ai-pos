@@ -35,7 +35,9 @@
       "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\\\(dashboard\\)\\\\bakery\\\\waste\")",
       "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\\\(dashboard\\)\\\\bakery\\\\items\")",
       "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\components\\\\bakery\")",
-      "Bash(Write-Output \"Directories created\")"
+      "Bash(Write-Output \"Directories created\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\)['dependencies']; [print\\(k,v\\) for k in ['recharts','xlsx','jspdf','jspdf-autotable','html2canvas'] if k in d]\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\);['recharts','xlsx','jspdf','jspdf-autotable','html2canvas'].forEach\\(k=>p.dependencies[k]&&console.log\\(k,p.dependencies[k]\\)\\)\")"
     ]
   }
 }

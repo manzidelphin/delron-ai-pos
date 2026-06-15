@@ -1,0 +1,310 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { StatCard } from "@/components/ui/stat-card";
+import { formatRWF } from "@/lib/utils";
+import { Package, AlertTriangle, DollarSign, FileDown, TableProperties, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const STATUS_BADGE: Record<string, string> = {
+  ok: "bg-green-500/10 text-green-400 border-green-500/20",
+  low_stock: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  out_of_stock: "bg-red-500/10 text-red-400 border-red-500/20",
+  overstocked: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  ok: "OK",
+  low_stock: "Low Stock",
+  out_of_stock: "Out of Stock",
+  overstocked: "Overstocked",
+};
+
+type Tab = "supermarket" | "bar" | "materials";
+
+interface StockData {
+  supermarket: {id: string; name: string; category: string; quantity: number; min_quantity: number; unit: string; cost_price: number; price: number; status: string}[];
+  bar: {id: string; name: string; category: string; quantity_bottles: number; shots_remaining: number; min_quantity: number; cost_per_bottle: number; price_per_bottle: number; is_shot_item: boolean; status: string}[];
+  materials: {id: string; name: string; unit: string; quantity: number; min_quantity: number; cost_per_unit: number; status: string}[];
+  valuation: { supermarket: number; bar: number; materials: number; total: number };
+  summary: {
+    supermarket_total: number;
+    supermarket_low: number;
+    supermarket_out: number;
+    bar_total: number;
+    bar_low: number;
+    materials_total: number;
+    materials_low: number;
+  };
+}
+
+export default function StockReportPage() {
+  const [data, setData] = useState<StockData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("supermarket");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/reports/stock");
+        if (!res.ok) throw new Error();
+        setData(await res.json());
+      } catch {
+        toast.error("Failed to load stock report");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const handleExport = async () => {
+    if (!data) return;
+    setExporting(true);
+    try {
+      const { exportToExcel } = await import("@/lib/export");
+      await exportToExcel("Stock Report", [
+        {
+          name: "Supermarket",
+          data: data.supermarket.map((p) => ({
+            name: p.name,
+            category: p.category ?? "",
+            quantity: p.quantity,
+            min_quantity: p.min_quantity,
+            unit: p.unit,
+            value: p.quantity * p.cost_price,
+            status: STATUS_LABEL[p.status] ?? p.status,
+          })),
+          columns: [
+            { header: "Product", key: "name" },
+            { header: "Category", key: "category" },
+            { header: "In Stock", key: "quantity" },
+            { header: "Min Stock", key: "min_quantity" },
+            { header: "Unit", key: "unit" },
+            { header: "Stock Value (RWF)", key: "value" },
+            { header: "Status", key: "status" },
+          ],
+        },
+        {
+          name: "Bar",
+          data: data.bar.map((i) => ({
+            name: i.name,
+            category: i.category ?? "",
+            bottles: i.quantity_bottles,
+            shots: i.shots_remaining,
+            min: i.min_quantity,
+            value: i.quantity_bottles * i.cost_per_bottle,
+            status: STATUS_LABEL[i.status] ?? i.status,
+          })),
+          columns: [
+            { header: "Item", key: "name" },
+            { header: "Category", key: "category" },
+            { header: "Bottles", key: "bottles" },
+            { header: "Shots Left", key: "shots" },
+            { header: "Min Bottles", key: "min" },
+            { header: "Stock Value (RWF)", key: "value" },
+            { header: "Status", key: "status" },
+          ],
+        },
+        {
+          name: "Bakery Ingredients",
+          data: data.materials.map((m) => ({
+            name: m.name,
+            unit: m.unit,
+            quantity: m.quantity,
+            min_quantity: m.min_quantity,
+            value: m.quantity * m.cost_per_unit,
+            status: STATUS_LABEL[m.status] ?? m.status,
+          })),
+          columns: [
+            { header: "Ingredient", key: "name" },
+            { header: "Unit", key: "unit" },
+            { header: "In Stock", key: "quantity" },
+            { header: "Min Stock", key: "min_quantity" },
+            { header: "Cost Value (RWF)", key: "value" },
+            { header: "Status", key: "status" },
+          ],
+        },
+      ]);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const getFilteredItems = () => {
+    const items = tab === "supermarket" ? data?.supermarket ?? [] :
+                  tab === "bar" ? data?.bar ?? [] : data?.materials ?? [];
+    if (statusFilter === "all") return items;
+    return items.filter((i) => (i as {status: string}).status === statusFilter);
+  };
+
+  const TABS: { key: Tab; label: string }[] = [
+    { key: "supermarket", label: "Supermarket" },
+    { key: "bar", label: "Bar Stock" },
+    { key: "materials", label: "Bakery Ingredients" },
+  ];
+
+  const filteredItems = getFilteredItems();
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Package className="w-6 h-6 text-amber-400" />
+            Stock Report
+          </h1>
+          <p className="text-slate-400 text-sm mt-0.5">Current inventory levels and valuation</p>
+        </div>
+        <button
+          onClick={handleExport}
+          disabled={exporting || loading}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm disabled:opacity-40"
+        >
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <TableProperties className="w-4 h-4" />}
+          Export Excel
+        </button>
+      </div>
+
+      {/* Valuation KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Total Stock Value" value={formatRWF(data?.valuation.total ?? 0)} icon={<DollarSign className="w-5 h-5" />} color="blue" loading={loading} />
+        <StatCard label="Supermarket Value" value={formatRWF(data?.valuation.supermarket ?? 0)} icon={<Package className="w-5 h-5" />} color="green" loading={loading} changeLabel={`${data?.summary.supermarket_total ?? 0} products`} />
+        <StatCard label="Bar Value" value={formatRWF(data?.valuation.bar ?? 0)} icon={<Package className="w-5 h-5" />} color="amber" loading={loading} changeLabel={`${data?.summary.bar_total ?? 0} items`} />
+        <StatCard label="Low Stock Alerts" value={(data?.summary.supermarket_low ?? 0) + (data?.summary.bar_low ?? 0) + (data?.summary.materials_low ?? 0)} icon={<AlertTriangle className="w-5 h-5" />} color="red" loading={loading} />
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-900 p-1 rounded-xl border border-slate-700 w-fit">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={cn(
+              "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+              tab === t.key ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Status filter */}
+      <div className="flex gap-2">
+        {["all", "ok", "low_stock", "out_of_stock", "overstocked"].map((s) => (
+          <button
+            key={s}
+            onClick={() => setStatusFilter(s)}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border capitalize",
+              statusFilter === s
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-slate-800 text-slate-400 border-slate-700 hover:border-blue-500/50"
+            )}
+          >
+            {s.replace("_", " ")}
+          </button>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-700 bg-slate-900/50">
+                {tab === "supermarket" && ["Product", "Category", "In Stock", "Min Stock", "Status", "Stock Value"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 text-slate-400 font-medium text-xs">{h}</th>
+                ))}
+                {tab === "bar" && ["Item", "Category", "Bottles", "Shots Left", "Min Bottles", "Status", "Value"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 text-slate-400 font-medium text-xs">{h}</th>
+                ))}
+                {tab === "materials" && ["Ingredient", "Unit", "In Stock", "Min Stock", "Status", "Cost Value"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 text-slate-400 font-medium text-xs">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-700/50">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-10">
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-400 mx-auto" />
+                  </td>
+                </tr>
+              ) : filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-10 text-slate-500">No items found</td>
+                </tr>
+              ) : tab === "supermarket" ? (
+                (filteredItems as NonNullable<typeof data>["supermarket"]).map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-700/20 transition-colors">
+                    <td className="px-4 py-3 font-medium text-white">{p.name}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs capitalize">{p.category ?? "—"}</td>
+                    <td className="px-4 py-3 text-white">{p.quantity} {p.unit}</td>
+                    <td className="px-4 py-3 text-slate-400">{p.min_quantity} {p.unit}</td>
+                    <td className="px-4 py-3">
+                      <span className={cn("px-2 py-0.5 rounded-full border text-xs font-medium", STATUS_BADGE[p.status] ?? STATUS_BADGE.ok)}>
+                        {STATUS_LABEL[p.status] ?? p.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">{formatRWF(p.quantity * p.cost_price)}</td>
+                  </tr>
+                ))
+              ) : tab === "bar" ? (
+                (filteredItems as NonNullable<typeof data>["bar"]).map((i) => (
+                  <tr key={i.id} className="hover:bg-slate-700/20 transition-colors">
+                    <td className="px-4 py-3 font-medium text-white">{i.name}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{i.category ?? "—"}</td>
+                    <td className="px-4 py-3 text-white">{i.quantity_bottles}</td>
+                    <td className="px-4 py-3 text-slate-300">{i.is_shot_item ? i.shots_remaining : "—"}</td>
+                    <td className="px-4 py-3 text-slate-400">{i.min_quantity}</td>
+                    <td className="px-4 py-3">
+                      <span className={cn("px-2 py-0.5 rounded-full border text-xs font-medium", STATUS_BADGE[i.status] ?? STATUS_BADGE.ok)}>
+                        {STATUS_LABEL[i.status] ?? i.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">{formatRWF(i.quantity_bottles * i.cost_per_bottle)}</td>
+                  </tr>
+                ))
+              ) : (
+                (filteredItems as NonNullable<typeof data>["materials"]).map((m) => (
+                  <tr key={m.id} className="hover:bg-slate-700/20 transition-colors">
+                    <td className="px-4 py-3 font-medium text-white">{m.name}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{m.unit}</td>
+                    <td className="px-4 py-3 text-white">{m.quantity}</td>
+                    <td className="px-4 py-3 text-slate-400">{m.min_quantity}</td>
+                    <td className="px-4 py-3">
+                      <span className={cn("px-2 py-0.5 rounded-full border text-xs font-medium", STATUS_BADGE[m.status] ?? STATUS_BADGE.ok)}>
+                        {STATUS_LABEL[m.status] ?? m.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">{formatRWF(m.quantity * m.cost_per_unit)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        {data && (
+          <div className="px-4 py-3 border-t border-slate-700 bg-slate-900/30 text-xs text-slate-400 flex items-center justify-between">
+            <span>{filteredItems.length} items shown</span>
+            <span>
+              Total stock value:{" "}
+              <strong className="text-white">
+                {formatRWF(
+                  tab === "supermarket" ? data.valuation.supermarket :
+                  tab === "bar" ? data.valuation.bar : data.valuation.materials
+                )}
+              </strong>
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
