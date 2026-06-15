@@ -1,0 +1,179 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light mode */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+    --radius: 0.75rem;
+    --chart-1: 217 91% 60%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 280 65% 60%;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 32% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 32% 17%;
+    --sidebar-ring: 217 91% 60%;
+  }
+
+  .dark {
+    /* Dark mode — DELRON default */
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 32% 14%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 32% 14%;
+    --muted-foreground: 215 20% 55%;
+    --accent: 217 32% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 32% 14%;
+    --input: 217 32% 14%;
+    --ring: 217 91% 60%;
+    --chart-1: 217 91% 60%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 280 65% 60%;
+    --sidebar-background: 222 47% 5%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 32% 10%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 32% 10%;
+    --sidebar-ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+@layer components {
+  /* POS touch-friendly button sizes */
+  .btn-pos {
+    @apply h-16 text-lg font-semibold rounded-xl transition-all duration-150 active:scale-95;
+  }
+  /* Number pad button */
+  .btn-numpad {
+    @apply h-14 w-full text-xl font-bold rounded-lg bg-secondary hover:bg-accent transition-all duration-100 active:scale-95;
+  }
+  /* Glowing card for important metrics */
+  .card-glow {
+    @apply relative overflow-hidden;
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2),
+      0 4px 24px hsl(var(--primary) / 0.1);
+  }
+  /* Status badge base */
+  .status-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+}
+
+/* Inter font */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+/* ═══════════════════════════════════════════
+   BAKERY LABEL PRINT STYLES
+   ═══════════════════════════════════════════ */
+@media print {
+  /* Hide everything except label containers */
+  body > *:not(#print-root) { display: none !important; }
+  .print-labels { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+  .print-labels * { visibility: visible !important; }
+
+  /* Full label — pre-packaged items: 6cm × 4cm */
+  .label-full {
+    width: 6cm;
+    height: 4cm;
+    border: 1px solid #000;
+    padding: 4px;
+    margin: 2px;
+    display: inline-block;
+    font-size: 10px;
+    font-family: monospace;
+    page-break-inside: avoid;
+    vertical-align: top;
+    background: white;
+    color: black;
+  }
+
+  /* Generic sticker — 3cm × 2cm */
+  .label-sticker {
+    width: 3cm;
+    height: 2cm;
+    border: 1px solid #000;
+    padding: 2px;
+    margin: 1px;
+    display: inline-block;
+    font-size: 8px;
+    font-family: monospace;
+    page-break-inside: avoid;
+    vertical-align: top;
+    background: white;
+    color: black;
+  }
+
+  /* Receipt print */
+  #delron-receipt {
+    display: block !important;
+    margin: 0 auto;
+    max-width: 80mm;
+  }
+}
