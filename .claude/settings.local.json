@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@14 . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git --yes)",
+      "Bash(npm install *)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\components\\\\providers\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\components\\\\ui\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\\\(auth\\)\\\\login\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\\\(auth\\)\\\\onboarding\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\\\(dashboard\\)\\\\dashboard\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\store\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\hooks\")",
+      "Bash(Write-Output \"Done\")",
+      "PowerShell(cd \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\"; $env:NEXT_PUBLIC_SUPABASE_URL=\"https://placeholder.supabase.co\"; $env:NEXT_PUBLIC_SUPABASE_ANON_KEY=\"placeholder\"; npx next build 2>&1 | Select-Object -Last 20)",
+      "PowerShell(cd \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\"; $env:NEXT_PUBLIC_SUPABASE_URL=\"https://placeholder.supabase.co\"; $env:NEXT_PUBLIC_SUPABASE_ANON_KEY=\"placeholder\"; npx next build 2>&1 | Select-Object -Last 25)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\" -Recurse -File | Select-Object -ExpandProperty FullName | Sort-Object | ForEach-Object { $_.Replace\\(\"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\\", \"src/\"\\) })",
+      "PowerShell(Test-Path \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\supabase\\\\schema.sql\" | Write-Output; npx supabase --version 2>&1)",
+      "PowerShell(cd \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\"; $env:NEXT_PUBLIC_SUPABASE_URL=\"https://hfjggupbkbudnqplxviq.supabase.co\"; $env:NEXT_PUBLIC_SUPABASE_ANON_KEY=\"placeholder\"; npx next build 2>&1 | Select-Object -Last 20)",
+      "PowerShell(Start-Sleep -Seconds 6; Invoke-RestMethod -Uri \"http://localhost:3000\" -ErrorAction SilentlyContinue | Select-Object -First 1; Write-Output \"Port check done\")",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Start-Sleep -Seconds 3; try { $r = Invoke-WebRequest -Uri \"http://localhost:3000\" -TimeoutSec 8 -UseBasicParsing -ErrorAction Stop; \"HTTP $\\($r.StatusCode\\) — server is UP\" } catch { \"Not ready yet: $_\" })",
+      "Bash(npx tsc *)",
+      "Bash(npx next *)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\api\\\\bakery\\\\materials\\\\[id]\\\\restock\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\api\\\\bakery\\\\materials\\\\[id]\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\api\\\\bakery\\\\recipes\\\\[id]\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\api\\\\bakery\\\\finished-goods\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\api\\\\bakery\\\\production\\\\today\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\api\\\\bakery\\\\waste\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\api\\\\bakery\\\\dashboard\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\\\(dashboard\\)\\\\bakery\\\\materials\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\\\(dashboard\\)\\\\bakery\\\\recipes\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\\\(dashboard\\)\\\\bakery\\\\production\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\\\(dashboard\\)\\\\bakery\\\\waste\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\app\\\\\\(dashboard\\)\\\\bakery\\\\items\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\manzi\\\\DELRON AI POS\\\\src\\\\components\\\\bakery\")",
+      "Bash(Write-Output \"Directories created\")"
+    ]
+  }
+}
