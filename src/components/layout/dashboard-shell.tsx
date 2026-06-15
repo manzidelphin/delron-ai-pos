@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useBusiness } from "@/hooks/use-business";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
+import AIChatWidget from "@/components/ai/ai-chat-widget";
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -32,6 +33,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         <TopBar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
+      <AIChatWidget />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
+import { useAIStore } from "@/store/ai-store";
 import {
   LayoutDashboard,
   Store,
@@ -63,6 +64,7 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
   const pathname = usePathname();
   const router = useRouter();
   const { business, staff, hasModule } = useAuthStore();
+  const { setOpen: openAI } = useAIStore();
 
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.module && !hasModule(item.module)) return false;
@@ -123,14 +125,16 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
       </nav>
 
       {/* AI quick access */}
-      {isOpen && (
-        <div className="p-3 border-t border-sidebar-border">
-          <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all text-sm font-medium">
-            <Zap className="w-4 h-4" />
-            Ask DELRON AI
-          </button>
-        </div>
-      )}
+      <div className="p-3 border-t border-sidebar-border">
+        <button
+          onClick={() => openAI(true)}
+          title={!isOpen ? "Ask DELRON AI" : undefined}
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all text-sm font-medium"
+        >
+          <Zap className="w-4 h-4 flex-shrink-0" />
+          {isOpen && <span>Ask DELRON AI</span>}
+        </button>
+      </div>
     </aside>
   );
 }
