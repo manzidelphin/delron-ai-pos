@@ -22,6 +22,7 @@ import {
   Bell,
   Building2,
   AlertTriangle,
+  TrendingUp,
 } from "lucide-react";
 import type { BusinessModule, UserRole } from "@/types";
 
@@ -31,6 +32,7 @@ interface NavItem {
   icon: React.ReactNode;
   module?: BusinessModule;
   roles?: UserRole[];
+  sectionLabel?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -55,7 +57,15 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Restaurant", href: "/restaurant", icon: <UtensilsCrossed className="w-4 h-4" />, module: "restaurant", roles: ["owner", "manager", "waiter"] },
   { label: "Credits", href: "/credits", icon: <CreditCard className="w-4 h-4" />, roles: ["owner", "manager", "cashier"] },
   { label: "Staff", href: "/staff", icon: <Users className="w-4 h-4" />, roles: ["owner", "manager"] },
-  { label: "Reports", href: "/reports", icon: <BarChart3 className="w-4 h-4" />, roles: ["owner", "manager"] },
+  // Reports section
+  { label: "Overview", href: "/reports", icon: <BarChart3 className="w-4 h-4" />, roles: ["owner", "manager"], sectionLabel: "Reports" },
+  { label: "Sales", href: "/reports/sales", icon: <TrendingUp className="w-4 h-4" />, roles: ["owner", "manager"] },
+  { label: "Stock", href: "/reports/stock", icon: <Package className="w-4 h-4" />, roles: ["owner", "manager"] },
+  { label: "Bakery", href: "/reports/bakery", icon: <ChefHat className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager"] },
+  { label: "Bar", href: "/reports/bar", icon: <Beer className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
+  { label: "Credits", href: "/reports/credits", icon: <CreditCard className="w-4 h-4" />, roles: ["owner", "manager"] },
+  { label: "Staff", href: "/reports/staff", icon: <Users className="w-4 h-4" />, roles: ["owner", "manager"] },
+  // System
   { label: "Notifications", href: "/notifications", icon: <Bell className="w-4 h-4" />, roles: ["owner", "manager"] },
   { label: "Settings", href: "/settings", icon: <Settings className="w-4 h-4" />, roles: ["owner"] },
 ];
@@ -104,22 +114,33 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
         {visibleItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/dashboard" && item.href !== "/" && pathname.startsWith(item.href));
+          const isActive = pathname === item.href || (item.href !== "/dashboard" && item.href !== "/" && pathname.startsWith(item.href) && item.href.length > 1);
           return (
-            <button
-              key={item.href}
-              onClick={() => router.push(item.href)}
-              title={!isOpen ? item.label : undefined}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                isActive ? "bg-sidebar-accent text-sidebar-primary shadow-sm" : "text-sidebar-foreground/70"
+            <div key={item.href}>
+              {item.sectionLabel && isOpen && (
+                <div className="px-3 pt-3 pb-1">
+                  <p className="text-[10px] font-semibold text-sidebar-foreground/30 uppercase tracking-widest">
+                    {item.sectionLabel}
+                  </p>
+                </div>
               )}
-            >
-              <span className="flex-shrink-0">{item.icon}</span>
-              {isOpen && <span className="truncate">{item.label}</span>}
-              {isActive && isOpen && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary flex-shrink-0" />}
-            </button>
+              {item.sectionLabel && !isOpen && (
+                <div className="my-1 mx-2 h-px bg-sidebar-border/40" />
+              )}
+              <button
+                onClick={() => router.push(item.href)}
+                title={!isOpen ? item.label : undefined}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+                  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  isActive ? "bg-sidebar-accent text-sidebar-primary shadow-sm" : "text-sidebar-foreground/70"
+                )}
+              >
+                <span className="flex-shrink-0">{item.icon}</span>
+                {isOpen && <span className="truncate">{item.label}</span>}
+                {isActive && isOpen && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary flex-shrink-0" />}
+              </button>
+            </div>
           );
         })}
       </nav>
