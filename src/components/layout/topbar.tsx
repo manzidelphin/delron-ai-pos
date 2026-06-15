@@ -49,31 +49,45 @@ export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
           <Menu className="w-5 h-5" />
         </button>
 
-        {staff?.role === "owner" && branches.length > 1 && (
+        {staff?.role === "owner" && branches.length >= 1 && (
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-sm font-medium text-foreground hover:bg-accent/80 transition-colors"
             >
               <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="max-w-[120px] truncate">{currentBranch?.name ?? "All branches"}</span>
+              <span className="max-w-[120px] truncate">{currentBranch?.name ?? "All Branches"}</span>
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
             {dropdownOpen && (
-              <div className="absolute top-full mt-1 left-0 w-52 bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden">
-                {branches.map((branch) => (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
+                <div className="absolute top-full mt-1 left-0 w-52 bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden">
                   <button
-                    key={branch.id}
-                    onClick={() => { setCurrentBranch(branch); setDropdownOpen(false); }}
-                    className={cn(
-                      "w-full text-left px-4 py-2.5 text-sm hover:bg-accent transition-colors",
-                      currentBranch?.id === branch.id ? "text-primary font-medium bg-primary/5" : "text-foreground"
-                    )}
+                    onClick={() => { setCurrentBranch(null); setDropdownOpen(false); }}
+                    className={cn("w-full text-left px-4 py-2.5 text-sm hover:bg-accent transition-colors", !currentBranch ? "text-primary font-medium bg-primary/5" : "text-foreground")}
                   >
-                    {branch.name}
+                    All Branches
                   </button>
-                ))}
-              </div>
+                  {branches.map((branch) => (
+                    <button
+                      key={branch.id}
+                      onClick={() => { setCurrentBranch(branch); setDropdownOpen(false); }}
+                      className={cn("w-full text-left px-4 py-2.5 text-sm hover:bg-accent transition-colors", currentBranch?.id === branch.id ? "text-primary font-medium bg-primary/5" : "text-foreground")}
+                    >
+                      {branch.name}
+                    </button>
+                  ))}
+                  <div className="border-t border-border">
+                    <button
+                      onClick={() => { router.push("/settings/branches"); setDropdownOpen(false); }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors flex items-center gap-2"
+                    >
+                      + Add / Manage Branches
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}

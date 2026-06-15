@@ -66,8 +66,11 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Credits", href: "/reports/credits", icon: <CreditCard className="w-4 h-4" />, roles: ["owner", "manager"] },
   { label: "Staff", href: "/reports/staff", icon: <Users className="w-4 h-4" />, roles: ["owner", "manager"] },
   // System
-  { label: "Notifications", href: "/notifications", icon: <Bell className="w-4 h-4" />, roles: ["owner", "manager"] },
-  { label: "Settings", href: "/settings", icon: <Settings className="w-4 h-4" />, roles: ["owner"] },
+  // System section
+  { label: "Notifications", href: "/notifications", icon: <Bell className="w-4 h-4" />, roles: ["owner", "manager"], sectionLabel: "System" },
+  { label: "Settings", href: "/settings", icon: <Settings className="w-4 h-4" />, roles: ["owner", "manager"] },
+  { label: "Branches", href: "/settings/branches", icon: <Building2 className="w-4 h-4" />, roles: ["owner"] },
+  { label: "Profile", href: "/profile", icon: <Users className="w-4 h-4" /> },
 ];
 
 export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
