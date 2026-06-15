@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
+import { sendSMS, SMS_TEMPLATES } from "@/lib/sms";
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthContext();
@@ -74,6 +75,48 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Send SMS notifications asynchronously (don't block response)
+  if (data) {
+    const { data: business } = await supabase
+      .from("businesses")
+      .select("name, phone")
+      .eq("id", auth.businessId)
+      .single();
+
+    const businessName = business?.name ?? "DELRON POS";
+    const formattedDue = new Date(due_date).toLocaleDateString("en-RW", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    // SMS to customer
+    void sendSMS(
+      customer_phone,
+      SMS_TEMPLATES.creditGiven(customer_name, total_amount, businessName, formattedDue)
+    );
+
+    // SMS to owner
+    if (business?.phone) {
+      void sendSMS(
+        business.phone,
+        SMS_TEMPLATES.ownerCreditAlert(customer_name, customer_phone, total_amount, formattedDue)
+      );
+    }
+
+    // Log notification
+    void supabase.from("notifications").insert({
+      business_id: auth.businessId,
+      user_id: auth.staffId,
+      title: "Credit Sale Recorded",
+      message: `${customer_name} (${customer_phone}) took ${total_amount.toLocaleString()} RWF on credit. Due: ${formattedDue}`,
+      type: "warning",
+      category: "credit",
+      sent_via: ["sms", "in-app"],
+      is_read: false,
+    });
+  }
 
   return NextResponse.json({ credit: data }, { status: 201 });
 }
