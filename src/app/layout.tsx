@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description:
     "Rwanda's first AI-powered business management and Point of Sale platform. Built for supermarkets, bakeries, bars, and restaurants.",
   keywords: ["POS", "Rwanda", "AI", "business management", "supermarket", "bakery", "bar", "restaurant"],
-  authors: [{ name: "DELRON" }],
+  authors: [{ name: "Delfin Manzi" }],
   creator: "DELRON",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
@@ -27,6 +27,10 @@ export const metadata: Metadata = {
     title: "DELRON AI POS",
     description: "Rwanda's first AI-powered business management platform",
     type: "website",
+    siteName: "DELRON AI POS",
+  },
+  icons: {
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%233b82f6'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='20' fill='white'>D</text></svg>",
   },
 };
 
