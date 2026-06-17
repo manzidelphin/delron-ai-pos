@@ -32,6 +32,7 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   module?: BusinessModule;
+  anyModule?: BusinessModule[]; // show if business has ANY of these modules
   roles?: UserRole[];
   sectionLabel?: string;
 }
@@ -61,7 +62,7 @@ const NAV_ITEMS: NavItem[] = [
   // Reports section
   { label: "Overview", href: "/reports", icon: <BarChart3 className="w-4 h-4" />, roles: ["owner", "manager"], sectionLabel: "Reports" },
   { label: "Sales", href: "/reports/sales", icon: <TrendingUp className="w-4 h-4" />, roles: ["owner", "manager"] },
-  { label: "Stock", href: "/reports/stock", icon: <Package className="w-4 h-4" />, roles: ["owner", "manager"] },
+  { label: "Stock", href: "/reports/stock", icon: <Package className="w-4 h-4" />, roles: ["owner", "manager"], anyModule: ["supermarket", "bakery"] as BusinessModule[] },
   { label: "Bakery", href: "/reports/bakery", icon: <ChefHat className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager"] },
   { label: "Bar", href: "/reports/bar", icon: <Beer className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
   { label: "Credits", href: "/reports/credits", icon: <CreditCard className="w-4 h-4" />, roles: ["owner", "manager"] },
@@ -88,9 +89,8 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
 
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.module && !hasModule(item.module)) return false;
-    if (item.roles) {
-      if (!canAccess(item.roles)) return false;
-    }
+    if (item.anyModule && !item.anyModule.some((m) => hasModule(m))) return false;
+    if (item.roles && !canAccess(item.roles)) return false;
     return true;
   });
 
