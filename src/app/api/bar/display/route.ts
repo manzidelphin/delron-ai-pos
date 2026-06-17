@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest) {
 
   const { data, error } = await supabase
     .from("order_items")
-    .update({ status, updated_at: new Date().toISOString() })
+    .update({ status })
     .eq("id", order_item_id)
     .select("*, orders(business_id)")
     .single();
