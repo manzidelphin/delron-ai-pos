@@ -410,26 +410,26 @@ export default async function MarketingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                name: "Free Trial",
-                price: "RWF 0",
-                period: "14 days",
-                desc: "Full access to all features for 14 days. No credit card required.",
+                name: "Starter",
+                price: "RWF 15,000",
+                period: "per month",
+                desc: "Perfect for single-location businesses getting started with a digital POS.",
                 features: [
-                  "All 3 modules included",
-                  "Up to 5 staff accounts",
+                  "1 module (Supermarket, Bakery, or Bar)",
+                  "Up to 3 staff accounts",
                   "AI daily briefings",
                   "SMS notifications",
-                  "Full reports & PDF exports",
+                  "PDF & Excel reports",
                 ],
-                cta: "Start Free Trial",
+                cta: "Get Started",
                 href: "/onboarding",
                 highlight: false,
               },
               {
                 name: "Professional",
-                price: "RWF 50,000",
+                price: "RWF 35,000",
                 period: "per month",
-                desc: "For growing businesses that need reliable POS with full AI capabilities.",
+                desc: "For growing businesses that need all modules with full AI capabilities.",
                 features: [
                   "All 3 modules included",
                   "Up to 20 staff accounts",
@@ -512,6 +512,12 @@ export default async function MarketingPage() {
               </div>
             ))}
           </div>
+
+          <p className="text-center text-slate-400 text-sm mt-10 max-w-2xl mx-auto">
+            All plans include{" "}
+            <span className="text-white font-medium">AI assistant, PDF reports, and SMS notifications</span>
+            {" "}— features competitors charge extra for or don&apos;t offer at all.
+          </p>
         </div>
       </section>
 
