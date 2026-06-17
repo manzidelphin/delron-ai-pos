@@ -1,31 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 
-/** Resolve business_id using the same priority as pos-login:
- *  1. Active Supabase session (owner logged in via email/password)
- *  2. pos_business_id cookie  (dedicated PIN-only POS device) */
-async function resolveBusinessId(req: NextRequest): Promise<string | null> {
-  try {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const admin = createAdminClient();
-      const { data: profile } = await admin
-        .from("staff")
-        .select("business_id")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .single();
-      if (profile?.business_id) {
-        console.log("[pin-login] businessId from Supabase session:", profile.business_id);
-        return profile.business_id;
-      }
-    }
-  } catch (err) {
-    console.warn("[pin-login] session lookup failed, falling back to cookie:", err);
+/** Resolve business_id for this PIN attempt.
+ *
+ *  Priority:
+ *  1. businessId sent in the POST body — the pos-login page always knows which
+ *     business it loaded staff for and sends it explicitly.
+ *  2. pos_business_id HTTP-only cookie — set when the owner first logs in on a
+ *     dedicated POS device.
+ *
+ *  We deliberately do NOT use the Supabase session here: the logged-in owner
+ *  may belong to a different business than the POS device being used. */
+function resolveBusinessId(req: NextRequest, bodyBusinessId?: string): string | null {
+  if (bodyBusinessId) {
+    console.log("[pin-login] businessId from request body:", bodyBusinessId);
+    return bodyBusinessId;
   }
-
   const cookieId = req.cookies.get("pos_business_id")?.value ?? null;
   console.log("[pin-login] businessId from cookie:", cookieId ?? "(missing)");
   return cookieId;
@@ -33,7 +23,15 @@ async function resolveBusinessId(req: NextRequest): Promise<string | null> {
 
 export async function POST(req: NextRequest) {
   try {
-    const businessId = await resolveBusinessId(req);
+    const body = await req.json();
+    const { staffId, pin, businessId: bodyBusinessId } = body as {
+      staffId?: string;
+      pin?: string;
+      businessId?: string;
+    };
+
+    const businessId = resolveBusinessId(req, bodyBusinessId);
+    console.log("[pin-login] resolved businessId:", businessId ?? "(none)", "| staffId:", staffId);
 
     if (!businessId) {
       return NextResponse.json(
@@ -42,17 +40,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const { staffId, pin } = body as { staffId?: string; pin?: string };
-    console.log("[pin-login] staffId:", staffId, "| pin length:", pin?.length ?? 0, "| businessId:", businessId);
-
     if (!staffId || !pin) {
       return NextResponse.json({ error: "staffId and pin are required" }, { status: 400 });
     }
 
     const supabase = createAdminClient();
 
-    // Look up by staffId only first so we can give precise error messages
     const { data: staff, error: fetchError } = await supabase
       .from("staff")
       .select("id, business_id, branch_id, user_id, name, phone, email, role, pin, is_active, created_at")
@@ -64,9 +57,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Staff member not found" }, { status: 404 });
     }
 
-    // Verify the staff belongs to the resolved business
     if (staff.business_id !== businessId) {
-      console.error("[pin-login] business mismatch — staff.business_id:", staff.business_id, "resolved:", businessId);
+      console.error("[pin-login] business mismatch — staff:", staff.business_id, "resolved:", businessId);
       return NextResponse.json({ error: "Staff member not found" }, { status: 404 });
     }
 
@@ -74,13 +66,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This account has been deactivated" }, { status: 403 });
     }
 
-    // Coerce both sides to string — PIN may be stored as integer in DB
     const storedPin = String(staff.pin ?? "").trim();
 
     if (!storedPin) {
-      console.error("[pin-login] staff has no PIN set:", staff.name);
+      console.error("[pin-login] no PIN set for:", staff.name);
       return NextResponse.json(
-        { error: `No PIN has been set for ${staff.name}. Please ask the manager to set a PIN in Staff Settings.` },
+        { error: `No PIN has been set for ${staff.name}. Ask the manager to set a PIN in Staff Settings.` },
         { status: 401 }
       );
     }
@@ -92,7 +83,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Incorrect PIN. Please try again." }, { status: 401 });
     }
 
-    // Load business and branches
     const [{ data: business }, { data: branches }] = await Promise.all([
       supabase.from("businesses").select("*").eq("id", businessId).single(),
       supabase.from("branches").select("*").eq("business_id", businessId),
@@ -116,24 +106,24 @@ export async function POST(req: NextRequest) {
       phone:       staff.phone ?? null,
       email:       staff.email ?? null,
       role:        staff.role,
-      pin:         null, // never expose PIN to client
+      pin:         null,
       is_active:   staff.is_active,
       created_at:  staff.created_at,
     };
 
-    console.log("[pin-login] success — operator:", staff.name, staff.role);
+    console.log("[pin-login] success —", staff.name, staff.role, "| business:", businessId);
 
     const res = NextResponse.json({
-      staff: operatorPayload,
+      staff:       operatorPayload,
       staffRecord,
-      business: business ?? null,
-      branches:  branches ?? [],
+      business:    business ?? null,
+      branches:    branches ?? [],
     });
 
     res.cookies.set("pos_operator", JSON.stringify(operatorPayload), {
       httpOnly: true,
       sameSite: "lax",
-      secure:   false, // must be false on http://localhost
+      secure:   false,
       path:     "/",
       maxAge:   60 * 60 * 12,
     });
