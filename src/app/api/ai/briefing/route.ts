@@ -100,7 +100,7 @@ Keep each field under 100 characters. Return only valid JSON, no markdown code b
     try {
       // Instantiate inside handler so constructor errors are caught here
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const result = await model.generateContent(briefingPrompt);
       const text = result.response.text();
 

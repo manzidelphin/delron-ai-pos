@@ -100,7 +100,7 @@ LAST 7 DAYS TOTAL REVENUE: ${weekRevenue.toLocaleString()} RWF
     // Instantiate inside the handler so any constructor error is caught below
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", systemInstruction });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", systemInstruction });
       const result = await model.generateContent(message);
       const aiResponse = result.response.text();
 
