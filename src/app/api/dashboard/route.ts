@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 
 export async function GET() {
@@ -7,7 +7,7 @@ export async function GET() {
   if (auth.error) return auth.error;
   const { businessId } = auth;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
   const yesterday = new Date(today);

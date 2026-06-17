@@ -62,6 +62,87 @@ export default function StockReportPage() {
     load();
   }, []);
 
+  const handleExportPDF = async () => {
+    if (!data) return;
+    setExporting(true);
+    try {
+      const { exportToPDF } = await import("@/lib/export");
+      if (tab === "supermarket") {
+        await exportToPDF(
+          "Stock Report — Supermarket",
+          data.supermarket.map((p) => ({
+            name: p.name, category: p.category ?? "—",
+            stock: `${p.quantity} ${p.unit}`, min: `${p.min_quantity} ${p.unit}`,
+            status: STATUS_LABEL[p.status] ?? p.status,
+            value: formatRWF(p.quantity * p.cost_price),
+          })),
+          [
+            { header: "Product", key: "name" }, { header: "Category", key: "category" },
+            { header: "In Stock", key: "stock" }, { header: "Min Stock", key: "min" },
+            { header: "Status", key: "status" }, { header: "Stock Value", key: "value" },
+          ],
+          undefined,
+          undefined,
+          [
+            { label: "Total Products", value: String(data.supermarket.length) },
+            { label: "Low Stock", value: String(data.summary.supermarket_low) },
+            { label: "Out of Stock", value: String(data.summary.supermarket_out) },
+            { label: "Total Value", value: formatRWF(data.valuation.supermarket) },
+          ]
+        );
+      } else if (tab === "bar") {
+        await exportToPDF(
+          "Stock Report — Bar",
+          data.bar.map((i) => ({
+            name: i.name, category: i.category ?? "—",
+            bottles: String(i.quantity_bottles),
+            shots: i.is_shot_item ? String(i.shots_remaining) : "—",
+            min: String(i.min_quantity),
+            status: STATUS_LABEL[i.status] ?? i.status,
+            value: formatRWF(i.quantity_bottles * i.cost_per_bottle),
+          })),
+          [
+            { header: "Item", key: "name" }, { header: "Category", key: "category" },
+            { header: "Bottles", key: "bottles" }, { header: "Shots Left", key: "shots" },
+            { header: "Min Bottles", key: "min" }, { header: "Status", key: "status" },
+            { header: "Stock Value", key: "value" },
+          ],
+          undefined,
+          undefined,
+          [
+            { label: "Bar Items", value: String(data.bar.length) },
+            { label: "Low Stock", value: String(data.summary.bar_low) },
+            { label: "Total Value", value: formatRWF(data.valuation.bar) },
+          ]
+        );
+      } else {
+        await exportToPDF(
+          "Stock Report — Ingredients",
+          data.materials.map((m) => ({
+            name: m.name, unit: m.unit,
+            stock: String(m.quantity), min: String(m.min_quantity),
+            status: STATUS_LABEL[m.status] ?? m.status,
+            value: formatRWF(m.quantity * m.cost_per_unit),
+          })),
+          [
+            { header: "Ingredient", key: "name" }, { header: "Unit", key: "unit" },
+            { header: "In Stock", key: "stock" }, { header: "Min Stock", key: "min" },
+            { header: "Status", key: "status" }, { header: "Cost Value", key: "value" },
+          ],
+          undefined,
+          undefined,
+          [
+            { label: "Ingredients", value: String(data.materials.length) },
+            { label: "Low Stock", value: String(data.summary.materials_low) },
+            { label: "Total Value", value: formatRWF(data.valuation.materials) },
+          ]
+        );
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleExport = async () => {
     if (!data) return;
     setExporting(true);
@@ -160,14 +241,24 @@ export default function StockReportPage() {
           </h1>
           <p className="text-slate-400 text-sm mt-0.5">Current inventory levels and valuation</p>
         </div>
-        <button
-          onClick={handleExport}
-          disabled={exporting || loading}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm disabled:opacity-40"
-        >
-          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <TableProperties className="w-4 h-4" />}
-          Export Excel
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportPDF}
+            disabled={exporting || loading}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40"
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            PDF
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={exporting || loading}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm disabled:opacity-40"
+          >
+            <TableProperties className="w-4 h-4" />
+            Excel
+          </button>
+        </div>
       </div>
 
       {/* Valuation KPIs */}

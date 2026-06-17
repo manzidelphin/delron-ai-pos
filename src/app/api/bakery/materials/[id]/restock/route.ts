@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ error: "Quantity must be a positive number" }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data: existing } = await supabase
     .from("raw_materials")

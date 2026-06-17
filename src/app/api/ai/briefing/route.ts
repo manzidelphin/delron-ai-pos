@@ -1,17 +1,15 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { createClient } from "@/lib/supabase/server";
+﻿import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function GET() {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const businessId = auth.businessId;
 
   const yesterday = new Date();
@@ -96,17 +94,13 @@ Return a JSON object with these exact fields:
   "tip": "one practical AI business tip relevant to current data"
 }
 
-Keep each field under 100 characters. Return only valid JSON.`;
+Keep each field under 100 characters. Return only valid JSON, no markdown code blocks.`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 500,
-      messages: [{ role: "user", content: briefingPrompt }],
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const result = await model.generateContent(briefingPrompt);
+    const text = result.response.text();
 
-    const text =
-      response.content[0].type === "text" ? response.content[0].text : "{}";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     const briefing = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
 

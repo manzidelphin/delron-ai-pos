@@ -21,7 +21,10 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
-  useEffect(() => { if (staff) setNameForm({ name: staff.name }); }, [staff]);
+  useEffect(() => {
+    if (staff?.role === "baker") { router.replace("/pos"); return; }
+    if (staff) setNameForm({ name: staff.name });
+  }, [staff, router]);
 
   const saveName = async () => {
     if (!staff) return;

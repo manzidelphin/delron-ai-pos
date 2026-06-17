@@ -28,7 +28,12 @@ export function useBusiness() {
     } = await supabase.auth.getUser();
 
     if (!authUser) {
-      reset();
+      // PIN-only session: preserve activeOperator so the cashier stays logged in.
+      // Only reset if there is truly no session of any kind.
+      const currentState = useAuthStore.getState();
+      if (!currentState.activeOperator) {
+        reset();
+      }
       setLoaded(true);
       return;
     }

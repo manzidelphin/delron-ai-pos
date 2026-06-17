@@ -6,6 +6,7 @@ import { IngredientCheckModal } from "@/components/bakery/ingredient-check-modal
 import { LabelPreview } from "@/components/bakery/label-preview";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/auth-store";
 import {
   ChefHat, Loader2, CheckCircle2, ArrowRight, RotateCcw, X, Plus,
 } from "lucide-react";
@@ -37,6 +38,7 @@ interface Shortage {
 
 export default function ProductionPage() {
   const router = useRouter();
+  const { isLoaded } = useAuthStore();
   const [items, setItems] = useState<FinishedGood[]>([]);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +64,7 @@ export default function ProductionPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (isLoaded) load(); }, [isLoaded, load]);
 
   const setQty = (id: string, val: string) => {
     setQuantities((prev) => ({ ...prev, [id]: val }));

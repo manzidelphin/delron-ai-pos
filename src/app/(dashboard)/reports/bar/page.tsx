@@ -8,7 +8,7 @@ import {
 import { StatCard } from "@/components/ui/stat-card";
 import { DateRangeFilter } from "@/components/reports/date-range-filter";
 import { formatRWF } from "@/lib/utils";
-import { Beer, TrendingUp, DollarSign, Clock, TableProperties, Loader2 } from "lucide-react";
+import { Beer, TrendingUp, DollarSign, Clock, FileDown, TableProperties, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -62,6 +62,35 @@ export default function BarReportPage() {
   }, [from, to]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleExportPDF = async () => {
+    if (!data) return;
+    setExporting(true);
+    try {
+      const { exportToPDF } = await import("@/lib/export");
+      await exportToPDF(
+        "Bar Report",
+        data.top_drinks.map((d) => ({
+          drink: d.name, qty: String(d.qty), revenue: formatRWF(d.revenue),
+        })),
+        [
+          { header: "Drink", key: "drink" },
+          { header: "Qty Sold", key: "qty" },
+          { header: "Revenue (RWF)", key: "revenue" },
+        ],
+        undefined,
+        `Period: ${from} → ${to}`,
+        [
+          { label: "Bar Revenue", value: formatRWF(data.kpis.bar_revenue) },
+          { label: "Bottles Sold", value: String(data.kpis.bottles_sold) },
+          { label: "Shots Sold", value: String(data.kpis.shots_sold) },
+          { label: "Tables Served", value: String(data.kpis.tables_served) },
+        ]
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleExportExcel = async () => {
     if (!data) return;
@@ -130,10 +159,16 @@ export default function BarReportPage() {
           </h1>
           <p className="text-slate-400 text-sm mt-0.5">Bottles, shots, tabs, and shot variance analysis</p>
         </div>
-        <button onClick={handleExportExcel} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm disabled:opacity-40">
-          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <TableProperties className="w-4 h-4" />}
-          Export Excel
-        </button>
+        <div className="flex gap-2">
+          <button onClick={handleExportPDF} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            PDF
+          </button>
+          <button onClick={handleExportExcel} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm disabled:opacity-40">
+            <TableProperties className="w-4 h-4" />
+            Excel
+          </button>
+        </div>
       </div>
 
       <DateRangeFilter from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />

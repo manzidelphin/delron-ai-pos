@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data: tab, error: tabError } = await supabase
     .from("orders")
@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("orders")

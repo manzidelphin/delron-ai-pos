@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAuthStore } from "@/store/auth-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { formatRWF } from "@/lib/utils";
@@ -28,21 +29,29 @@ interface DashboardData {
 }
 
 export default function BakeryDashboard() {
+  const { isLoaded } = useAuthStore();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [finishedGoods, setFinishedGoods] = useState<Array<{ id: string; name: string; quantity: number }>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/bakery/dashboard");
-      const json = await res.json();
-      if (res.ok) setData(json);
+      const [dashRes, itemsRes] = await Promise.all([
+        fetch("/api/bakery/dashboard"),
+        fetch("/api/bakery/finished-goods"),
+      ]);
+      if (dashRes.ok) setData(await dashRes.json());
+      if (itemsRes.ok) {
+        const json = await itemsRes.json();
+        setFinishedGoods(json.items ?? []);
+      }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (isLoaded) load(); }, [isLoaded, load]);
 
   const stats = data?.stats;
 
@@ -146,34 +155,40 @@ export default function BakeryDashboard() {
             <div className="p-4 space-y-2">
               {[1, 2, 3].map((i) => <div key={i} className="h-10 bg-slate-700/50 rounded-xl animate-pulse" />)}
             </div>
-          ) : (data?.top_items ?? []).length === 0 ? (
-            <div className="p-8 text-center text-slate-500 text-sm">No production logged today</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-700/50">
-                    <th className="text-left px-5 py-2 text-xs font-semibold text-slate-500 uppercase">Item</th>
-                    <th className="text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Baked</th>
-                    <th className="text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Sold</th>
-                    <th className="text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Left</th>
-                    <th className="text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Waste</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(data?.top_items ?? []).map((item) => (
-                    <tr key={item.id} className="border-b border-slate-700/30 last:border-0 hover:bg-slate-700/20">
-                      <td className="px-5 py-2.5 font-medium text-white">{item.name}</td>
-                      <td className="px-3 py-2.5 text-center text-blue-400">{item.produced}</td>
-                      <td className="px-3 py-2.5 text-center text-green-400">{item.sold}</td>
-                      <td className="px-3 py-2.5 text-center text-white">{item.remaining}</td>
-                      <td className="px-3 py-2.5 text-center text-red-400">{item.wasted}</td>
+          ) : finishedGoods.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 text-sm">No baked items set up yet</div>
+          ) : (() => {
+            const statsMap = new Map((data?.top_items ?? []).map((t) => [t.id, t]));
+            return (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700/50">
+                      <th className="text-left px-5 py-2 text-xs font-semibold text-slate-500 uppercase">Item</th>
+                      <th className="text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Baked</th>
+                      <th className="text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Sold</th>
+                      <th className="text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Left</th>
+                      <th className="text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Waste</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {finishedGoods.map((fg) => {
+                      const s = statsMap.get(fg.id);
+                      return (
+                        <tr key={fg.id} className="border-b border-slate-700/30 last:border-0 hover:bg-slate-700/20">
+                          <td className="px-5 py-2.5 font-medium text-white">{fg.name}</td>
+                          <td className="px-3 py-2.5 text-center text-blue-400">{s?.produced ?? 0}</td>
+                          <td className="px-3 py-2.5 text-center text-green-400">{s?.sold ?? 0}</td>
+                          <td className="px-3 py-2.5 text-center text-white">{fg.quantity}</td>
+                          <td className="px-3 py-2.5 text-center text-red-400">{s?.wasted ?? 0}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Today's production log timeline */}

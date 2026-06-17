@@ -65,11 +65,14 @@ CREATE TABLE IF NOT EXISTS suppliers (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   business_id UUID REFERENCES businesses(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
+  contact_name TEXT,
   phone TEXT,
   email TEXT,
   address TEXT,
   notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ================================================
@@ -249,7 +252,7 @@ CREATE TABLE IF NOT EXISTS orders (
   table_id UUID REFERENCES floor_tables(id) ON DELETE SET NULL,
   staff_id UUID REFERENCES staff(id) ON DELETE SET NULL,
   order_type TEXT DEFAULT 'counter'
-    CHECK (order_type IN ('counter','table','takeaway','credit')),
+    CHECK (order_type IN ('counter','table','takeaway','credit','bar_tab')),
   status TEXT DEFAULT 'pending'
     CHECK (status IN ('pending','preparing','ready','completed','cancelled')),
   subtotal DECIMAL(12,2) DEFAULT 0,
@@ -315,8 +318,7 @@ CREATE TABLE IF NOT EXISTS credits (
   items_description TEXT,
   total_amount DECIMAL(12,2) NOT NULL,
   amount_paid DECIMAL(12,2) DEFAULT 0,
-  balance DECIMAL(12,2) GENERATED ALWAYS AS
-    (total_amount - amount_paid) STORED,
+  balance DECIMAL(12,2) DEFAULT 0,
   due_date DATE NOT NULL,
   status TEXT DEFAULT 'unpaid'
     CHECK (status IN ('unpaid','partial','paid','overdue')),
@@ -408,6 +410,15 @@ ALTER TABLE ai_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies: users can only see their own business data
+--
+-- NOTE — PIN-only staff (bakers, cashiers, bartenders) log in without a
+-- Supabase auth session, so auth.uid() is always null for them. Adding a
+-- per-role RLS policy cannot help here because the uid-based subquery would
+-- still return nothing. Instead, all bakery/bar/POS API routes use the
+-- service-role admin client (createAdminClient) after getAuthContext() has
+-- already validated the caller's identity via the pos_operator cookie.
+-- RLS stays enabled on every table; the admin client simply bypasses it
+-- server-side once the caller is confirmed legitimate.
 CREATE POLICY "Users see own business" ON businesses
   FOR ALL USING (owner_id = auth.uid());
 
@@ -542,5 +553,5 @@ CREATE POLICY "Users see own order_items" ON order_items
   );
 
 -- ================================================
--- DONE — 18 tables created with RLS policies
+-- DONE — 19 tables created with RLS policies
 -- ================================================

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 
@@ -6,7 +6,7 @@ export async function GET(_request: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const [productsRes] = await Promise.all([
     supabase
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const body = await request.json();
   const { product_id, adjustment_type, quantity, reason } = body;
 

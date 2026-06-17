@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 
@@ -9,7 +9,7 @@ export async function GET(
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("products")
     .select("*, suppliers(name)")
@@ -30,7 +30,7 @@ export async function PUT(
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const body = await request.json();
 
   const updates: Record<string, unknown> = {};
@@ -69,7 +69,7 @@ export async function DELETE(
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   // Soft delete
   const { error } = await supabase
     .from("products")

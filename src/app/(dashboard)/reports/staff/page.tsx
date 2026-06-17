@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { StatCard } from "@/components/ui/stat-card";
 import { DateRangeFilter } from "@/components/reports/date-range-filter";
 import { formatRWF } from "@/lib/utils";
-import { Users, TrendingUp, DollarSign, Award, TableProperties, Loader2 } from "lucide-react";
+import { Users, TrendingUp, DollarSign, Award, FileDown, TableProperties, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -58,6 +58,37 @@ export default function StaffReportPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const handleExportPDF = async () => {
+    if (!data) return;
+    setExporting(true);
+    try {
+      const { exportToPDF } = await import("@/lib/export");
+      await exportToPDF(
+        "Staff Report",
+        sortedPerformance.map((s) => ({
+          name: s.name, role: s.role, tx: String(s.transactions),
+          revenue: formatRWF(s.revenue), avg: formatRWF(s.avg_transaction),
+          credits: String(s.credits_given), discounts: formatRWF(s.discounts_given),
+        })),
+        [
+          { header: "Staff Name", key: "name" }, { header: "Role", key: "role" },
+          { header: "Transactions", key: "tx" }, { header: "Revenue Generated", key: "revenue" },
+          { header: "Avg Transaction", key: "avg" }, { header: "Credits Given", key: "credits" },
+          { header: "Discounts Given", key: "discounts" },
+        ],
+        undefined,
+        `Period: ${from} → ${to}`,
+        [
+          { label: "Active Staff", value: String(data.summary.total_staff) },
+          { label: "Total Transactions", value: String(data.summary.total_transactions) },
+          { label: "Total Revenue", value: formatRWF(data.summary.total_revenue) },
+        ]
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleExportExcel = async () => {
     if (!data) return;
     setExporting(true);
@@ -106,10 +137,16 @@ export default function StaffReportPage() {
           </h1>
           <p className="text-slate-400 text-sm mt-0.5">Performance, revenue, and transaction breakdown per staff member</p>
         </div>
-        <button onClick={handleExportExcel} disabled={exporting || loading} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm disabled:opacity-40">
-          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <TableProperties className="w-4 h-4" />}
-          Export Excel
-        </button>
+        <div className="flex gap-2">
+          <button onClick={handleExportPDF} disabled={exporting || loading} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            PDF
+          </button>
+          <button onClick={handleExportExcel} disabled={exporting || loading} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm disabled:opacity-40">
+            <TableProperties className="w-4 h-4" />
+            Excel
+          </button>
+        </div>
       </div>
 
       <DateRangeFilter from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />

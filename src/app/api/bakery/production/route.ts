@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
+
+export async function GET(request: NextRequest) {
+  const auth = await getAuthContext();
+  if (auth.error) return auth.error;
+
+  const { searchParams } = new URL(request.url);
+  const date = searchParams.get("date") ?? new Date().toISOString().split("T")[0];
+
+  const supabase = createAdminClient();
+
+  const { data: logs, error } = await supabase
+    .from("production_logs")
+    .select(`
+      id, quantity_produced, batch_label, production_time, expiry_time, notes,
+      finished_goods(name, barcode, barcode_type, selling_price),
+      staff(name)
+    `)
+    .eq("business_id", auth.businessId)
+    .gte("production_time", `${date}T00:00:00.000Z`)
+    .lte("production_time", `${date}T23:59:59.999Z`)
+    .order("production_time", { ascending: false });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ logs: logs ?? [] });
+}
 
 interface ProductionItem {
   finished_good_id: string;
@@ -25,7 +51,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "All quantities are 0" }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   // 1. Fetch recipes for all items
   const fgIds = validItems.map((i) => i.finished_good_id);

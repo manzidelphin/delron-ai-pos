@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get("to") ?? today;
   const toEnd = to + "T23:59:59.999Z";
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const [staffRes, txRes, creditsRes, ordersRes] = await Promise.all([
     supabase

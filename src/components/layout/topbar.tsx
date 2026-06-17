@@ -12,7 +12,8 @@ import { toast } from "sonner";
 export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const { staff, currentBranch, branches, setCurrentBranch, reset } = useAuthStore();
+  const { staff, activeOperator, currentBranch, branches, setCurrentBranch, reset } = useAuthStore();
+  const displayStaff = activeOperator ?? staff;
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -116,12 +117,12 @@ export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
         <div className="flex items-center gap-2 pl-2 border-l border-border ml-1">
           <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
             <span className="text-xs font-bold text-blue-400">
-              {staff ? getInitials(staff.name) : "?"}
+              {displayStaff ? getInitials(displayStaff.name) : "?"}
             </span>
           </div>
           <div className="hidden md:block">
-            <div className="text-sm font-medium text-foreground leading-none">{staff?.name ?? "Loading..."}</div>
-            <div className="text-xs text-muted-foreground capitalize leading-none mt-0.5">{staff?.role}</div>
+            <div className="text-sm font-medium text-foreground leading-none">{displayStaff?.name ?? "Loading..."}</div>
+            <div className="text-xs text-muted-foreground capitalize leading-none mt-0.5">{displayStaff?.role}</div>
           </div>
           <button
             onClick={handleLogout}

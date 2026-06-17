@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 import { sendSMS, SMS_TEMPLATES } from "@/lib/sms";
@@ -10,7 +10,7 @@ export async function POST(
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: credit, error } = await supabase
     .from("credits")
     .select("*")

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 
@@ -6,7 +6,7 @@ export async function GET() {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const [productsRes, barRes, materialsRes] = await Promise.all([
     supabase

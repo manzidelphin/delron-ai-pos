@@ -59,22 +59,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              classNames: {
-                toast:
-                  "bg-card border-border text-foreground shadow-lg",
-                title: "text-foreground font-semibold",
-                description: "text-muted-foreground",
-                actionButton: "bg-primary text-primary-foreground",
-                cancelButton: "bg-muted text-muted-foreground",
-                error: "border-destructive/50 bg-destructive/10",
-                success: "border-green-500/50 bg-green-500/10",
-                warning: "border-yellow-500/50 bg-yellow-500/10",
-              },
-            }}
-          />
+          <Toaster position="top-right" richColors closeButton />
         </ThemeProvider>
       </body>
     </html>

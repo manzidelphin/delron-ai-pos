@@ -65,6 +65,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [data, setData] = useState<OnboardingData>({
     full_name: "",
@@ -80,6 +81,9 @@ export default function OnboardingPage() {
     products_method: "skip",
   });
 
+  const set = (field: keyof OnboardingData, value: string) =>
+    setData((prev) => ({ ...prev, [field]: value } as OnboardingData));
+
   const toggleModule = (module: BusinessModule) => {
     setData((prev) => ({
       ...prev,
@@ -94,7 +98,6 @@ export default function OnboardingPage() {
     try {
       const supabase = createClient();
 
-      // 1. Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -106,70 +109,46 @@ export default function OnboardingPage() {
         return;
       }
 
-      // 2. Create business record
-      const { data: business, error: bizError } = await supabase
-        .from("businesses")
-        .insert({
-          name: data.business_name,
-          owner_id: authData.user.id,
-          location: data.location,
+      const res = await fetch("/api/auth/complete-onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: authData.user.id,
+          full_name: data.full_name,
+          business_name: data.business_name,
           phone: data.phone,
           email: data.email,
-          modules: data.modules,
-          plan: "free",
-          language: data.language,
-          currency: "RWF",
-        })
-        .select()
-        .single();
-
-      if (bizError || !business) {
-        toast.error("Failed to create business. Please try again.");
-        return;
-      }
-
-      // 3. Create main branch
-      const { data: branch, error: branchError } = await supabase
-        .from("branches")
-        .insert({
-          business_id: business.id,
-          name: `${data.business_name} — Main Branch`,
           location: data.location,
-          phone: data.phone,
-          is_main: true,
-        })
-        .select()
-        .single();
-
-      if (branchError || !branch) {
-        toast.error("Failed to create branch.");
-        return;
-      }
-
-      // 4. Create owner staff record (linked to auth user via user_id)
-      const { error: staffError } = await supabase.from("staff").insert({
-        business_id: business.id,
-        branch_id: branch.id,
-        user_id: authData.user.id,
-        name: data.full_name,
-        phone: data.phone,
-        email: data.email,
-        role: "owner",
-        is_active: true,
+          modules: data.modules,
+          language: data.language,
+        }),
       });
 
-      if (staffError) {
-        toast.error("Account created but staff profile failed. Contact support.");
+      if (!res.ok) {
+        const { error } = await res.json();
+        toast.error(error ?? "Failed to create business. Please try again.");
         return;
       }
 
-      toast.success("Account created! Welcome to DELRON AI POS 🎉");
+      toast.success("Account created! Welcome to DELRON AI POS");
       setStep(5);
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const validateStep1 = () => {
+    const newErrors: Record<string, string> = {};
+    if (!data.full_name.trim()) newErrors.full_name = "Full name is required";
+    if (!data.business_name.trim()) newErrors.business_name = "Business name is required";
+    if (!data.phone.trim()) newErrors.phone = "Phone number is required";
+    if (!data.email.trim()) newErrors.email = "Email address is required";
+    if (!data.password) newErrors.password = "Password is required";
+    else if (data.password.length < 8) newErrors.password = "Password must be at least 8 characters";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   return (
@@ -237,36 +216,59 @@ export default function OnboardingPage() {
                 <p className="text-slate-400 text-sm">You&apos;re the owner of this business</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Your full name">
-                  <Input value={data.full_name} onChange={(v) => setData({ ...data, full_name: v })} placeholder="Uwimana Jean" />
+                <Field label="Your full name" error={errors.full_name}>
+                  <Input
+                    value={data.full_name}
+                    onChange={(v) => { set("full_name", v); if (errors.full_name) setErrors((e) => ({ ...e, full_name: "" })); }}
+                    placeholder="Uwimana Jean"
+                    hasError={!!errors.full_name}
+                  />
                 </Field>
-                <Field label="Business name">
-                  <Input value={data.business_name} onChange={(v) => setData({ ...data, business_name: v })} placeholder="Kigali Supermarket" />
+                <Field label="Business name" error={errors.business_name}>
+                  <Input
+                    value={data.business_name}
+                    onChange={(v) => { set("business_name", v); if (errors.business_name) setErrors((e) => ({ ...e, business_name: "" })); }}
+                    placeholder="Kigali Supermarket"
+                    hasError={!!errors.business_name}
+                  />
                 </Field>
-                <Field label="Phone number">
-                  <Input value={data.phone} onChange={(v) => setData({ ...data, phone: v })} placeholder="0781234567" />
+                <Field label="Phone number" error={errors.phone}>
+                  <Input
+                    value={data.phone}
+                    onChange={(v) => { set("phone", v); if (errors.phone) setErrors((e) => ({ ...e, phone: "" })); }}
+                    placeholder="0781234567"
+                    hasError={!!errors.phone}
+                  />
                 </Field>
                 <Field label="Business location">
-                  <Input value={data.location} onChange={(v) => setData({ ...data, location: v })} placeholder="Kigali, Rwanda" />
+                  <Input
+                    value={data.location}
+                    onChange={(v) => set("location", v)}
+                    placeholder="Kigali, Rwanda"
+                  />
                 </Field>
-                <Field label="Email address">
-                  <Input type="email" value={data.email} onChange={(v) => setData({ ...data, email: v })} placeholder="you@business.com" />
+                <Field label="Email address" error={errors.email}>
+                  <Input
+                    type="email"
+                    value={data.email}
+                    onChange={(v) => { set("email", v); if (errors.email) setErrors((e) => ({ ...e, email: "" })); }}
+                    placeholder="you@business.com"
+                    hasError={!!errors.email}
+                  />
                 </Field>
-                <Field label="Password">
-                  <Input type="password" value={data.password} onChange={(v) => setData({ ...data, password: v })} placeholder="Min. 8 characters" />
+                <Field label="Password" error={errors.password}>
+                  <Input
+                    type="password"
+                    value={data.password}
+                    onChange={(v) => { set("password", v); if (errors.password) setErrors((e) => ({ ...e, password: "" })); }}
+                    placeholder="Min. 8 characters"
+                    hasError={!!errors.password}
+                  />
                 </Field>
               </div>
               <NavButtons
                 onNext={() => {
-                  if (!data.full_name || !data.business_name || !data.phone || !data.email || !data.password) {
-                    toast.error("Please fill in all required fields");
-                    return;
-                  }
-                  if (data.password.length < 8) {
-                    toast.error("Password must be at least 8 characters");
-                    return;
-                  }
-                  setStep(2);
+                  if (validateStep1()) setStep(2);
                 }}
                 showBack={false}
               />
@@ -416,7 +418,7 @@ export default function OnboardingPage() {
                 <CheckCircle2 className="w-10 h-10 text-green-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white mb-2">You&apos;re live! 🎉</h2>
+                <h2 className="text-2xl font-bold text-white mb-2">You&apos;re live!</h2>
                 <p className="text-slate-400">
                   Welcome to DELRON AI POS,{" "}
                   <span className="text-white font-semibold">{data.full_name.split(" ")[0]}</span>. Your dashboard is ready.
@@ -445,17 +447,18 @@ export default function OnboardingPage() {
 
 // ─── Helper components ───────────────────────────
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
   return (
     <div className="space-y-1.5">
       <label className="text-sm font-medium text-slate-300">{label}</label>
       {children}
+      {error && <p className="text-xs text-red-400 mt-0.5">{error}</p>}
     </div>
   );
 }
 
-function Input({ value, onChange, placeholder, type = "text" }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+function Input({ value, onChange, placeholder, type = "text", hasError = false }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; type?: string; hasError?: boolean;
 }) {
   return (
     <input
@@ -463,7 +466,12 @@ function Input({ value, onChange, placeholder, type = "text" }: {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full h-11 px-4 bg-[#0F172A] border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+      className={cn(
+        "w-full h-11 px-4 bg-[#0F172A] border rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all",
+        hasError
+          ? "border-red-500 focus:ring-red-500"
+          : "border-slate-700 focus:ring-blue-500"
+      )}
     />
   );
 }

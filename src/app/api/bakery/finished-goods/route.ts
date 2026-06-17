@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 
 function generateBakeryBarcode(name: string, type: string): string {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   const includeInactive = searchParams.get("include_inactive") === "true";
   const category = searchParams.get("category") || "";
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   let query = supabase
     .from("finished_goods")
@@ -43,13 +43,30 @@ export async function POST(request: NextRequest) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { name, barcode_type, selling_price, cost_price, unit, category, is_active } = body;
+  const { name, barcode_type, selling_price, cost_price, unit, category, is_active, branch_id: bodyBranchId } = body;
 
   if (!name?.trim() || !barcode_type) {
     return NextResponse.json({ error: "Name and barcode type are required" }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
+
+  // 1. Prefer branch_id from request body
+  // 2. Fall back to the branch resolved in auth context (set from pos_operator cookie)
+  // 3. Last resort: query the branches table for this business's first branch
+  let branchId: string | null = bodyBranchId || auth.branchId || null;
+  if (!branchId) {
+    const { data: defaultBranch } = await supabase
+      .from("branches")
+      .select("id")
+      .eq("business_id", auth.businessId)
+      .limit(1)
+      .single();
+    if (!defaultBranch) {
+      return NextResponse.json({ error: "No branch found for this business" }, { status: 400 });
+    }
+    branchId = defaultBranch.id;
+  }
 
   const barcode = generateBakeryBarcode(name.trim(), barcode_type);
 
@@ -57,7 +74,7 @@ export async function POST(request: NextRequest) {
     .from("finished_goods")
     .insert({
       business_id: auth.businessId,
-      branch_id: auth.branchId,
+      branch_id: branchId,
       name: name.trim(),
       barcode,
       barcode_type,
@@ -84,7 +101,7 @@ export async function PUT(request: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("finished_goods")

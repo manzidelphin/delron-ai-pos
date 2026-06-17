@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 
 export async function GET() {
@@ -7,7 +8,7 @@ export async function GET() {
   if (auth.error) return auth.error;
   const { businessId } = auth;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("staff")
     .select("id,name,phone,email,role,branch_id,is_active,created_at")
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (auth.error) return auth.error;
   const { businessId, staffId: requesterId } = auth;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: requester } = await supabase.from("staff").select("role").eq("id", requesterId).single();
   if (!["owner", "manager"].includes(requester?.role ?? "")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
@@ -36,17 +37,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "name, phone, role and pin are required" }, { status: 400 });
   }
 
-  // Create auth user with temporary password
+  // Create auth user with temporary password (admin client required for auth.admin)
+  const adminClient = createAdminClient();
   const tempPassword = Math.random().toString(36).slice(-8) + "A1!";
-  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+  const { data: authUser } = await adminClient.auth.admin.createUser({
     email: email || `${phone.replace(/\D/g, "")}@delron.rw`,
     password: tempPassword,
     email_confirm: true,
   });
-
-  if (authError) {
-    // If auth fails, still create staff without user_id (PIN-only login)
-  }
 
   const { data: newStaff, error } = await supabase
     .from("staff")
