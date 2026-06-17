@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { table_number, capacity, location } = body;
+  const { table_number, capacity, section } = body;
 
   if (!table_number) {
     return NextResponse.json({ error: "table_number required" }, { status: 400 });
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       branch_id: auth.branchId,
       table_number: parseInt(table_number),
       capacity: capacity ? parseInt(capacity) : 4,
-      location: location ?? null,
+      section: section ?? null,
       status: "empty",
     })
     .select()

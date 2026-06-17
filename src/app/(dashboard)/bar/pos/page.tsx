@@ -17,7 +17,7 @@ interface FloorTable {
   id: string;
   table_number: number;
   capacity: number;
-  location: string | null;
+  section: string | null;
   status: "empty" | "occupied" | "bill_requested" | "reserved";
 }
 

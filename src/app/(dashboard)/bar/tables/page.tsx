@@ -10,7 +10,7 @@ interface FloorTable {
   id: string;
   table_number: number;
   capacity: number;
-  location: string | null;
+  section: string | null;
   status: "empty" | "occupied" | "bill_requested" | "reserved";
 }
 
@@ -27,7 +27,7 @@ export default function BarTablesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editTable, setEditTable] = useState<FloorTable | null>(null);
-  const [form, setForm] = useState({ table_number: "", capacity: "4", location: "" });
+  const [form, setForm] = useState({ table_number: "", capacity: "4", section: "" });
   const [saving, setSaving] = useState(false);
   const [statusModal, setStatusModal] = useState<FloorTable | null>(null);
 
@@ -48,7 +48,7 @@ export default function BarTablesPage() {
 
   const openCreate = () => {
     setEditTable(null);
-    setForm({ table_number: "", capacity: "4", location: "" });
+    setForm({ table_number: "", capacity: "4", section: "" });
     setShowModal(true);
   };
 
@@ -158,7 +158,7 @@ export default function BarTablesPage() {
                 </button>
               ))}
               <button
-                onClick={() => { setEditTable(statusModal); setForm({ table_number: String(statusModal.table_number), capacity: String(statusModal.capacity), location: statusModal.location ?? "" }); setStatusModal(null); setShowModal(true); }}
+                onClick={() => { setEditTable(statusModal); setForm({ table_number: String(statusModal.table_number), capacity: String(statusModal.capacity), section: statusModal.section ?? "" }); setStatusModal(null); setShowModal(true); }}
                 className="w-full h-11 rounded-xl text-sm font-semibold bg-accent text-foreground hover:bg-accent/80 transition-all mt-2"
               >
                 Edit Table Details
@@ -190,7 +190,7 @@ export default function BarTablesPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Location / Section</label>
-                <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })}
+                <input value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })}
                   placeholder="e.g. Terrace, VIP Room"
                   className="w-full h-10 px-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
               </div>
