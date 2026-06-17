@@ -108,7 +108,7 @@ export default function PosLoginPage() {
       const res = await fetch("/api/auth/pin-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ staffId: selected.id, pin: enteredPin }),
+        body: JSON.stringify({ staffId: selected.id, pin: enteredPin, businessId: businessId ?? undefined }),
       });
 
       let data: Record<string, unknown> = {};
