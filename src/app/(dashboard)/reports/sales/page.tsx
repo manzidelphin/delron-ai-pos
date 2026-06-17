@@ -101,7 +101,13 @@ export default function SalesReportPage() {
           { header: "Amount", key: "amount" },
         ],
         undefined,
-        `Period: ${fmt(from, to)}`
+        `Period: ${fmt(from, to)}`,
+        [
+          { label: "Total Revenue", value: formatRWF(data.kpis.total_revenue) },
+          { label: "Transactions", value: String(data.kpis.total_transactions) },
+          { label: "Avg Transaction", value: formatRWF(data.kpis.avg_transaction) },
+          { label: "Growth vs Prev", value: `${data.kpis.growth > 0 ? "+" : ""}${data.kpis.growth}%` },
+        ]
       );
     } finally {
       setExporting(false);

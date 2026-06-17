@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAuthStore } from "@/store/auth-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { formatRWF } from "@/lib/utils";
 import { toast } from "sonner";
@@ -173,6 +174,7 @@ function ItemModal({ item, onClose, onSave }: { item: FinishedGood | null; onClo
 }
 
 export default function BakedItemsPage() {
+  const { isLoaded } = useAuthStore();
   const [items, setItems] = useState<FinishedGood[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [modal, setModal] = useState<"add" | "edit" | null>(null);
@@ -190,7 +192,7 @@ export default function BakedItemsPage() {
     }
   }, [showInactive]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (isLoaded) load(); }, [isLoaded, load]);
 
   const CATEGORY_ICONS: Record<string, string> = { bread: "🍞", pastry: "🥐", cake: "🎂", snack: "🥟", other: "🍪" };
 

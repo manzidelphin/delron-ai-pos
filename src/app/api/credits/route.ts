@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 import { sendSMS, SMS_TEMPLATES } from "@/lib/sms";
@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status") ?? "all";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const body = await request.json();
 
   const {

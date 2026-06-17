@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAuthStore } from "@/store/auth-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { WasteForm } from "@/components/bakery/waste-form";
@@ -25,6 +26,7 @@ interface FinishedGoodOption {
 }
 
 export default function WastePage() {
+  const { isLoaded } = useAuthStore();
   const [logs, setLogs] = useState<WasteLog[]>([]);
   const [finishedGoods, setFinishedGoods] = useState<FinishedGoodOption[]>([]);
   const [stats, setStats] = useState({ totalToday: 0, totalTodayQty: 0 });
@@ -52,7 +54,7 @@ export default function WastePage() {
     }
   }, [dateFrom, dateTo]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (isLoaded) load(); }, [isLoaded, load]);
 
   const totalCostPeriod = logs.reduce((s, l) => s + l.cost_of_waste, 0);
   const totalQtyPeriod = logs.reduce((s, l) => s + l.quantity_wasted, 0);

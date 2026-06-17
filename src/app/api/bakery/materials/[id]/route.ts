@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
@@ -9,7 +9,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   const body = await request.json();
   const { name, unit, quantity, min_quantity, cost_per_unit, supplier_id } = body;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("raw_materials")
@@ -35,7 +35,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase
     .from("raw_materials")

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
@@ -7,7 +7,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("bar_items")
@@ -26,7 +26,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase
     .from("bar_items")

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -7,7 +7,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (auth.error) return auth.error;
   const { businessId, staffId: requesterId } = auth;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: requester } = await supabase.from("staff").select("role").eq("id", requesterId).single();
   if (!["owner", "manager"].includes(requester?.role ?? "")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
@@ -37,7 +37,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (auth.error) return auth.error;
   const { businessId, staffId: requesterId } = auth;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: requester } = await supabase.from("staff").select("role").eq("id", requesterId).single();
   if (requester?.role !== "owner") {
     return NextResponse.json({ error: "Only owners can deactivate staff" }, { status: 403 });

@@ -1,17 +1,15 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { createClient } from "@/lib/supabase/server";
+﻿import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { message } = await req.json();
 
   if (!message?.trim()) {
@@ -109,7 +107,6 @@ export async function POST(req: NextRequest) {
     0
   );
 
-  // Filter low stock items
   const lowProducts = (lowStockProducts.data ?? []).filter(
     (p) => p.quantity <= p.min_quantity
   );
@@ -120,7 +117,7 @@ export async function POST(req: NextRequest) {
     (m) => m.quantity <= m.min_quantity
   );
 
-  const businessContext = `You are DELRON AI, the smart business assistant for this business. You have access to real-time business data.
+  const systemInstruction = `You are DELRON AI, the smart business assistant for this business. You have access to real-time business data.
 Always respond helpfully, clearly, and concisely. You can respond in English or Kinyarwanda depending on what language the user writes in.
 Always format money as "X,XXX RWF".
 
@@ -143,17 +140,10 @@ ${
 }
 
 Low bar items (${lowBar.length}):
-${
-  lowBar.map((i) => `  - ${i.name}: ${i.quantity_bottles} bottles left`).join("\n") ||
-  "  None"
-}
+${lowBar.map((i) => `  - ${i.name}: ${i.quantity_bottles} bottles left`).join("\n") || "  None"}
 
 Low bakery ingredients (${lowMaterials.length}):
-${
-  lowMaterials
-    .map((m) => `  - ${m.name}: ${m.quantity} ${m.unit} left`)
-    .join("\n") || "  None"
-}
+${lowMaterials.map((m) => `  - ${m.name}: ${m.quantity} ${m.unit} left`).join("\n") || "  None"}
 
 CREDITS & DEBTS:
 Total outstanding: ${totalOutstanding.toLocaleString()} RWF
@@ -172,17 +162,13 @@ LAST 7 DAYS:
 Total revenue: ${weekRevenue.toLocaleString()} RWF
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1000,
-    system: businessContext,
-    messages: [{ role: "user", content: message }],
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+    systemInstruction,
   });
 
-  const aiResponse =
-    response.content[0].type === "text"
-      ? response.content[0].text
-      : "Sorry, I could not process that.";
+  const result = await model.generateContent(message);
+  const aiResponse = result.response.text();
 
   // Save conversation
   void supabase.from("ai_conversations").insert([

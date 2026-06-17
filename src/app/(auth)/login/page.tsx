@@ -153,6 +153,17 @@ export default function LoginPage() {
               Create your account
             </button>
           </p>
+
+          {/* POS cashier link */}
+          <div className="text-center mt-3">
+            <button
+              type="button"
+              onClick={() => router.push("/pos-login")}
+              className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Staff PIN Login →
+            </button>
+          </div>
         </div>
 
         {/* Footer */}

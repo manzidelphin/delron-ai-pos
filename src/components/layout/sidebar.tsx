@@ -23,6 +23,7 @@ import {
   Building2,
   AlertTriangle,
   TrendingUp,
+  Lock,
 } from "lucide-react";
 import type { BusinessModule, UserRole } from "@/types";
 
@@ -70,18 +71,26 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Notifications", href: "/notifications", icon: <Bell className="w-4 h-4" />, roles: ["owner", "manager"], sectionLabel: "System" },
   { label: "Settings", href: "/settings", icon: <Settings className="w-4 h-4" />, roles: ["owner", "manager"] },
   { label: "Branches", href: "/settings/branches", icon: <Building2 className="w-4 h-4" />, roles: ["owner"] },
-  { label: "Profile", href: "/profile", icon: <Users className="w-4 h-4" /> },
+  { label: "Profile", href: "/profile", icon: <Users className="w-4 h-4" />, roles: ["owner", "manager"] },
 ];
 
 export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { business, staff, hasModule } = useAuthStore();
+  const { business, staff, activeOperator, clearOperator, hasModule, canAccess } = useAuthStore();
   const { setOpen: openAI } = useAIStore();
+
+  const handleLockScreen = async () => {
+    await fetch("/api/auth/pin-login", { method: "DELETE" });
+    clearOperator();
+    window.location.href = "/pos-login";
+  };
 
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.module && !hasModule(item.module)) return false;
-    if (item.roles && staff && !item.roles.includes(staff.role)) return false;
+    if (item.roles) {
+      if (!canAccess(item.roles)) return false;
+    }
     return true;
   });
 
@@ -148,8 +157,25 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
         })}
       </nav>
 
-      {/* AI quick access */}
-      <div className="p-3 border-t border-sidebar-border">
+      {/* Lock Screen + AI */}
+      <div className="p-3 border-t border-sidebar-border space-y-2">
+        {/* Active operator badge */}
+        {activeOperator && isOpen && (
+          <div className="px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
+            <p className="text-[10px] text-slate-500 uppercase tracking-wide">Active operator</p>
+            <p className="text-xs font-semibold text-white truncate">{activeOperator.name}</p>
+          </div>
+        )}
+
+        <button
+          onClick={handleLockScreen}
+          title={!isOpen ? "Lock Screen" : undefined}
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700 transition-all text-sm font-medium"
+        >
+          <Lock className="w-4 h-4 flex-shrink-0" />
+          {isOpen && <span>Lock Screen</span>}
+        </button>
+
         <button
           onClick={() => openAI(true)}
           title={!isOpen ? "Ask DELRON AI" : undefined}

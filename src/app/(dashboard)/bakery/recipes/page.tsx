@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAuthStore } from "@/store/auth-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { RecipeCard } from "@/components/bakery/recipe-card";
 import { formatRWF } from "@/lib/utils";
@@ -283,6 +284,7 @@ function RecipeModal({
 }
 
 export default function RecipesPage() {
+  const { isLoaded } = useAuthStore();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
   const [finishedGoods, setFinishedGoods] = useState<FinishedGood[]>([]);
@@ -307,7 +309,7 @@ export default function RecipesPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (isLoaded) load(); }, [isLoaded, load]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this recipe?")) return;

@@ -8,7 +8,7 @@ import {
 import { StatCard } from "@/components/ui/stat-card";
 import { DateRangeFilter } from "@/components/reports/date-range-filter";
 import { formatRWF, formatDate } from "@/lib/utils";
-import { CreditCard, TrendingUp, DollarSign, Clock, TableProperties, Loader2 } from "lucide-react";
+import { CreditCard, TrendingUp, DollarSign, Clock, FileDown, TableProperties, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -68,6 +68,39 @@ export default function CreditsReportPage() {
   }, [from, to]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleExportPDF = async () => {
+    if (!data) return;
+    setExporting(true);
+    try {
+      const { exportToPDF } = await import("@/lib/export");
+      await exportToPDF(
+        "Credit Report",
+        data.aging_table.map((r) => ({
+          customer: r.customer_name, phone: r.customer_phone,
+          owed: formatRWF(r.total_owed), due: formatDate(r.due_date),
+          days: r.days_overdue > 0 ? `${r.days_overdue}d` : "—",
+          bucket: r.bucket, status: r.status,
+        })),
+        [
+          { header: "Customer", key: "customer" }, { header: "Phone", key: "phone" },
+          { header: "Amount Owed", key: "owed" }, { header: "Due Date", key: "due" },
+          { header: "Days Overdue", key: "days" }, { header: "Aging", key: "bucket" },
+          { header: "Status", key: "status" },
+        ],
+        undefined,
+        `Period: ${from} → ${to}`,
+        [
+          { label: "Total Credit Given", value: formatRWF(data.kpis.total_given) },
+          { label: "Total Collected", value: formatRWF(data.kpis.total_collected) },
+          { label: "Collection Rate", value: `${data.kpis.collection_rate}%` },
+          { label: "Still Outstanding", value: formatRWF(data.kpis.still_outstanding) },
+        ]
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleExportExcel = async () => {
     if (!data) return;
@@ -133,10 +166,16 @@ export default function CreditsReportPage() {
           </h1>
           <p className="text-slate-400 text-sm mt-0.5">Debt analysis, aging, and collection performance</p>
         </div>
-        <button onClick={handleExportExcel} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm disabled:opacity-40">
-          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <TableProperties className="w-4 h-4" />}
-          Export Excel
-        </button>
+        <div className="flex gap-2">
+          <button onClick={handleExportPDF} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            PDF
+          </button>
+          <button onClick={handleExportExcel} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm disabled:opacity-40">
+            <TableProperties className="w-4 h-4" />
+            Excel
+          </button>
+        </div>
       </div>
 
       <DateRangeFilter from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />

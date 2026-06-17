@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 
 export async function GET() {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const todayStr = new Date().toISOString().split("T")[0];
   const todayStart = `${todayStr}T00:00:00.000Z`;
@@ -121,7 +121,7 @@ export async function GET() {
       remaining: fg.quantity,
       wasted: wasteItems.reduce((s, w) => s + w.quantity_wasted, 0),
     };
-  }).filter((item) => item.produced > 0 || item.remaining > 0);
+  });
 
   return NextResponse.json({
     stats: {

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { sendSMS, SMS_TEMPLATES } from "@/lib/sms";
 
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const today = new Date().toISOString().split("T")[0];
   const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
     .toISOString()

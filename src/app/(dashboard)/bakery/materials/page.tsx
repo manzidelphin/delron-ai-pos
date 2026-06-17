@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useAuthStore } from "@/store/auth-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { formatRWF } from "@/lib/utils";
@@ -219,6 +220,7 @@ function RestockModal({ material, onClose, onDone }: { material: RawMaterial; on
 }
 
 export default function MaterialsPage() {
+  const { isLoaded } = useAuthStore();
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
   const [suppliers, setSuppliers] = useState<Array<{ id: string; name: string }>>([]);
   const [stats, setStats] = useState({ total: 0, totalValue: 0, lowCount: 0, outCount: 0 });
@@ -249,7 +251,7 @@ export default function MaterialsPage() {
     }
   }, [statusFilter]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (isLoaded) load(); }, [isLoaded, load]);
 
   const handleSearch = (val: string) => {
     setSearch(val);

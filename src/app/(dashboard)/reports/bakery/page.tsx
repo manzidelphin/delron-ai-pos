@@ -62,6 +62,39 @@ export default function BakeryReportPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const handleExportPDF = async () => {
+    if (!data) return;
+    setExporting(true);
+    try {
+      const { exportToPDF } = await import("@/lib/export");
+      await exportToPDF(
+        "Bakery Report",
+        data.items_breakdown.map((i) => ({
+          item: i.name, produced: String(i.produced), sold: String(i.sold),
+          wasted: String(i.wasted), waste_pct: `${i.waste_percent}%`,
+          revenue: formatRWF(i.revenue), profit: formatRWF(i.profit), margin: `${i.margin}%`,
+        })),
+        [
+          { header: "Item", key: "item" }, { header: "Produced", key: "produced" },
+          { header: "Sold", key: "sold" }, { header: "Wasted", key: "wasted" },
+          { header: "Waste %", key: "waste_pct" }, { header: "Revenue", key: "revenue" },
+          { header: "Profit", key: "profit" }, { header: "Margin %", key: "margin" },
+        ],
+        undefined,
+        `Period: ${from} → ${to}`,
+        [
+          { label: "Total Produced", value: String(data.kpis.total_produced) },
+          { label: "Total Sold", value: String(data.kpis.total_sold) },
+          { label: "Total Wasted", value: String(data.kpis.total_wasted) },
+          { label: "Bakery Revenue", value: formatRWF(data.kpis.bakery_revenue) },
+          { label: "Efficiency Rate", value: `${data.kpis.efficiency_rate}%` },
+        ]
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleExportExcel = async () => {
     if (!data) return;
     setExporting(true);
@@ -128,8 +161,12 @@ export default function BakeryReportPage() {
           <p className="text-slate-400 text-sm mt-0.5">Production, sales, waste, and baker performance</p>
         </div>
         <div className="flex gap-2">
+          <button onClick={handleExportPDF} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            PDF
+          </button>
           <button onClick={handleExportExcel} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm disabled:opacity-40">
-            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <TableProperties className="w-4 h-4" />}
+            <TableProperties className="w-4 h-4" />
             Excel
           </button>
         </div>

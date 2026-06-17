@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const to = searchParams.get("to") || "";
   const item_id = searchParams.get("item_id") || "";
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   let query = supabase
     .from("waste_logs")
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "item_id, item_name, quantity_wasted, and reason are required" }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data: fg } = await supabase
     .from("finished_goods")

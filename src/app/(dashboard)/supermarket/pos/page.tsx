@@ -11,7 +11,7 @@ import { Receipt } from "@/components/supermarket/receipt";
 import { GenericBarcodeModal } from "@/components/bakery/generic-barcode-modal";
 import type { PaymentDetails } from "@/components/supermarket/payment-modal";
 import type { CreditDetails } from "@/components/supermarket/credit-modal";
-import type { PaymentMethod, Product, CartItem } from "@/types";
+import type { PaymentMethod, CartItem } from "@/types";
 import {
   Search,
   ShoppingCart,
@@ -23,8 +23,20 @@ import {
   Trash2,
 } from "lucide-react";
 
+interface PosItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  min_quantity: number;
+  category: string | null;
+  source: "supermarket" | "bakery";
+  unit: string;
+}
+
 const CATEGORIES = [
   "All",
+  "Bakery",
   "Beverages",
   "Snacks",
   "Dairy",
@@ -64,8 +76,8 @@ interface ReceiptData {
 export default function POSPage() {
   const { cart, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, discount, total, setDiscount } = usePOSStore();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [posItems, setPosItems] = useState<PosItem[]>([]);
+  const [filteredItems, setFilteredItems] = useState<PosItem[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -86,11 +98,42 @@ export default function POSPage() {
   const loadProducts = useCallback(async () => {
     setIsLoadingProducts(true);
     try {
-      const res = await fetch("/api/products?limit=500&stock_type=supermarket");
-      const json = await res.json();
-      if (res.ok) {
-        setProducts(json.products ?? []);
+      const [superRes, bakeryRes] = await Promise.all([
+        fetch("/api/products?limit=500&stock_type=supermarket"),
+        fetch("/api/bakery/finished-goods"),
+      ]);
+      const merged: PosItem[] = [];
+      if (superRes.ok) {
+        const json = await superRes.json();
+        for (const p of json.products ?? []) {
+          merged.push({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            quantity: p.quantity,
+            min_quantity: p.min_quantity ?? 5,
+            category: p.category ?? null,
+            source: "supermarket",
+            unit: p.unit ?? "piece",
+          });
+        }
       }
+      if (bakeryRes.ok) {
+        const json = await bakeryRes.json();
+        for (const fg of json.items ?? []) {
+          merged.push({
+            id: fg.id,
+            name: fg.name,
+            price: fg.selling_price,
+            quantity: fg.quantity,
+            min_quantity: 0,
+            category: fg.category ?? "Bakery",
+            source: "bakery",
+            unit: fg.unit ?? "piece",
+          });
+        }
+      }
+      setPosItems(merged);
     } catch {
       // silently fail
     } finally {
@@ -103,20 +146,19 @@ export default function POSPage() {
   }, [loadProducts]);
 
   useEffect(() => {
-    let filtered = products;
-    if (selectedCategory !== "All") {
-      filtered = filtered.filter((p) => p.category === selectedCategory);
+    let filtered = posItems;
+    if (selectedCategory === "Bakery") {
+      filtered = posItems.filter((p) => p.source === "bakery");
+    } else if (selectedCategory !== "All") {
+      // Other category tabs are supermarket-specific
+      filtered = posItems.filter((p) => p.source === "supermarket" && p.category === selectedCategory);
     }
     if (search.trim()) {
       const q = search.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          (p.barcode && p.barcode.toLowerCase().includes(q))
-      );
+      filtered = filtered.filter((p) => p.name.toLowerCase().includes(q));
     }
-    setFilteredProducts(filtered);
-  }, [products, search, selectedCategory]);
+    setFilteredItems(filtered);
+  }, [posItems, search, selectedCategory]);
 
   const handleBarcodeScan = useCallback(
     async (barcode: string) => {
@@ -160,15 +202,15 @@ export default function POSPage() {
     [addToCart]
   );
 
-  const handleAddProduct = (product: Product) => {
-    if (product.quantity <= 0) return;
+  const handleAddProduct = (item: PosItem) => {
+    if (item.quantity <= 0) return;
     addToCart({
-      product_id: product.id,
-      item_name: product.name,
-      product_type: "product",
+      product_id: item.id,
+      item_name: item.name,
+      product_type: item.source === "bakery" ? "finished_good" : "product",
       quantity: 1,
-      unit_price: product.price,
-      total_price: product.price,
+      unit_price: item.price,
+      total_price: item.price,
     });
   };
 
@@ -310,7 +352,7 @@ export default function POSPage() {
                   <div key={i} className="h-28 bg-slate-800 rounded-xl animate-pulse" />
                 ))}
               </div>
-            ) : filteredProducts.length === 0 ? (
+            ) : filteredItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-center">
                 <p className="text-slate-500 text-sm">No products found</p>
                 {search && (
@@ -321,35 +363,41 @@ export default function POSPage() {
               </div>
             ) : (
               <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
-                {filteredProducts.map((product) => {
-                  const outOfStock = product.quantity <= 0;
-                  const lowStock = !outOfStock && product.quantity <= (product.min_quantity || 5);
+                {filteredItems.map((item) => {
+                  const outOfStock = item.quantity <= 0;
+                  const lowStock = !outOfStock && item.min_quantity > 0 && item.quantity <= item.min_quantity;
+                  const isBakery = item.source === "bakery";
                   return (
                     <button
-                      key={product.id}
-                      onClick={() => handleAddProduct(product)}
+                      key={item.id}
+                      onClick={() => handleAddProduct(item)}
                       disabled={outOfStock}
                       className={`relative h-28 rounded-xl p-3 text-left flex flex-col justify-between transition-all border active:scale-95 ${
                         outOfStock
                           ? "bg-slate-800/30 border-slate-700/30 opacity-40 cursor-not-allowed"
+                          : isBakery
+                          ? "bg-slate-800 border-amber-600/30 hover:border-amber-500/60 hover:bg-slate-700"
                           : lowStock
                           ? "bg-slate-800 border-amber-500/30 hover:border-amber-400/50 hover:bg-slate-700"
                           : "bg-slate-800 border-slate-700 hover:border-blue-500/50 hover:bg-slate-700"
                       }`}
                     >
-                      {lowStock && !outOfStock && (
+                      {isBakery && (
+                        <span className="absolute top-2 left-2 text-[10px] font-bold text-amber-400 bg-amber-500/20 px-1.5 py-0.5 rounded">Bakery</span>
+                      )}
+                      {lowStock && !outOfStock && !isBakery && (
                         <span className="absolute top-2 right-2 text-[10px] font-bold text-amber-400 bg-amber-500/20 px-1.5 py-0.5 rounded">LOW</span>
                       )}
                       {outOfStock && (
                         <span className="absolute top-2 right-2 text-[10px] font-bold text-red-400 bg-red-500/20 px-1.5 py-0.5 rounded">OUT</span>
                       )}
-                      <div>
-                        <p className="text-sm font-semibold text-white leading-tight line-clamp-2">{product.name}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{product.category}</p>
+                      <div className={isBakery ? "mt-4" : ""}>
+                        <p className="text-sm font-semibold text-white leading-tight line-clamp-2">{item.name}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{item.category}</p>
                       </div>
                       <div>
-                        <p className="text-base font-black text-blue-400">{formatRWF(product.price)}</p>
-                        <p className="text-[10px] text-slate-500">Stock: {product.quantity}</p>
+                        <p className="text-base font-black text-blue-400">{formatRWF(item.price)}</p>
+                        <p className="text-[10px] text-slate-500">Stock: {item.quantity}</p>
                       </div>
                     </button>
                   );

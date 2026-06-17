@@ -9,8 +9,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# ─── Anthropic (Claude AI) ───────────────────────────────────────
-ANTHROPIC_API_KEY=sk-ant-api...
+# ─── Google Gemini AI ────────────────────────────────────────────
+GEMINI_API_KEY=your_gemini_api_key_here
 
 # ─── Africa's Talking (SMS) ──────────────────────────────────────
 AFRICAS_TALKING_API_KEY=your_at_api_key
@@ -36,7 +36,7 @@ CRON_SECRET=your_random_secret_string_here
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase Dashboard → Project Settings → API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Dashboard → Project Settings → API |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard → Project Settings → API (keep secret!) |
-| `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys |
+| `GEMINI_API_KEY` | aistudio.google.com → Get API Key (free tier: 15 req/min, 1M tokens/day) |
 | `AFRICAS_TALKING_API_KEY` | account.africastalking.com → Settings → API Key |
 | `AFRICAS_TALKING_USERNAME` | Your Africa's Talking username (or "sandbox" for testing) |
 | `CRON_SECRET` | Generate with: `openssl rand -hex 32` |

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 import { generateBarcode } from "@/lib/utils";
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const body = await request.json();
   const rows: ImportRow[] = body.rows ?? [];
 
