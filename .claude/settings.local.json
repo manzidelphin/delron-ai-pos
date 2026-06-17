@@ -56,7 +56,8 @@
       "Bash(node -e \"console.log\\(require\\('./node_modules/@google/generative-ai/package.json'\\).version\\)\")",
       "Bash(npm run *)",
       "Bash(echo \"Dev server starting in background \\(PID: $!\\)\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(npx supabase *)"
     ]
   }
 }
