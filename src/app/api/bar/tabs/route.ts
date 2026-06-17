@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from("orders")
-    .select("*, floor_tables(table_number, capacity, location)")
+    .select("*, floor_tables(table_number, capacity, section)")
     .eq("business_id", auth.businessId)
-    .eq("status", status)
+    .eq("status", status === "open" ? "pending" : status)
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -48,10 +48,8 @@ export async function POST(request: NextRequest) {
       branch_id: auth.branchId,
       table_id: table_id ?? null,
       staff_id: auth.staffId,
-      customer_name: customer_name ?? null,
-      num_guests: num_guests ?? 1,
-      status: "open",
-      total_amount: 0,
+      status: "pending",
+      total: 0,
       order_type: "bar_tab",
     })
     .select()
