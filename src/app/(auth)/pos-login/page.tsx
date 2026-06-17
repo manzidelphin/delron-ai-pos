@@ -51,24 +51,38 @@ export default function PosLoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    const match = document.cookie
-      .split(";")
-      .find((c) => c.trim().startsWith("pos_business_id="));
-    const id = match
-      ? decodeURIComponent(match.trim().slice("pos_business_id=".length))
-      : null;
-    setBusinessId(id);
-
-    if (!id) {
-      setLoadingStaff(false);
-      return;
-    }
-
     async function load() {
       try {
-        const res = await fetch(`/api/auth/pos-staff?businessId=${id}`);
-        if (!res.ok) throw new Error("Failed");
-        const data = await res.json();
+        // 1. Prefer active Supabase session — owner logged in via email/password.
+        const sessionRes = await fetch("/api/auth/session-business");
+        if (sessionRes.ok) {
+          const session = await sessionRes.json() as { businessId: string | null; businessName: string | null };
+          if (session.businessId) {
+            setBusinessId(session.businessId);
+            setBusinessName(session.businessName ?? null);
+            const staffRes = await fetch(`/api/auth/pos-staff?businessId=${session.businessId}`);
+            if (staffRes.ok) {
+              const data = await staffRes.json();
+              setStaffList(data.staff ?? []);
+            }
+            return;
+          }
+        }
+
+        // 2. Fall back to the pos_business_id cookie (dedicated POS device).
+        const match = document.cookie
+          .split(";")
+          .find((c) => c.trim().startsWith("pos_business_id="));
+        const cookieId = match
+          ? decodeURIComponent(match.trim().slice("pos_business_id=".length))
+          : null;
+        setBusinessId(cookieId);
+
+        if (!cookieId) return; // show "Device not configured"
+
+        const staffRes = await fetch(`/api/auth/pos-staff?businessId=${cookieId}`);
+        if (!staffRes.ok) throw new Error("Failed");
+        const data = await staffRes.json();
         setBusinessName(data.businessName ?? null);
         setStaffList(data.staff ?? []);
       } catch {
