@@ -109,7 +109,7 @@ const MODULE_LABEL: Record<string, string> = { supermarket: "Supermarket", baker
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { business, staff, hasModule } = useAuthStore();
+  const { business, staff, activeOperator, hasModule } = useAuthStore();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -144,7 +144,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">
-          {greeting()}, {staff?.name?.split(" ")[0] ?? "there"} 👋
+          {greeting()}, {(activeOperator?.name ?? staff?.name)?.split(" ")[0] ?? "there"} 👋
         </h1>
         <p className="text-slate-400 text-sm mt-0.5">
           {business?.name ?? "Your business"} · {new Date().toLocaleDateString("en-RW", { weekday: "long", month: "long", day: "numeric" })}
