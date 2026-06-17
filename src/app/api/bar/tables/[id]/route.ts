@@ -11,7 +11,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   const { data, error } = await supabase
     .from("floor_tables")
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update({ ...body })
     .eq("id", params.id)
     .eq("business_id", auth.businessId)
     .select()
