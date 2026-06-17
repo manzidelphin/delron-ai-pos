@@ -7,7 +7,7 @@ interface FloorTable {
   id: string;
   table_number: number;
   capacity: number;
-  location: string | null;
+  section: string | null;
   status: "empty" | "occupied" | "bill_requested" | "reserved";
 }
 
@@ -38,7 +38,7 @@ export function TableCard({ table, activeTabTotal, onClick }: TableCardProps) {
       <div className="flex items-start justify-between mb-3">
         <div>
           <p className="text-2xl font-black text-white">T{table.table_number}</p>
-          {table.location && <p className="text-xs text-slate-500">{table.location}</p>}
+          {table.section && <p className="text-xs text-slate-500">{table.section}</p>}
         </div>
         <span className={cn("flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-full", cfg.text)}>
           <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", cfg.dot)} />
