@@ -25,7 +25,7 @@ interface Tab {
   id: string;
   table_id: string | null;
   customer_name: string | null;
-  total_amount: number;
+  total: number;
   status: string;
   created_at: string;
   floor_tables?: { table_number: number } | null;
@@ -100,7 +100,7 @@ export default function BarPOSPage() {
   const openTab = async (table: FloorTable) => {
     if (table.status === "occupied") {
       // Find existing open tab for this table
-      const res = await fetch(`/api/bar/tabs?status=open`);
+      const res = await fetch(`/api/bar/tabs?status=pending`);
       const json = await res.json();
       const existing = (json.tabs ?? []).find((t: Tab) => t.table_id === table.id);
       if (existing) {
@@ -136,7 +136,7 @@ export default function BarPOSPage() {
       });
       const json = await res.json();
       if (!res.ok) return toast.error(json.error);
-      setActiveTab((prev) => prev ? { ...prev, total_amount: json.tab_total } : prev);
+      setActiveTab((prev) => prev ? { ...prev, total: json.tab_total } : prev);
       setTabItems((prev) => [...prev, json.order_item]);
       loadData(); // refresh stock
     } catch {
@@ -149,7 +149,7 @@ export default function BarPOSPage() {
     const item = tabItems.find((i) => i.id === id);
     if (!item) return;
     setTabItems((prev) => prev.filter((i) => i.id !== id));
-    setActiveTab((prev) => prev ? { ...prev, total_amount: prev.total_amount - item.total_price } : prev);
+    setActiveTab((prev) => prev ? { ...prev, total: prev.total - item.total_price } : prev);
     // Note: full delete API could be added; for now removal is UI-only before payment
     toast.success("Item removed from display");
   };
@@ -159,7 +159,7 @@ export default function BarPOSPage() {
     setProcessing(true);
     setSplitModal(false);
     try {
-      const paid = amountPaid ? parseFloat(amountPaid) : activeTab.total_amount;
+      const paid = amountPaid ? parseFloat(amountPaid) : activeTab.total;
       const res = await fetch(`/api/bar/tabs/${activeTab.id}/pay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -324,7 +324,7 @@ export default function BarPOSPage() {
             <div className="p-4 border-t border-border space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-sm">Tab Total</span>
-                <span className="text-xl font-black text-foreground">{formatRWF(activeTab.total_amount)}</span>
+                <span className="text-xl font-black text-foreground">{formatRWF(activeTab.total)}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -370,7 +370,7 @@ export default function BarPOSPage() {
       {/* Split bill modal */}
       {splitModal && activeTab && (
         <SplitBillModal
-          total={activeTab.total_amount}
+          total={activeTab.total}
           onConfirm={(count) => processPayment(count)}
           onClose={() => setSplitModal(false)}
         />
@@ -387,7 +387,7 @@ export default function BarPOSPage() {
             <div className="p-5 space-y-5">
               <div className="bg-slate-900/50 rounded-xl p-4 text-center">
                 <p className="text-slate-400 text-sm">Total Due</p>
-                <p className="text-4xl font-black text-white">{formatRWF(activeTab.total_amount)}</p>
+                <p className="text-4xl font-black text-white">{formatRWF(activeTab.total)}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -417,10 +417,10 @@ export default function BarPOSPage() {
                     placeholder="Enter amount..."
                     className="w-full h-14 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white text-xl font-bold placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  {parseFloat(amountPaid) >= activeTab.total_amount && (
+                  {parseFloat(amountPaid) >= activeTab.total && (
                     <div className="mt-2 flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-2">
                       <span className="text-sm text-green-400">Change</span>
-                      <span className="font-bold text-green-400">{formatRWF(parseFloat(amountPaid) - activeTab.total_amount)}</span>
+                      <span className="font-bold text-green-400">{formatRWF(parseFloat(amountPaid) - activeTab.total)}</span>
                     </div>
                   )}
                 </div>
@@ -428,7 +428,7 @@ export default function BarPOSPage() {
 
               <button
                 onClick={() => processPayment(1)}
-                disabled={processing || (payMethod === "cash" && parseFloat(amountPaid || "0") < activeTab.total_amount)}
+                disabled={processing || (payMethod === "cash" && parseFloat(amountPaid || "0") < activeTab.total)}
                 className="w-full h-14 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
               >
                 {processing ? <Loader2 className="w-5 h-5 animate-spin" /> : "✓"} Confirm Payment

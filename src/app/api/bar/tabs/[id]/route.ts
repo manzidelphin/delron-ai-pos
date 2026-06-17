@@ -10,7 +10,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
   const { data: tab, error: tabError } = await supabase
     .from("orders")
-    .select("*, floor_tables(table_number, capacity, location)")
+    .select("*, floor_tables(table_number, capacity, section)")
     .eq("id", params.id)
     .eq("business_id", auth.businessId)
     .single();

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   if (!item) return NextResponse.json({ error: "Bar item not found" }, { status: 404 });
 
-  const isShot = serve_as === "shot" && item.is_shot_item;
+  const isShot = serve_as === "shot" && item.shots_per_bottle > 1;
   const unit_price = isShot ? (item.price_per_shot ?? 0) : item.price_per_bottle;
   const line_total = unit_price * qty;
 
@@ -65,13 +65,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from("order_items")
     .insert({
       order_id: params.id,
+      item_id: bar_item_id,
+      item_type: "bar_item",
       item_name: item.name,
-      bar_item_id,
       quantity: qty,
       unit_price,
       total_price: line_total,
-      serve_as: isShot ? "shot" : "bottle",
-      status: "pending",
+      notes: isShot ? "served as shot" : null,
     })
     .select()
     .single();
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   await supabase
     .from("orders")
-    .update({ total_amount: newTotal })
+    .update({ total: newTotal })
     .eq("id", params.id);
 
   return NextResponse.json({ order_item: orderItem, tab_total: newTotal }, { status: 201 });

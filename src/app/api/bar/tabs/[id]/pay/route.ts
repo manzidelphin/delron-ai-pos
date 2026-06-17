@@ -24,9 +24,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .single();
 
   if (!tab) return NextResponse.json({ error: "Tab not found" }, { status: 404 });
-  if (tab.status !== "open") return NextResponse.json({ error: "Tab already closed" }, { status: 400 });
+  if (["completed", "cancelled"].includes(tab.status)) {
+    return NextResponse.json({ error: "Tab already closed" }, { status: 400 });
+  }
 
-  const total = tab.total_amount;
+  const total = tab.total;
   const paid = amount_paid ? parseFloat(amount_paid) : total;
   const change = Math.max(0, paid - total);
 
@@ -38,17 +40,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .insert({
       business_id: auth.businessId,
       branch_id: auth.branchId,
-      staff_id: auth.staffId,
+      cashier_id: auth.staffId,
       order_id: params.id,
       receipt_number: receiptNumber,
-      total_amount: total,
-      amount_paid: paid,
-      change_given: change,
+      total,
       payment_method,
-      phone: phone ?? null,
-      reference: reference ?? null,
-      split_count: split_count ?? 1,
-      transaction_type: "bar_tab",
+      module_source: "bar",
     })
     .select()
     .single();
@@ -58,7 +55,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   // Close tab and set table empty
   await supabase
     .from("orders")
-    .update({ status: "paid", paid_at: new Date().toISOString() })
+    .update({ status: "completed", updated_at: new Date().toISOString() })
     .eq("id", params.id);
 
   if (tab.table_id) {
