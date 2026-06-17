@@ -6,6 +6,7 @@ import { formatRWF } from "@/lib/utils";
 import { Package, AlertTriangle, DollarSign, FileDown, TableProperties, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth-store";
 
 const STATUS_BADGE: Record<string, string> = {
   ok: "bg-green-500/10 text-green-400 border-green-500/20",
@@ -40,11 +41,21 @@ interface StockData {
 }
 
 export default function StockReportPage() {
+  const { hasModule } = useAuthStore();
   const [data, setData] = useState<StockData | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("supermarket");
   const [statusFilter, setStatusFilter] = useState("all");
   const [exporting, setExporting] = useState(false);
+
+  // Auto-select first available tab on mount (e.g. bar-only business → "bar")
+  useEffect(() => {
+    if (!hasModule("supermarket")) {
+      if (hasModule("bar")) setTab("bar");
+      else if (hasModule("bakery")) setTab("materials");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -224,9 +235,9 @@ export default function StockReportPage() {
   };
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: "supermarket", label: "Supermarket" },
-    { key: "bar", label: "Bar Stock" },
-    { key: "materials", label: "Bakery Ingredients" },
+    ...(hasModule("supermarket") ? [{ key: "supermarket" as Tab, label: "Supermarket" }] : []),
+    ...(hasModule("bar")         ? [{ key: "bar"         as Tab, label: "Bar Stock" }] : []),
+    ...(hasModule("bakery")      ? [{ key: "materials"   as Tab, label: "Bakery Ingredients" }] : []),
   ];
 
   const filteredItems = getFilteredItems();
@@ -264,8 +275,12 @@ export default function StockReportPage() {
       {/* Valuation KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Stock Value" value={formatRWF(data?.valuation.total ?? 0)} icon={<DollarSign className="w-5 h-5" />} color="blue" loading={loading} />
-        <StatCard label="Supermarket Value" value={formatRWF(data?.valuation.supermarket ?? 0)} icon={<Package className="w-5 h-5" />} color="green" loading={loading} changeLabel={`${data?.summary.supermarket_total ?? 0} products`} />
-        <StatCard label="Bar Value" value={formatRWF(data?.valuation.bar ?? 0)} icon={<Package className="w-5 h-5" />} color="amber" loading={loading} changeLabel={`${data?.summary.bar_total ?? 0} items`} />
+        {hasModule("supermarket") && (
+          <StatCard label="Supermarket Value" value={formatRWF(data?.valuation.supermarket ?? 0)} icon={<Package className="w-5 h-5" />} color="green" loading={loading} changeLabel={`${data?.summary.supermarket_total ?? 0} products`} />
+        )}
+        {hasModule("bar") && (
+          <StatCard label="Bar Value" value={formatRWF(data?.valuation.bar ?? 0)} icon={<Package className="w-5 h-5" />} color="amber" loading={loading} changeLabel={`${data?.summary.bar_total ?? 0} items`} />
+        )}
         <StatCard label="Low Stock Alerts" value={(data?.summary.supermarket_low ?? 0) + (data?.summary.bar_low ?? 0) + (data?.summary.materials_low ?? 0)} icon={<AlertTriangle className="w-5 h-5" />} color="red" loading={loading} />
       </div>
 
