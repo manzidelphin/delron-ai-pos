@@ -26,6 +26,7 @@ export async function POST(
     .single();
 
   if (fetchErr || !credit) {
+    console.error("[credits/pay] fetch error:", fetchErr?.message);
     return NextResponse.json({ error: "Credit not found" }, { status: 404 });
   }
 
@@ -33,25 +34,40 @@ export async function POST(
     return NextResponse.json({ error: "This credit is already fully paid" }, { status: 400 });
   }
 
+  // Compute real outstanding balance from authoritative columns (not the stored balance
+  // field which may be 0 on older records where the insert didn't set it)
+  const currentBalance = Math.max(0, credit.total_amount - (credit.amount_paid ?? 0));
+
+  if (currentBalance === 0) {
+    return NextResponse.json({ error: "This credit has no outstanding balance" }, { status: 400 });
+  }
+  if (amount_paid > currentBalance) {
+    return NextResponse.json(
+      { error: `Payment (${amount_paid}) exceeds outstanding balance (${currentBalance})` },
+      { status: 400 }
+    );
+  }
+
   const newAmountPaid = (credit.amount_paid ?? 0) + amount_paid;
-  const newBalance = Math.max(0, credit.total_amount - newAmountPaid);
-  const newStatus = newBalance === 0 ? "paid" : "partial";
-  const paidAt = newBalance === 0 ? new Date().toISOString() : null;
+  const newBalance    = Math.max(0, credit.total_amount - newAmountPaid);
+  const newStatus     = newBalance === 0 ? "paid" : "partial";
+  const paidAt        = newBalance === 0 ? new Date().toISOString() : null;
 
   const { data: updated, error: updateErr } = await supabase
     .from("credits")
     .update({
       amount_paid: newAmountPaid,
-      balance: newBalance,
-      status: newStatus,
-      paid_at: paidAt,
-      updated_at: new Date().toISOString(),
+      balance:     newBalance,
+      status:      newStatus,
+      paid_at:     paidAt,
+      updated_at:  new Date().toISOString(),
     })
     .eq("id", params.id)
     .select()
     .single();
 
   if (updateErr) {
+    console.error("[credits/pay] update error:", updateErr.message, updateErr.details);
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
   }
 

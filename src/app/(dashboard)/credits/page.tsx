@@ -103,10 +103,13 @@ export default function CreditsPage() {
   const handleMarkPaid = async (credit: Credit) => {
     setActionLoading(credit.id);
     try {
+      // Compute outstanding from authoritative columns — credit.balance may be
+      // 0 on records created before the balance field was set on insert
+      const outstanding = credit.total_amount - (credit.amount_paid ?? 0);
       const res = await fetch(`/api/credits/${credit.id}/pay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount_paid: credit.balance }),
+        body: JSON.stringify({ amount_paid: outstanding }),
       });
       if (!res.ok) throw new Error();
       toast.success(`${credit.customer_name} marked as paid`);
@@ -125,8 +128,9 @@ export default function CreditsPage() {
       toast.error("Enter a valid amount");
       return;
     }
-    if (amount > partialModal.credit.balance) {
-      toast.error("Amount exceeds balance");
+    const outstanding = partialModal.credit.total_amount - (partialModal.credit.amount_paid ?? 0);
+    if (amount > outstanding) {
+      toast.error("Amount exceeds outstanding balance");
       return;
     }
     setActionLoading(partialModal.credit.id);
@@ -449,7 +453,7 @@ export default function CreditsPage() {
                 <p className="text-sm text-slate-400">Customer</p>
                 <p className="font-bold text-white">{partialModal.credit.customer_name}</p>
                 <p className="text-slate-400 text-xs mt-1">
-                  Balance: {formatRWF(partialModal.credit.balance)}
+                  Outstanding: {formatRWF(partialModal.credit.total_amount - (partialModal.credit.amount_paid ?? 0))}
                 </p>
               </div>
               <div>
