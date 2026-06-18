@@ -145,7 +145,7 @@ export default function PosLoginPage() {
       const roleRedirect: Record<string, string> = {
         cashier:   "/supermarket/pos",
         bartender: "/bar/pos",
-        waiter:    "/restaurant",
+        waiter:    "/bar/tables",
         baker:     "/bakery",
         manager:   "/dashboard",
         owner:     "/dashboard",
