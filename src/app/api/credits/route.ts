@@ -69,18 +69,19 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from("credits")
     .insert({
-      business_id: auth.businessId,
-      branch_id: auth.branchId,
-      order_id: order_id ?? null,
+      business_id:       auth.businessId,
+      branch_id:         auth.branchId,
+      order_id:          order_id ?? null,
       customer_name,
       customer_phone,
       items_description: items_description ?? "",
       total_amount,
-      amount_paid: 0,
+      amount_paid:       0,
+      balance:           total_amount, // must be set explicitly — DB default is 0
       due_date,
-      status: "unpaid",
-      created_by: auth.staffId,
-      notes: notes ?? null,
+      status:            "unpaid",
+      created_by:        auth.staffId,
+      notes:             notes ?? null,
     })
     .select()
     .single();
