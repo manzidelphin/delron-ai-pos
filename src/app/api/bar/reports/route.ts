@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     .from("orders")
     .select("id")
     .eq("business_id", auth.businessId)
-    .eq("module_source", "bar")     // was: order_type "bar_tab" (column doesn't exist)
+    .eq("order_type", "bar_tab")    // orders table uses order_type, not module_source
     .gte("created_at", from)
     .lte("created_at", to);
 
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
   const orderItemsRes = orderIds.length > 0
     ? await supabase
         .from("order_items")
-        .select("item_id, item_name, quantity, unit_price, total, notes") // was: bar_item_id, total_price, serve_as
+        .select("item_id, item_name, quantity, unit_price, total_price, notes") // actual column is total_price
         .in("order_id", orderIds)
     : { data: [], error: null };
 
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     } else {
       itemMap[key].bottles_sold += item.quantity;
     }
-    itemMap[key].revenue += item.total ?? 0;   // was: item.total_price
+    itemMap[key].revenue += item.total_price ?? 0;
   }
 
   // Bottle vs shot variance (theft detection)
