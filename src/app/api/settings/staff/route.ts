@@ -21,12 +21,21 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
-  const { businessId, staffId: requesterId } = auth;
+  // ownerStaffId = session owner's ID (never overridden by PIN operator)
+  // staffId may be a PIN-switched cashier — don't use that for role checks
+  const { businessId, ownerStaffId } = auth;
 
   const supabase = createAdminClient();
-  const { data: requester } = await supabase.from("staff").select("role").eq("id", requesterId).single();
+  const { data: requester, error: roleErr } = await supabase
+    .from("staff")
+    .select("role")
+    .eq("id", ownerStaffId)
+    .single();
+
+  console.log("[staff POST] ownerStaffId:", ownerStaffId, "role:", requester?.role, "err:", roleErr?.message);
+
   if (!["owner", "manager"].includes(requester?.role ?? "")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    return NextResponse.json({ error: "Unauthorized — role: " + (requester?.role ?? "not found") }, { status: 403 });
   }
 
   const body = await req.json();
