@@ -26,7 +26,7 @@ type Tab = "supermarket" | "bar" | "materials";
 
 interface StockData {
   supermarket: {id: string; name: string; category: string; quantity: number; min_quantity: number; unit: string; cost_price: number; price: number; status: string}[];
-  bar: {id: string; name: string; category: string; quantity_bottles: number; shots_remaining: number; min_quantity: number; cost_per_bottle: number; price_per_bottle: number; is_shot_item: boolean; status: string}[];
+  bar: {id: string; name: string; category: string; quantity_bottles: number; shots_remaining: number; min_quantity: number; price_per_bottle: number; price_per_shot: number; shots_per_bottle: number; status: string}[];
   materials: {id: string; name: string; unit: string; quantity: number; min_quantity: number; cost_per_unit: number; status: string}[];
   valuation: { supermarket: number; bar: number; materials: number; total: number };
   summary: {
@@ -107,10 +107,10 @@ export default function StockReportPage() {
           data.bar.map((i) => ({
             name: i.name, category: i.category ?? "—",
             bottles: String(i.quantity_bottles),
-            shots: i.is_shot_item ? String(i.shots_remaining) : "—",
+            shots: i.shots_per_bottle > 1 ? String(i.shots_remaining) : "—",
             min: String(i.min_quantity),
             status: STATUS_LABEL[i.status] ?? i.status,
-            value: formatRWF(i.quantity_bottles * i.cost_per_bottle),
+            value: formatRWF(i.quantity_bottles * i.price_per_bottle),
           })),
           [
             { header: "Item", key: "name" }, { header: "Category", key: "category" },
@@ -189,7 +189,7 @@ export default function StockReportPage() {
             bottles: i.quantity_bottles,
             shots: i.shots_remaining,
             min: i.min_quantity,
-            value: i.quantity_bottles * i.cost_per_bottle,
+            value: i.quantity_bottles * i.price_per_bottle,
             status: STATUS_LABEL[i.status] ?? i.status,
           })),
           columns: [
@@ -367,14 +367,14 @@ export default function StockReportPage() {
                     <td className="px-4 py-3 font-medium text-white">{i.name}</td>
                     <td className="px-4 py-3 text-slate-400 text-xs">{i.category ?? "—"}</td>
                     <td className="px-4 py-3 text-white">{i.quantity_bottles}</td>
-                    <td className="px-4 py-3 text-slate-300">{i.is_shot_item ? i.shots_remaining : "—"}</td>
+                    <td className="px-4 py-3 text-slate-300">{i.shots_per_bottle > 1 ? i.shots_remaining : "—"}</td>
                     <td className="px-4 py-3 text-slate-400">{i.min_quantity}</td>
                     <td className="px-4 py-3">
                       <span className={cn("px-2 py-0.5 rounded-full border text-xs font-medium", STATUS_BADGE[i.status] ?? STATUS_BADGE.ok)}>
                         {STATUS_LABEL[i.status] ?? i.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{formatRWF(i.quantity_bottles * i.cost_per_bottle)}</td>
+                    <td className="px-4 py-3 text-slate-300">{formatRWF(i.quantity_bottles * i.price_per_bottle)}</td>
                   </tr>
                 ))
               ) : (
