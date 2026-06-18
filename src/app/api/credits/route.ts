@@ -14,12 +14,23 @@ export async function GET(request: NextRequest) {
   const limit = 20;
   const offset = (page - 1) * limit;
 
+  // Bartenders see only credits they personally recorded
+  const { data: requester } = await supabase
+    .from("staff")
+    .select("role")
+    .eq("id", auth.staffId)
+    .single();
+
   let query = supabase
     .from("credits")
     .select("*", { count: "exact" })
     .eq("business_id", auth.businessId)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
+
+  if (requester?.role === "bartender") {
+    query = query.eq("created_by", auth.staffId);
+  }
 
   if (status !== "all") {
     query = query.eq("status", status);

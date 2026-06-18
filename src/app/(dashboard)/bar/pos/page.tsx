@@ -43,12 +43,13 @@ interface OrderItem {
 }
 
 const PAYMENT_METHODS = ["cash", "mtn_momo", "airtel_money", "bank_transfer"] as const;
-type PayMethod = typeof PAYMENT_METHODS[number];
-const PAYMENT_LABELS: Record<PayMethod, string> = {
+type PayMethod = typeof PAYMENT_METHODS[number] | "credit";
+const PAYMENT_LABELS: Record<string, string> = {
   cash: "Cash",
   mtn_momo: "MTN MoMo",
   airtel_money: "Airtel Money",
   bank_transfer: "Bank Transfer",
+  credit: "Credit Sale",
 };
 
 const CATEGORIES = ["All", "spirits", "wine", "beer", "cocktail", "soft_drink", "juice", "other"];
@@ -71,6 +72,9 @@ export default function BarPOSPage() {
   const [processing, setProcessing] = useState(false);
   const [receipt, setReceipt] = useState<{ receiptNumber: string; change: number; amountPaid: number; splitCount: number; items: OrderItem[] } | null>(null);
   const [openingTab, setOpeningTab] = useState(false);
+  const [creditName, setCreditName]   = useState("");
+  const [creditPhone, setCreditPhone] = useState("");
+  const [creditDueDate, setCreditDue] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -155,8 +159,67 @@ export default function BarPOSPage() {
     toast.success("Item removed from display");
   };
 
+  const processCreditSale = async () => {
+    if (!activeTab) return;
+    if (!creditName.trim() || !creditPhone.trim() || !creditDueDate) {
+      toast.error("Customer name, phone number, and due date are required");
+      return;
+    }
+    setProcessing(true);
+    try {
+      const itemsDesc = tabItems.map((i) => `${i.item_name} x${i.quantity}`).join(", ");
+      // Record the credit
+      const creditRes = await fetch("/api/credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_name:     creditName.trim(),
+          customer_phone:    creditPhone.trim(),
+          due_date:          creditDueDate,
+          total_amount:      activeTab.total,
+          items_description: itemsDesc,
+          order_id:          activeTab.id,
+          notes:             "Bar credit sale",
+        }),
+      });
+      if (!creditRes.ok) {
+        const e = await creditRes.json();
+        throw new Error(e.error ?? "Failed to record credit");
+      }
+      // Close the tab with payment_method "credit"
+      const payRes = await fetch(`/api/bar/tabs/${activeTab.id}/pay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_method: "credit", amount_paid: activeTab.total }),
+      });
+      const payJson = await payRes.json();
+      if (!payRes.ok) throw new Error(payJson.error ?? "Failed to close tab");
+
+      toast.success(`Credit recorded for ${creditName.trim()}`);
+      setReceipt({
+        receiptNumber: payJson.receipt_number,
+        change:        0,
+        amountPaid:    activeTab.total,
+        splitCount:    1,
+        items:         tabItems,
+      });
+      setActiveTab(null);
+      setTabItems([]);
+      setPayModal(false);
+      setCreditName("");
+      setCreditPhone("");
+      setCreditDue("");
+      loadData();
+    } catch (err) {
+      toast.error((err as Error).message ?? "Credit sale failed");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const processPayment = async (splitCount = 1) => {
     if (!activeTab) return;
+    if (payMethod === "credit") return processCreditSale();
     setProcessing(true);
     setSplitModal(false);
     try {
@@ -407,6 +470,25 @@ export default function BarPOSPage() {
                     {PAYMENT_LABELS[m]}
                   </button>
                 ))}
+                {/* Credit Sale — spans full width */}
+                <button
+                  onClick={() => {
+                    setPayMethod("credit");
+                    if (!creditDueDate) {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 7);
+                      setCreditDue(d.toISOString().split("T")[0]);
+                    }
+                  }}
+                  className={cn(
+                    "col-span-2 h-11 rounded-xl text-sm font-semibold border transition-all",
+                    payMethod === "credit"
+                      ? "bg-amber-600 border-amber-500 text-white"
+                      : "bg-slate-700 border-slate-600 text-slate-300"
+                  )}
+                >
+                  💳 Credit Sale (Pay Later)
+                </button>
               </div>
 
               {payMethod === "cash" && (
@@ -428,12 +510,58 @@ export default function BarPOSPage() {
                 </div>
               )}
 
+              {payMethod === "credit" && (
+                <div className="space-y-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                  <p className="text-xs text-amber-400 font-semibold uppercase tracking-wide">Customer Details</p>
+                  <div>
+                    <label className="text-xs font-medium text-slate-400 block mb-1">Customer Name *</label>
+                    <input
+                      type="text"
+                      value={creditName}
+                      onChange={(e) => setCreditName(e.target.value)}
+                      placeholder="Full name..."
+                      autoFocus
+                      className="w-full h-10 px-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-400 block mb-1">Phone Number *</label>
+                    <input
+                      type="tel"
+                      value={creditPhone}
+                      onChange={(e) => setCreditPhone(e.target.value)}
+                      placeholder="07XXXXXXXX"
+                      className="w-full h-10 px-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-400 block mb-1">Due Date *</label>
+                    <input
+                      type="date"
+                      value={creditDueDate}
+                      onChange={(e) => setCreditDue(e.target.value)}
+                      className="w-full h-10 px-3 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={() => processPayment(1)}
-                disabled={processing || (payMethod === "cash" && parseFloat(amountPaid || "0") < activeTab.total)}
-                className="w-full h-14 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                disabled={
+                  processing ||
+                  (payMethod === "cash" && parseFloat(amountPaid || "0") < activeTab.total) ||
+                  (payMethod === "credit" && (!creditName.trim() || !creditPhone.trim() || !creditDueDate))
+                }
+                className={cn(
+                  "w-full h-14 rounded-xl text-white font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50",
+                  payMethod === "credit"
+                    ? "bg-amber-600 hover:bg-amber-700"
+                    : "bg-green-600 hover:bg-green-700"
+                )}
               >
-                {processing ? <Loader2 className="w-5 h-5 animate-spin" /> : "✓"} Confirm Payment
+                {processing ? <Loader2 className="w-5 h-5 animate-spin" /> : payMethod === "credit" ? "💳" : "✓"}
+                {payMethod === "credit" ? "Record Credit Sale" : "Confirm Payment"}
               </button>
             </div>
           </div>

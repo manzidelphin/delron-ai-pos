@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/auth-store";
 import type { Credit, CreditStatus } from "@/types";
 
 interface DashboardStats {
@@ -52,6 +53,11 @@ function StatusBadge({ status }: { status: CreditStatus }) {
 
 export default function CreditsPage() {
   const router = useRouter();
+  const { staff, activeOperator } = useAuthStore();
+  // Bartenders can add credits but cannot mark them paid or send reminders
+  const effectiveRole = activeOperator?.role ?? staff?.role;
+  const isBartender = effectiveRole === "bartender";
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [credits, setCredits] = useState<Credit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +218,7 @@ export default function CreditsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {(stats?.overdue_count ?? 0) > 0 && (
+          {!isBartender && (stats?.overdue_count ?? 0) > 0 && (
             <button
               onClick={handleBulkRemind}
               disabled={bulkSending}
@@ -366,7 +372,7 @@ export default function CreditsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        {credit.status !== "paid" && (
+                        {!isBartender && credit.status !== "paid" && (
                           <>
                             <button
                               onClick={() => handleMarkPaid(credit)}

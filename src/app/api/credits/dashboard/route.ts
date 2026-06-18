@@ -12,10 +12,23 @@ export async function GET() {
     .toISOString()
     .split("T")[0];
 
-  const { data: credits } = await supabase
+  // Bartenders see only their own credits
+  const { data: requester } = await supabase
+    .from("staff")
+    .select("role")
+    .eq("id", auth.staffId)
+    .single();
+
+  let creditQuery = supabase
     .from("credits")
     .select("*")
     .eq("business_id", auth.businessId);
+
+  if (requester?.role === "bartender") {
+    creditQuery = creditQuery.eq("created_by", auth.staffId);
+  }
+
+  const { data: credits } = await creditQuery;
 
   const all = credits ?? [];
 
