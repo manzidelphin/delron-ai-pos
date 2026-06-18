@@ -20,7 +20,7 @@ export async function GET() {
     supabase
       .from("bar_items")
       .select(
-        "id, name, category, quantity_bottles, shots_remaining, min_quantity, price_per_bottle, cost_per_bottle, shots_per_bottle, is_shot_item, updated_at, is_active"
+        "id, name, category, quantity_bottles, shots_remaining, min_quantity, price_per_bottle, price_per_shot, shots_per_bottle, updated_at, is_active"
       )
       .eq("business_id", auth.businessId)
       .eq("is_active", true)
@@ -67,7 +67,7 @@ export async function GET() {
     0
   );
   const barValue = barItems.reduce(
-    (s, i) => s + (i.quantity_bottles ?? 0) * (i.cost_per_bottle ?? 0),
+    (s, i) => s + (i.quantity_bottles ?? 0) * (i.price_per_bottle ?? 0),
     0
   );
   const materialsValue = materials.reduce(
