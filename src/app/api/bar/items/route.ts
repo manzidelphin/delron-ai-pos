@@ -29,9 +29,9 @@ export async function GET(request: NextRequest) {
 
   const stats = {
     total_items: items.length,
-    low_stock: items.filter((i) => i.quantity_bottles <= i.reorder_point).length,
+    low_stock: items.filter((i) => i.quantity_bottles > 0 && i.quantity_bottles <= i.min_quantity).length,
     out_of_stock: items.filter((i) => i.quantity_bottles === 0).length,
-    total_value: items.reduce((s, i) => s + i.quantity_bottles * i.cost_per_bottle, 0),
+    total_value: items.reduce((s, i) => s + i.quantity_bottles * i.price_per_bottle, 0),
   };
 
   return NextResponse.json({ items, stats });
@@ -42,39 +42,32 @@ export async function POST(request: NextRequest) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const {
-    name, category, barcode, price_per_bottle, price_per_shot,
-    shots_per_bottle, cost_per_bottle, quantity_bottles, reorder_point,
-    is_shot_item,
-  } = body;
+  const { name, category, barcode, price_per_bottle, price_per_shot, shots_per_bottle, quantity_bottles, min_quantity } = body;
 
   if (!name || !price_per_bottle) {
     return NextResponse.json({ error: "name and price_per_bottle required" }, { status: 400 });
   }
 
   const supabase = createAdminClient();
-
-  const shots_remaining = is_shot_item
-    ? (quantity_bottles ?? 0) * (shots_per_bottle ?? 1)
-    : 0;
+  const parsedShots = shots_per_bottle ? parseInt(shots_per_bottle) : 0;
+  const parsedQty   = quantity_bottles ? parseFloat(quantity_bottles) : 0;
+  const shots_remaining = parsedShots > 0 ? parsedQty * parsedShots : 0;
 
   const { data, error } = await supabase
     .from("bar_items")
     .insert({
-      business_id: auth.businessId,
-      branch_id: auth.branchId,
+      business_id:      auth.businessId,
+      branch_id:        auth.branchId,
       name,
-      category: category ?? "spirits",
-      barcode: barcode ?? null,
+      category:         category ?? "spirits",
+      barcode:          barcode || null,
       price_per_bottle: parseFloat(price_per_bottle),
-      price_per_shot: price_per_shot ? parseFloat(price_per_shot) : null,
-      shots_per_bottle: shots_per_bottle ? parseInt(shots_per_bottle) : null,
-      cost_per_bottle: cost_per_bottle ? parseFloat(cost_per_bottle) : 0,
-      quantity_bottles: quantity_bottles ? parseFloat(quantity_bottles) : 0,
+      price_per_shot:   price_per_shot ? parseFloat(price_per_shot) : null,
+      shots_per_bottle: parsedShots || null,
+      quantity_bottles: parsedQty,
       shots_remaining,
-      reorder_point: reorder_point ? parseFloat(reorder_point) : 1,
-      is_shot_item: is_shot_item ?? false,
-      is_active: true,
+      min_quantity:     min_quantity ? parseFloat(min_quantity) : 2,
+      is_active:        true,
     })
     .select()
     .single();
