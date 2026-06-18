@@ -53,6 +53,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Ingredients", href: "/bakery/materials", icon: <Building2 className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager", "baker"] },
   { label: "Waste Log", href: "/bakery/waste", icon: <AlertTriangle className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager", "baker"] },
   { label: "Bar", href: "/bar", icon: <Beer className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender"] },
+  { label: "Bar Items", href: "/bar/items", icon: <Package className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
   { label: "Bar POS", href: "/bar/pos", icon: <ShoppingCart className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender", "cashier"] },
   { label: "Tables", href: "/bar/tables", icon: <Layers className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender"] },
   { label: "Bar Stock", href: "/bar/stock", icon: <Package className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
