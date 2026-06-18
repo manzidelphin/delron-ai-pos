@@ -28,21 +28,32 @@ export async function GET() {
     creditQuery = creditQuery.eq("created_by", auth.staffId);
   }
 
-  const { data: credits } = await creditQuery;
+  const { data: credits, error: creditsErr } = await creditQuery;
+
+  if (creditsErr) {
+    console.error("[credits/dashboard] query error:", creditsErr.message, creditsErr.details);
+    return NextResponse.json({ error: creditsErr.message }, { status: 500 });
+  }
 
   const all = credits ?? [];
 
+  // Use total_amount - amount_paid as the authoritative outstanding figure.
+  // The stored balance column was not populated on insert in older records and
+  // should not be trusted for calculations.
+  const outstanding = (c: { total_amount: number; amount_paid: number }) =>
+    Math.max(0, (c.total_amount ?? 0) - (c.amount_paid ?? 0));
+
   const totalOutstanding = all
     .filter((c) => c.status !== "paid")
-    .reduce((sum: number, c) => sum + (c.balance ?? 0), 0);
+    .reduce((sum: number, c) => sum + outstanding(c), 0);
 
   const overdue = all.filter((c) => c.status === "overdue");
-  const overdueAmount = overdue.reduce((sum: number, c) => sum + (c.balance ?? 0), 0);
+  const overdueAmount = overdue.reduce((sum: number, c) => sum + outstanding(c), 0);
 
   const dueToday = all.filter(
     (c) => c.due_date === today && c.status !== "paid"
   );
-  const dueTodayAmount = dueToday.reduce((sum: number, c) => sum + (c.balance ?? 0), 0);
+  const dueTodayAmount = dueToday.reduce((sum: number, c) => sum + outstanding(c), 0);
 
   const paidThisMonth = all.filter(
     (c) => c.status === "paid" && c.paid_at && c.paid_at >= startOfMonth
