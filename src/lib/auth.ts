@@ -7,8 +7,8 @@ import { NextResponse } from "next/server";
  *  - staffId uses the PIN-switched operator (pos_operator cookie) when present,
  *    so sales/orders are attributed to the cashier, not the owner. */
 export async function getAuthContext(): Promise<
-  | { businessId: string; branchId: string; staffId: string; error: null }
-  | { businessId: null; branchId: null; staffId: null; error: NextResponse }
+  | { businessId: string; branchId: string; staffId: string; ownerStaffId: string; error: null }
+  | { businessId: null; branchId: null; staffId: null; ownerStaffId: null; error: NextResponse }
 > {
   const supabase = createClient();
   const {
@@ -28,6 +28,7 @@ export async function getAuthContext(): Promise<
             businessId,
             branchId: op.branch_id ?? businessId,
             staffId: op.id,
+            ownerStaffId: op.id, // PIN-only: no session owner; use operator as authorizer too
             error: null,
           };
         }
@@ -39,6 +40,7 @@ export async function getAuthContext(): Promise<
       businessId: null,
       branchId: null,
       staffId: null,
+      ownerStaffId: null,
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
   }
@@ -55,9 +57,14 @@ export async function getAuthContext(): Promise<
       businessId: null,
       branchId: null,
       staffId: null,
+      ownerStaffId: null,
       error: NextResponse.json({ error: "Staff profile not found" }, { status: 404 }),
     };
   }
+
+  // ownerStaffId is always the Supabase session owner — never overridden by PIN operator.
+  // Use this for authorization checks (role gates). staffId may be the PIN operator.
+  const ownerStaffId = profile.id;
 
   // Check if there is a PIN-switched active operator
   let staffId = profile.id;
@@ -82,6 +89,7 @@ export async function getAuthContext(): Promise<
     businessId: profile.business_id,
     branchId,
     staffId,
+    ownerStaffId,
     error: null,
   };
 }
