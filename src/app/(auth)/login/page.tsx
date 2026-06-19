@@ -30,8 +30,11 @@ export default function LoginPage() {
       }
 
       toast.success("Welcome back!");
-      router.push("/dashboard");
-      router.refresh();
+      // Full-page navigation ensures the Supabase session cookie is fully
+      // committed before DashboardShell tries to read it. router.push() +
+      // router.refresh() creates a race where getUser() can return null
+      // mid-cookie-exchange, causing the sidebar to render with no modules.
+      window.location.href = "/dashboard";
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {

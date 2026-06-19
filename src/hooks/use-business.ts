@@ -23,9 +23,17 @@ export function useBusiness() {
   const loadUserData = useCallback(async () => {
     const supabase = createClient();
 
-    const {
+    let {
       data: { user: authUser },
     } = await supabase.auth.getUser();
+
+    // If getUser() returns null it may be a post-login timing issue where the
+    // session cookie hasn't fully propagated yet. Retry once after 400 ms
+    // before concluding there is no session.
+    if (!authUser) {
+      await new Promise((r) => setTimeout(r, 400));
+      ({ data: { user: authUser } } = await supabase.auth.getUser());
+    }
 
     if (!authUser) {
       // PIN-only session: preserve activeOperator so the cashier stays logged in.
