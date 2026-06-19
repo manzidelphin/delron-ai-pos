@@ -51,6 +51,9 @@ export async function updateSession(request: NextRequest) {
     "/login", "/onboarding", "/", "/pos-login",
     "/api/auth/pos-staff", "/api/auth/pin-login",
     "/supermarket", "/supermarket/pos",
+    "/customer-display",
+    "/api/pwa-icon",
+    "/offline.html",
   ];
   const isPublicRoute = publicRoutes.some(
     (route) =>

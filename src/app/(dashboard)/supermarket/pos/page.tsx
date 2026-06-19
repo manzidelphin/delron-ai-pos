@@ -21,7 +21,10 @@ import {
   RotateCcw,
   X,
   Trash2,
+  Monitor,
 } from "lucide-react";
+import { useAuthStore } from "@/store/auth-store";
+import { useCustomerDisplay } from "@/hooks/use-customer-display";
 
 interface PosItem {
   id: string;
@@ -75,6 +78,8 @@ interface ReceiptData {
 
 export default function POSPage() {
   const { cart, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, discount, total, setDiscount } = usePOSStore();
+  const { business } = useAuthStore();
+  const { broadcast, openDisplay } = useCustomerDisplay(business?.id);
 
   const [posItems, setPosItems] = useState<PosItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<PosItem[]>([]);
@@ -94,6 +99,24 @@ export default function POSPage() {
 
   const cartItems = cart;
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Keep the customer display in sync whenever the cart or discount changes.
+  useEffect(() => {
+    if (!business?.id) return;
+    broadcast({
+      items: cartItems.map((i) => ({
+        name: i.item_name,
+        qty: i.quantity,
+        unit_price: i.unit_price,
+        total: i.total_price,
+      })),
+      subtotal: subtotal(),
+      discount,
+      total: total(),
+      currency: "RWF",
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartItems, discount, business?.id]);
 
   const loadProducts = useCallback(async () => {
     setIsLoadingProducts(true);
@@ -420,15 +443,27 @@ export default function POSPage() {
                 </span>
               )}
             </div>
-            {cartItems.length > 0 && (
-              <button
-                onClick={clearCart}
-                className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-400 transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Clear
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {business?.id && (
+                <button
+                  onClick={() => openDisplay(business.id)}
+                  title="Open Customer Display"
+                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-blue-400 transition-colors"
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                  Display
+                </button>
+              )}
+              {cartItems.length > 0 && (
+                <button
+                  onClick={clearCart}
+                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-400 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Cart items */}
