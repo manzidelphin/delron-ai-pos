@@ -346,7 +346,7 @@ function DeleteModal({ item, onClose, onDeleted }: {
         <div className="text-center">
           <h3 className="text-lg font-bold text-white">Remove Item?</h3>
           <p className="text-slate-400 text-sm mt-1">
-            <span className="text-white font-medium">{item.name}</span> will be deactivated and hidden from the POS. This won't delete historical sales data.
+            <span className="text-white font-medium">{item.name}</span> will be deactivated and hidden from the POS. This won&apos;t delete historical sales data.
           </p>
         </div>
         <div className="flex gap-3">
