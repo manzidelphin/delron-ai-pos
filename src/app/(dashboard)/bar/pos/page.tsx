@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, Plus, CreditCard, SplitSquareHorizontal, Printer, X, Loader2 } from "lucide-react";
+import { Search, Plus, CreditCard, SplitSquareHorizontal, Printer, X, Loader2, Monitor } from "lucide-react";
+import { useCustomerDisplay } from "@/hooks/use-customer-display";
 import { ShotModal } from "@/components/bar/shot-modal";
 import { TabItem } from "@/components/bar/tab-item";
 import { SplitBillModal } from "@/components/bar/split-bill-modal";
@@ -67,6 +68,7 @@ export default function BarPOSPage() {
   const { staff, business, currentBranch, hasModule } = useAuthStore();
   const hasBar        = hasModule("bar");
   const hasRestaurant = hasModule("restaurant");
+  const { broadcast, openDisplay } = useCustomerDisplay(business?.id);
 
   const [tables,     setTables]    = useState<FloorTable[]>([]);
   const [barItems,   setBarItems]  = useState<BarItem[]>([]);
@@ -89,6 +91,25 @@ export default function BarPOSPage() {
   const [creditDueDate, setCreditDue]   = useState("");
   const [foodModal,     setFoodModal]   = useState<MenuItem | null>(null);
   const [foodQty,       setFoodQty]     = useState(1);
+
+  // Keep customer display in sync whenever tab items or the active tab total change.
+  useEffect(() => {
+    if (!business?.id) return;
+    const tabTotal = activeTab?.total ?? tabItems.reduce((s, i) => s + i.total_price, 0);
+    broadcast({
+      items: tabItems.map((i) => ({
+        name: i.serve_as === "shot" ? `${i.item_name} (shot)` : i.item_name,
+        qty: i.quantity,
+        unit_price: i.unit_price,
+        total: i.total_price,
+      })),
+      subtotal: tabTotal,
+      discount: 0,
+      total: tabTotal,
+      currency: "RWF",
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabItems, activeTab?.total, business?.id]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -458,9 +479,20 @@ export default function BarPOSPage() {
                   {new Date(activeTab.created_at).toLocaleTimeString("en-RW", { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
-              <button onClick={() => { setActiveTab(null); setTabItems([]); }} className="text-muted-foreground hover:text-foreground">
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                {business?.id && (
+                  <button
+                    onClick={() => openDisplay(business.id)}
+                    title="Open Customer Display"
+                    className="text-muted-foreground hover:text-blue-400 transition-colors"
+                  >
+                    <Monitor className="w-4 h-4" />
+                  </button>
+                )}
+                <button onClick={() => { setActiveTab(null); setTabItems([]); }} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-2">

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "sonner";
+import { PWARegister } from "@/components/pwa-register";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,10 +39,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F8FAFC" },
-    { media: "(prefers-color-scheme: dark)", color: "#0F172A" },
-  ],
+  // Single solid colour so the PWA splash screen + browser chrome both use the
+  // app's dark theme regardless of the OS colour-scheme preference.
+  themeColor: "#1e293b",
 };
 
 export default function RootLayout({
@@ -60,6 +60,7 @@ export default function RootLayout({
         >
           {children}
           <Toaster position="top-right" richColors closeButton />
+          <PWARegister />
         </ThemeProvider>
       </body>
     </html>
