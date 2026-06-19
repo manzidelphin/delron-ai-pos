@@ -26,6 +26,7 @@ import {
   Lock,
   RefreshCw,
   ClipboardList,
+  Monitor,
 } from "lucide-react";
 import type { BusinessModule, UserRole } from "@/types";
 
@@ -61,7 +62,9 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Closing Count", href: "/bar/stock/closing", icon: <ClipboardList className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
   { label: "KDS Display", href: "/bar/display", icon: <LayoutDashboard className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender"] },
   { label: "Bar Reports", href: "/bar/reports", icon: <BarChart3 className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
-  { label: "Restaurant", href: "/restaurant", icon: <UtensilsCrossed className="w-4 h-4" />, module: "restaurant", roles: ["owner", "manager", "waiter"] },
+  { label: "Restaurant",      href: "/restaurant",      icon: <UtensilsCrossed className="w-4 h-4" />, module: "restaurant", roles: ["owner", "manager", "waiter"] },
+  { label: "Menu",            href: "/restaurant/menu", icon: <ChefHat className="w-4 h-4" />,         module: "restaurant", roles: ["owner", "manager"] },
+  { label: "Kitchen Display", href: "/restaurant/kds",  icon: <Monitor className="w-4 h-4" />,          module: "restaurant", roles: ["owner", "manager", "waiter"] },
   { label: "Credits", href: "/credits", icon: <CreditCard className="w-4 h-4" />, roles: ["owner", "manager", "cashier", "bartender"] },
   { label: "Staff", href: "/staff", icon: <Users className="w-4 h-4" />, roles: ["owner", "manager"] },
   // Reports section
