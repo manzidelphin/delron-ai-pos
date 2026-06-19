@@ -14,6 +14,15 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 import type { BarItem } from "@/types";
 
+interface MenuItem {
+  id: string;
+  name: string;
+  category: string;
+  selling_price: number;
+  prep_time_minutes: number;
+  is_active: boolean;
+}
+
 interface FloorTable {
   id: string;
   table_number: number;
@@ -52,14 +61,16 @@ const PAYMENT_LABELS: Record<string, string> = {
   credit: "Credit Sale",
 };
 
-const CATEGORIES = ["All", "spirits", "wine", "beer", "cocktail", "soft_drink", "juice", "other"];
+const BAR_CATEGORIES = ["All", "spirits", "wine", "beer", "cocktail", "soft_drink", "juice", "other"];
 
 export default function BarPOSPage() {
-  const { staff } = useAuthStore();
+  const { staff, hasModule } = useAuthStore();
+  const hasRestaurant = hasModule("restaurant");
 
-  const [tables, setTables] = useState<FloorTable[]>([]);
-  const [barItems, setBarItems] = useState<BarItem[]>([]);
-  const [activeTab, setActiveTab] = useState<Tab | null>(null);
+  const [tables,     setTables]    = useState<FloorTable[]>([]);
+  const [barItems,   setBarItems]  = useState<BarItem[]>([]);
+  const [menuItems,  setMenuItems] = useState<MenuItem[]>([]);
+  const [activeTab,  setActiveTab] = useState<Tab | null>(null);
   const [tabItems, setTabItems] = useState<OrderItem[]>([]);
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("All");
@@ -72,9 +83,11 @@ export default function BarPOSPage() {
   const [processing, setProcessing] = useState(false);
   const [receipt, setReceipt] = useState<{ receiptNumber: string; change: number; amountPaid: number; splitCount: number; items: OrderItem[] } | null>(null);
   const [openingTab, setOpeningTab] = useState(false);
-  const [creditName, setCreditName]   = useState("");
-  const [creditPhone, setCreditPhone] = useState("");
-  const [creditDueDate, setCreditDue] = useState("");
+  const [creditName,    setCreditName]  = useState("");
+  const [creditPhone,   setCreditPhone] = useState("");
+  const [creditDueDate, setCreditDue]   = useState("");
+  const [foodModal,     setFoodModal]   = useState<MenuItem | null>(null);
+  const [foodQty,       setFoodQty]     = useState(1);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -86,12 +99,22 @@ export default function BarPOSPage() {
       const [tablesJson, itemsJson] = await Promise.all([tablesRes.json(), itemsRes.json()]);
       setTables(tablesJson.tables ?? []);
       setBarItems(itemsJson.items ?? []);
+
+      if (hasRestaurant) {
+        try {
+          const menuRes  = await fetch("/api/restaurant/menu");
+          const menuJson = await menuRes.json();
+          setMenuItems((menuJson.items ?? []).filter((i: MenuItem) => i.is_active));
+        } catch {
+          // Non-fatal — bar POS must work even if restaurant menu fails
+        }
+      }
     } catch {
       toast.error("Failed to load POS data");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [hasRestaurant]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -260,6 +283,28 @@ export default function BarPOSPage() {
     return matchCat && matchSearch;
   });
 
+  const filteredFood = menuItems.filter((i) =>
+    !search || i.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const addFoodItem = async (item: MenuItem, qty: number) => {
+    if (!activeTab) return toast.error("Select a table first");
+    setFoodModal(null);
+    try {
+      const res = await fetch(`/api/bar/tabs/${activeTab.id}/items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ menu_item_id: item.id, quantity: qty }),
+      });
+      const json = await res.json();
+      if (!res.ok) return toast.error(json.error);
+      setActiveTab((prev) => prev ? { ...prev, total: json.tab_total } : prev);
+      setTabItems((prev) => [...prev, json.order_item]);
+    } catch {
+      toast.error("Failed to add food item");
+    }
+  };
+
   return (
     <div className="h-[calc(100vh-4rem)] flex gap-0 overflow-hidden">
       {/* Left: Tables */}
@@ -302,7 +347,7 @@ export default function BarPOSPage() {
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {CATEGORIES.map((cat) => (
+            {BAR_CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setCatFilter(cat)}
@@ -316,6 +361,19 @@ export default function BarPOSPage() {
                 {cat.replace("_", " ")}
               </button>
             ))}
+            {hasRestaurant && (
+              <button
+                onClick={() => setCatFilter("food")}
+                className={cn(
+                  "shrink-0 h-8 px-3 rounded-full text-xs font-semibold transition-colors",
+                  catFilter === "food"
+                    ? "bg-orange-600 text-white"
+                    : "bg-accent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                🍽️ Food
+              </button>
+            )}
           </div>
         </div>
 
@@ -324,9 +382,31 @@ export default function BarPOSPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {loading ? (
               [...Array(8)].map((_, i) => <div key={i} className="h-28 bg-card border border-border rounded-xl animate-pulse" />)
+            ) : catFilter === "food" ? (
+              // Food / restaurant items
+              filteredFood.length === 0 ? (
+                <p className="col-span-4 text-center py-12 text-muted-foreground">No food items found</p>
+              ) : (
+                filteredFood.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => { setFoodQty(1); setFoodModal(item); }}
+                    disabled={!activeTab}
+                    className="p-4 rounded-xl border text-left transition-all hover:scale-[1.02] active:scale-[0.98] bg-card border-border hover:border-orange-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <p className="text-sm font-bold text-foreground truncate">{item.name}</p>
+                    <p className="text-xs text-muted-foreground capitalize mt-0.5">{item.category}</p>
+                    <div className="mt-2 space-y-0.5">
+                      <p className="text-sm font-bold text-orange-400">{formatRWF(item.selling_price)}</p>
+                      <p className="text-xs text-muted-foreground">⏱ {item.prep_time_minutes}m</p>
+                    </div>
+                  </button>
+                ))
+              )
             ) : filteredItems.length === 0 ? (
               <p className="col-span-4 text-center py-12 text-muted-foreground">No items found</p>
             ) : (
+              // Bar items (existing)
               filteredItems.map((item) => (
                 <button
                   key={item.id}
@@ -430,6 +510,62 @@ export default function BarPOSPage() {
           onConfirm={addItem}
           onClose={() => setShotModal(null)}
         />
+      )}
+
+      {/* Food modal */}
+      {foodModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs text-orange-400 font-semibold uppercase tracking-wide mb-1">Food Item</p>
+                <h2 className="text-xl font-bold text-white">{foodModal.name}</h2>
+                <p className="text-orange-400 font-bold text-lg mt-0.5">{formatRWF(foodModal.selling_price)}</p>
+                <p className="text-xs text-slate-400 mt-0.5">⏱ {foodModal.prep_time_minutes} min prep time</p>
+              </div>
+              <button
+                onClick={() => setFoodModal(null)}
+                className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-400 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-slate-300 block mb-2">Quantity</label>
+              <div className="flex items-center justify-center gap-6">
+                <button
+                  onClick={() => setFoodQty((q) => Math.max(1, q - 1))}
+                  className="w-11 h-11 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xl font-bold transition-colors"
+                >
+                  -
+                </button>
+                <span className="text-3xl font-black text-white w-12 text-center">{foodQty}</span>
+                <button
+                  onClick={() => setFoodQty((q) => Math.min(20, q + 1))}
+                  className="w-11 h-11 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xl font-bold transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setFoodModal(null)}
+                className="flex-1 h-11 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-700 transition-colors text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => addFoodItem(foodModal, foodQty)}
+                className="flex-1 h-11 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold transition-colors text-sm"
+              >
+                Add to Tab — {formatRWF(foodModal.selling_price * foodQty)}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Split bill modal */}
