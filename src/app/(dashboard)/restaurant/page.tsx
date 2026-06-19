@@ -5,6 +5,8 @@ import { UtensilsCrossed, ChefHat, Monitor, RefreshCw, Clock, TrendingUp } from 
 import { formatRWF } from "@/lib/utils";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useAuthStore } from "@/store/auth-store";
+import { useCustomerDisplay } from "@/hooks/use-customer-display";
 
 interface DashboardData {
   menu_items_count: number;
@@ -14,6 +16,8 @@ interface DashboardData {
 }
 
 export default function RestaurantDashboardPage() {
+  const { business } = useAuthStore();
+  const { openDisplay } = useCustomerDisplay(business?.id);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,13 +62,24 @@ export default function RestaurantDashboardPage() {
           <h1 className="text-2xl font-bold text-foreground">Restaurant</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Kitchen operations overview</p>
         </div>
-        <button
-          onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-foreground hover:bg-accent/80 transition-colors text-sm font-medium"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {business?.id && (
+            <button
+              onClick={() => openDisplay(business.id)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-foreground hover:bg-accent/80 transition-colors text-sm font-medium"
+            >
+              <Monitor className="w-4 h-4" />
+              Customer Display
+            </button>
+          )}
+          <button
+            onClick={load}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-foreground hover:bg-accent/80 transition-colors text-sm font-medium"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
