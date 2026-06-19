@@ -432,7 +432,7 @@ export default function OnboardingPage() {
                 <SummaryRow label="Branches" value={data.branch_count.toString()} />
               </div>
               <button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => { window.location.href = "/dashboard"; }}
                 className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
               >
                 Go to Dashboard <ArrowRight className="w-4 h-4" />
