@@ -37,6 +37,7 @@ interface DashboardData {
   last_7_days: {date: string; revenue: number}[];
   top_sellers_today: {name: string; module: string; quantity: number; revenue: number}[];
   staff_on_duty: {id: string; name: string; role: string; transactions: number; revenue: number}[];
+  staff_on_shift: {id: string; name: string; role: string; since: string}[];
 }
 
 function AIBriefingCard() {
@@ -313,6 +314,39 @@ export default function DashboardPage() {
                 <Bar dataKey="revenue" fill="#22c55e" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Staff on Shift — live indicator */}
+      {(data?.staff_on_shift?.length ?? 0) > 0 && (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+            <h2 className="text-sm font-semibold text-green-400">
+              {data!.staff_on_shift.length} staff currently on shift
+            </h2>
+            <button onClick={() => router.push("/reports/shifts")} className="ml-auto text-xs text-green-600 hover:text-green-400 transition-colors flex items-center gap-1">
+              View all shifts <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {data!.staff_on_shift.map((s) => {
+              const sinceMs  = Date.now() - new Date(s.since).getTime();
+              const sinceMin = Math.floor(sinceMs / 60_000);
+              const sinceLabel = sinceMin >= 60 ? `${Math.floor(sinceMin / 60)}h ${sinceMin % 60}m` : `${sinceMin}m`;
+              return (
+                <div key={s.id} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/60 border border-green-500/10">
+                  <div className="w-7 h-7 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-green-400">{s.name[0]}</span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-white">{s.name}</p>
+                    <p className="text-[10px] text-slate-400 capitalize">{s.role} · {sinceLabel}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
