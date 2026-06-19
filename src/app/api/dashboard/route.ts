@@ -149,6 +149,20 @@ export async function GET() {
     .filter((s) => staffMap[s.id])
     .map((s) => ({ ...s, transactions: staffMap[s.id].transactions, revenue: staffMap[s.id].revenue }));
 
+  // Active shifts — who is currently clocked in
+  const { data: activeShifts } = await supabase
+    .from("shifts")
+    .select("id, staff_name, role, started_at")
+    .eq("business_id", businessId)
+    .eq("status", "active")
+    .order("started_at", { ascending: true });
+  const staff_on_shift = (activeShifts ?? []).map((s) => ({
+    id: s.id,
+    name: s.staff_name,
+    role: s.role,
+    since: s.started_at,
+  }));
+
   // Recent transactions with cashier names
   const cashierIds = [...new Set((recentTx.data ?? []).map((t) => t.cashier_id).filter(Boolean))];
   let cashierMap: Record<string, string> = {};
@@ -191,5 +205,6 @@ export async function GET() {
     last_7_days,
     top_sellers_today,
     staff_on_duty,
+    staff_on_shift,
   });
 }

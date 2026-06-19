@@ -27,7 +27,9 @@ import {
   RefreshCw,
   ClipboardList,
   Monitor,
+  Clock,
 } from "lucide-react";
+import { EndShiftButton } from "@/components/shift/end-shift-button";
 import type { BusinessModule, UserRole } from "@/types";
 
 interface NavItem {
@@ -86,6 +88,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Bar", href: "/reports/bar", icon: <Beer className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
   { label: "Credits", href: "/reports/credits", icon: <CreditCard className="w-4 h-4" />, roles: ["owner", "manager"] },
   { label: "Staff", href: "/reports/staff", icon: <Users className="w-4 h-4" />, roles: ["owner", "manager"] },
+  { label: "Shifts", href: "/reports/shifts", icon: <Clock className="w-4 h-4" />, roles: ["owner", "manager"] },
   // System
   // System section
   { label: "Notifications", href: "/notifications", icon: <Bell className="w-4 h-4" />, roles: ["owner", "manager"], sectionLabel: "System" },
@@ -186,6 +189,8 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
             <p className="text-xs font-semibold text-white truncate">{activeOperator.name}</p>
           </div>
         )}
+
+        <EndShiftButton isOpen={isOpen} />
 
         <button
           onClick={handleLockScreen}

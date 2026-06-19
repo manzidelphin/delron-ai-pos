@@ -49,6 +49,10 @@ export default function PosLoginPage() {
   const [verifying, setVerifying] = useState(false);
   const [shake, setShake] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showOpeningCash, setShowOpeningCash] = useState(false);
+  const [openingCash, setOpeningCash] = useState("");
+  const [openingCashError, setOpeningCashError] = useState("");
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -150,12 +154,48 @@ export default function PosLoginPage() {
         manager:   "/dashboard",
         owner:     "/dashboard",
       };
-      window.location.href = roleRedirect[staffData.role] ?? "/dashboard";
+      const dest = roleRedirect[staffData.role] ?? "/dashboard";
+
+      // Cashiers see an opening cash prompt before we create the shift
+      if (staffData.role === "cashier") {
+        setPendingRedirect(dest);
+        setShowOpeningCash(true);
+        setVerifying(false);
+        return;
+      }
+
+      // All other shift-eligible roles: start shift silently then redirect
+      const shiftRoles = ["bartender", "baker", "waiter"];
+      if (shiftRoles.includes(staffData.role)) {
+        fetch("/api/shifts/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) })
+          .catch(() => { /* non-blocking */ });
+      }
+
+      window.location.href = dest;
     } catch {
       triggerShake("Connection error");
     } finally {
       setVerifying(false);
     }
+  };
+
+  const handleOpeningCashSubmit = async () => {
+    const amount = parseFloat(openingCash);
+    if (openingCash.trim() !== "" && (isNaN(amount) || amount < 0)) {
+      setOpeningCashError("Enter a valid amount (0 or more)");
+      return;
+    }
+    setOpeningCashError("");
+    try {
+      await fetch("/api/shifts/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ opening_cash: openingCash.trim() ? amount : null }),
+      });
+    } catch {
+      // non-blocking — shift start failure doesn't block login
+    }
+    window.location.href = pendingRedirect ?? "/supermarket/pos";
   };
 
   const handleDigit = (key: string) => {
@@ -179,6 +219,50 @@ export default function PosLoginPage() {
     return (
       <div className="min-h-screen bg-[#0A0F1E] flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+      </div>
+    );
+  }
+
+  // Opening cash modal for cashiers — shown after successful PIN verification
+  if (showOpeningCash) {
+    return (
+      <div className="min-h-screen bg-[#0A0F1E] flex items-center justify-center p-4">
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto">
+              <LogIn className="w-7 h-7 text-green-400" />
+            </div>
+            <h2 className="text-xl font-bold text-white">Opening Cash</h2>
+            <p className="text-slate-400 text-sm">
+              Count the cash in the till and enter the opening amount for your shift.
+            </p>
+          </div>
+          <div>
+            <label className="block text-xs text-slate-400 mb-2">Amount in till (RWF)</label>
+            <input
+              type="number" min="0" step="100"
+              value={openingCash}
+              onChange={(e) => { setOpeningCash(e.target.value); setOpeningCashError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleOpeningCashSubmit()}
+              placeholder="e.g. 50000"
+              autoFocus
+              className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white text-lg font-bold text-center placeholder-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+            />
+            {openingCashError && <p className="text-red-400 text-xs mt-1.5 text-center">{openingCashError}</p>}
+          </div>
+          <button
+            onClick={handleOpeningCashSubmit}
+            className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 transition-colors"
+          >
+            Start Shift
+          </button>
+          <button
+            onClick={handleOpeningCashSubmit}
+            className="w-full text-slate-500 hover:text-slate-300 text-xs transition-colors py-1"
+          >
+            Skip (no cash tracking)
+          </button>
+        </div>
       </div>
     );
   }
