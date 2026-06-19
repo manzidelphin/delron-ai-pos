@@ -38,14 +38,14 @@ interface Shortage {
 
 export default function ProductionPage() {
   const router = useRouter();
-  const { isLoaded } = useAuthStore();
+  const { isLoaded, business } = useAuthStore();
   const [items, setItems] = useState<FinishedGood[]>([]);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [shortages, setShortages] = useState<Shortage[] | null>(null);
   const [productionResult, setProductionResult] = useState<ProductionLog[] | null>(null);
-  const businessName = "DELRON Bakery";
+  const businessName = business?.name ?? "Bakery";
   const [customItem, setCustomItem] = useState({ name: "", qty: "" });
   const [showCustomInput, setShowCustomInput] = useState(false);
 
