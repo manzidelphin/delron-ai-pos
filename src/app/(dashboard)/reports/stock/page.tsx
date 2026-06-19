@@ -22,7 +22,7 @@ const STATUS_LABEL: Record<string, string> = {
   overstocked: "Overstocked",
 };
 
-type Tab = "supermarket" | "bar" | "materials";
+type Tab = "supermarket" | "bar" | "materials" | "kitchen";
 
 interface StockData {
   supermarket: {id: string; name: string; category: string; quantity: number; min_quantity: number; unit: string; cost_price: number; price: number; status: string}[];
@@ -40,19 +40,33 @@ interface StockData {
   };
 }
 
+interface KitchenMaterial {
+  id: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  min_quantity: number;
+  cost_per_unit: number;
+  status: string;
+  used_in: string[];
+}
+
 export default function StockReportPage() {
   const { hasModule } = useAuthStore();
-  const [data, setData] = useState<StockData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("supermarket");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [exporting, setExporting] = useState(false);
+  const [data,           setData]          = useState<StockData | null>(null);
+  const [kitchenMats,    setKitchenMats]   = useState<KitchenMaterial[]>([]);
+  const [kitchenValue,   setKitchenValue]  = useState(0);
+  const [loading,        setLoading]       = useState(true);
+  const [tab,            setTab]           = useState<Tab>("supermarket");
+  const [statusFilter,   setStatusFilter]  = useState("all");
+  const [exporting,      setExporting]     = useState(false);
 
-  // Auto-select first available tab on mount (e.g. bar-only business → "bar")
+  // Auto-select first available tab on mount
   useEffect(() => {
     if (!hasModule("supermarket")) {
-      if (hasModule("bar")) setTab("bar");
-      else if (hasModule("bakery")) setTab("materials");
+      if (hasModule("bar"))          setTab("bar");
+      else if (hasModule("bakery"))  setTab("materials");
+      else if (hasModule("restaurant")) setTab("kitchen");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -61,9 +75,17 @@ export default function StockReportPage() {
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch("/api/reports/stock");
-        if (!res.ok) throw new Error();
-        setData(await res.json());
+        const fetches: Promise<Response>[] = [fetch("/api/reports/stock")];
+        if (hasModule("restaurant")) fetches.push(fetch("/api/restaurant/stock"));
+
+        const responses = await Promise.all(fetches);
+        const jsons     = await Promise.all(responses.map((r) => r.json()));
+
+        setData(jsons[0]);
+        if (hasModule("restaurant") && jsons[1]) {
+          setKitchenMats(jsons[1].materials ?? []);
+          setKitchenValue(jsons[1].valuation ?? 0);
+        }
       } catch {
         toast.error("Failed to load stock report");
       } finally {
@@ -71,6 +93,7 @@ export default function StockReportPage() {
       }
     }
     load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleExportPDF = async () => {
@@ -126,9 +149,32 @@ export default function StockReportPage() {
             { label: "Total Value", value: formatRWF(data.valuation.bar) },
           ]
         );
+      } else if (tab === "kitchen") {
+        await exportToPDF(
+          "Stock Report — Kitchen Ingredients",
+          kitchenMats.map((m) => ({
+            name: m.name, unit: m.unit,
+            stock: String(m.quantity), min: String(m.min_quantity),
+            used_in: m.used_in.join(", ") || "—",
+            status: STATUS_LABEL[m.status] ?? m.status,
+            value: formatRWF(m.quantity * m.cost_per_unit),
+          })),
+          [
+            { header: "Ingredient", key: "name" }, { header: "Unit", key: "unit" },
+            { header: "In Stock", key: "stock" }, { header: "Min Stock", key: "min" },
+            { header: "Used In", key: "used_in" }, { header: "Status", key: "status" },
+            { header: "Cost Value", key: "value" },
+          ],
+          undefined, undefined,
+          [
+            { label: "Ingredients", value: String(kitchenMats.length) },
+            { label: "Low Stock", value: String(kitchenMats.filter((m) => m.status !== "ok").length) },
+            { label: "Total Value", value: formatRWF(kitchenValue) },
+          ]
+        );
       } else {
         await exportToPDF(
-          "Stock Report — Ingredients",
+          "Stock Report — Bakery Ingredients",
           data.materials.map((m) => ({
             name: m.name, unit: m.unit,
             stock: String(m.quantity), min: String(m.min_quantity),
@@ -229,15 +275,17 @@ export default function StockReportPage() {
 
   const getFilteredItems = () => {
     const items = tab === "supermarket" ? data?.supermarket ?? [] :
-                  tab === "bar" ? data?.bar ?? [] : data?.materials ?? [];
+                  tab === "bar"         ? data?.bar ?? []          :
+                  tab === "materials"   ? data?.materials ?? []    : kitchenMats;
     if (statusFilter === "all") return items;
-    return items.filter((i) => (i as {status: string}).status === statusFilter);
+    return items.filter((i) => (i as { status: string }).status === statusFilter);
   };
 
   const TABS: { key: Tab; label: string }[] = [
-    ...(hasModule("supermarket") ? [{ key: "supermarket" as Tab, label: "Supermarket" }] : []),
-    ...(hasModule("bar")         ? [{ key: "bar"         as Tab, label: "Bar Stock" }] : []),
-    ...(hasModule("bakery")      ? [{ key: "materials"   as Tab, label: "Bakery Ingredients" }] : []),
+    ...(hasModule("supermarket")  ? [{ key: "supermarket" as Tab, label: "Supermarket" }] : []),
+    ...(hasModule("bar")          ? [{ key: "bar"         as Tab, label: "Bar Stock" }] : []),
+    ...(hasModule("bakery")       ? [{ key: "materials"   as Tab, label: "Bakery Ingredients" }] : []),
+    ...(hasModule("restaurant")   ? [{ key: "kitchen"     as Tab, label: "Kitchen Stock" }] : []),
   ];
 
   const filteredItems = getFilteredItems();
@@ -333,18 +381,21 @@ export default function StockReportPage() {
                 {tab === "materials" && ["Ingredient", "Unit", "In Stock", "Min Stock", "Status", "Cost Value"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-slate-400 font-medium text-xs">{h}</th>
                 ))}
+                {tab === "kitchen" && ["Ingredient", "Unit", "In Stock", "Min Stock", "Used In (Menu Items)", "Status", "Cost Value"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 text-slate-400 font-medium text-xs">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/50">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10">
+                  <td colSpan={tab === "kitchen" ? 7 : 6} className="text-center py-10">
                     <Loader2 className="w-5 h-5 animate-spin text-blue-400 mx-auto" />
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-slate-500">No items found</td>
+                  <td colSpan={tab === "kitchen" ? 7 : 6} className="text-center py-10 text-slate-500">No items found</td>
                 </tr>
               ) : tab === "supermarket" ? (
                 (filteredItems as NonNullable<typeof data>["supermarket"]).map((p) => (
@@ -377,13 +428,30 @@ export default function StockReportPage() {
                     <td className="px-4 py-3 text-slate-300">{formatRWF(i.quantity_bottles * i.price_per_bottle)}</td>
                   </tr>
                 ))
-              ) : (
+              ) : tab === "materials" ? (
                 (filteredItems as NonNullable<typeof data>["materials"]).map((m) => (
                   <tr key={m.id} className="hover:bg-slate-700/20 transition-colors">
                     <td className="px-4 py-3 font-medium text-white">{m.name}</td>
                     <td className="px-4 py-3 text-slate-400 text-xs">{m.unit}</td>
                     <td className="px-4 py-3 text-white">{m.quantity}</td>
                     <td className="px-4 py-3 text-slate-400">{m.min_quantity}</td>
+                    <td className="px-4 py-3">
+                      <span className={cn("px-2 py-0.5 rounded-full border text-xs font-medium", STATUS_BADGE[m.status] ?? STATUS_BADGE.ok)}>
+                        {STATUS_LABEL[m.status] ?? m.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">{formatRWF(m.quantity * m.cost_per_unit)}</td>
+                  </tr>
+                ))
+              ) : (
+                // Kitchen Stock tab
+                (filteredItems as KitchenMaterial[]).map((m) => (
+                  <tr key={m.id} className="hover:bg-slate-700/20 transition-colors">
+                    <td className="px-4 py-3 font-medium text-white">{m.name}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{m.unit}</td>
+                    <td className="px-4 py-3 text-white">{m.quantity}</td>
+                    <td className="px-4 py-3 text-slate-400">{m.min_quantity}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{m.used_in.join(", ") || "—"}</td>
                     <td className="px-4 py-3">
                       <span className={cn("px-2 py-0.5 rounded-full border text-xs font-medium", STATUS_BADGE[m.status] ?? STATUS_BADGE.ok)}>
                         {STATUS_LABEL[m.status] ?? m.status}
@@ -404,7 +472,8 @@ export default function StockReportPage() {
               <strong className="text-white">
                 {formatRWF(
                   tab === "supermarket" ? data.valuation.supermarket :
-                  tab === "bar" ? data.valuation.bar : data.valuation.materials
+                  tab === "bar"         ? data.valuation.bar          :
+                  tab === "materials"   ? data.valuation.materials    : kitchenValue
                 )}
               </strong>
             </span>

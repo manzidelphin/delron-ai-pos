@@ -32,10 +32,12 @@ import type { BusinessModule, UserRole } from "@/types";
 
 interface NavItem {
   label: string;
+  labelFn?: (hasModule: (m: BusinessModule) => boolean) => string; // dynamic label
   href: string;
   icon: React.ReactNode;
   module?: BusinessModule;
   anyModule?: BusinessModule[]; // show if business has ANY of these modules
+  hideIfModule?: BusinessModule; // hide if business ALSO has this module
   roles?: UserRole[];
   sectionLabel?: string;
 }
@@ -55,8 +57,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Waste Log", href: "/bakery/waste", icon: <AlertTriangle className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager", "baker"] },
   { label: "Bar", href: "/bar", icon: <Beer className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender"] },
   { label: "Bar Items", href: "/bar/items", icon: <Package className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
-  { label: "Bar POS", href: "/bar/pos", icon: <ShoppingCart className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender", "cashier"] },
-  { label: "Tables", href: "/bar/tables", icon: <Layers className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender"] },
+  { label: "Bar POS", labelFn: (hm) => hm("restaurant") ? "POS" : "Bar POS", href: "/bar/pos", icon: <ShoppingCart className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender", "cashier", "waiter"] },
+  { label: "Tables", href: "/bar/tables", icon: <Layers className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender", "waiter"] },
   { label: "Bar Stock", href: "/bar/stock", icon: <Package className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
   { label: "Restock", href: "/bar/stock/restock", icon: <RefreshCw className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
   { label: "Closing Count", href: "/bar/stock/closing", icon: <ClipboardList className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
@@ -64,13 +66,16 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Bar Reports", href: "/bar/reports", icon: <BarChart3 className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
   { label: "Restaurant",      href: "/restaurant",      icon: <UtensilsCrossed className="w-4 h-4" />, module: "restaurant", roles: ["owner", "manager", "waiter"] },
   { label: "Menu",            href: "/restaurant/menu", icon: <ChefHat className="w-4 h-4" />,         module: "restaurant", roles: ["owner", "manager"] },
-  { label: "Kitchen Display", href: "/restaurant/kds",  icon: <Monitor className="w-4 h-4" />,          module: "restaurant", roles: ["owner", "manager", "waiter"] },
+  { label: "Kitchen Display", href: "/restaurant/kds",  icon: <Monitor className="w-4 h-4" />,         module: "restaurant", roles: ["owner", "manager", "waiter"] },
+  // POS + Tables for restaurant-only businesses (hidden when bar module is also active — bar section covers them)
+  { label: "POS",    href: "/bar/pos",    icon: <ShoppingCart className="w-4 h-4" />, module: "restaurant", hideIfModule: "bar", roles: ["owner", "manager", "waiter", "cashier"] },
+  { label: "Tables", href: "/bar/tables", icon: <Layers className="w-4 h-4" />,       module: "restaurant", hideIfModule: "bar", roles: ["owner", "manager", "waiter"] },
   { label: "Credits", href: "/credits", icon: <CreditCard className="w-4 h-4" />, roles: ["owner", "manager", "cashier", "bartender"] },
   { label: "Staff", href: "/staff", icon: <Users className="w-4 h-4" />, roles: ["owner", "manager"] },
   // Reports section
   { label: "Overview", href: "/reports", icon: <BarChart3 className="w-4 h-4" />, roles: ["owner", "manager"], sectionLabel: "Reports" },
   { label: "Sales", href: "/reports/sales", icon: <TrendingUp className="w-4 h-4" />, roles: ["owner", "manager"] },
-  { label: "Stock", href: "/reports/stock", icon: <Package className="w-4 h-4" />, roles: ["owner", "manager"], anyModule: ["supermarket", "bakery"] as BusinessModule[] },
+  { label: "Stock", href: "/reports/stock", icon: <Package className="w-4 h-4" />, roles: ["owner", "manager"], anyModule: ["supermarket", "bakery", "restaurant"] as BusinessModule[] },
   { label: "Bakery", href: "/reports/bakery", icon: <ChefHat className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager"] },
   { label: "Bar", href: "/reports/bar", icon: <Beer className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
   { label: "Credits", href: "/reports/credits", icon: <CreditCard className="w-4 h-4" />, roles: ["owner", "manager"] },
@@ -98,6 +103,7 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.module && !hasModule(item.module)) return false;
     if (item.anyModule && !item.anyModule.some((m) => hasModule(m))) return false;
+    if (item.hideIfModule && hasModule(item.hideIfModule)) return false;
     if (item.roles && !canAccess(item.roles)) return false;
     return true;
   });
@@ -149,7 +155,7 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
               )}
               <button
                 onClick={() => router.push(item.href)}
-                title={!isOpen ? item.label : undefined}
+                title={!isOpen ? (item.labelFn ? item.labelFn(hasModule) : item.label) : undefined}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
                   "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -157,7 +163,7 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
                 )}
               >
                 <span className="flex-shrink-0">{item.icon}</span>
-                {isOpen && <span className="truncate">{item.label}</span>}
+                {isOpen && <span className="truncate">{item.labelFn ? item.labelFn(hasModule) : item.label}</span>}
                 {isActive && isOpen && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary flex-shrink-0" />}
               </button>
             </div>
