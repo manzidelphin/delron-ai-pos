@@ -65,6 +65,7 @@ const BAR_CATEGORIES = ["All", "spirits", "wine", "beer", "cocktail", "soft_drin
 
 export default function BarPOSPage() {
   const { staff, hasModule } = useAuthStore();
+  const hasBar        = hasModule("bar");
   const hasRestaurant = hasModule("restaurant");
 
   const [tables,     setTables]    = useState<FloorTable[]>([]);
@@ -114,7 +115,7 @@ export default function BarPOSPage() {
     } finally {
       setLoading(false);
     }
-  }, [hasRestaurant]);
+  }, [hasBar, hasRestaurant]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -277,6 +278,9 @@ export default function BarPOSPage() {
     }
   };
 
+  // restaurant-only businesses always see food; bar businesses switch via catFilter
+  const isFoodView = !hasBar || catFilter === "food";
+
   const filteredItems = barItems.filter((i) => {
     const matchCat = catFilter === "All" || i.category === catFilter;
     const matchSearch = i.name.toLowerCase().includes(search.toLowerCase());
@@ -342,10 +346,12 @@ export default function BarPOSPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search drinks..."
+              placeholder={isFoodView ? "Search food..." : "Search drinks..."}
               className="w-full h-10 pl-9 pr-3 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
           </div>
+          {/* Category filter — only shown for bar businesses */}
+          {hasBar && (
           <div className="flex gap-2 overflow-x-auto pb-1">
             {BAR_CATEGORIES.map((cat) => (
               <button
@@ -375,6 +381,7 @@ export default function BarPOSPage() {
               </button>
             )}
           </div>
+          )}
         </div>
 
         {/* Items grid */}
@@ -382,8 +389,8 @@ export default function BarPOSPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {loading ? (
               [...Array(8)].map((_, i) => <div key={i} className="h-28 bg-card border border-border rounded-xl animate-pulse" />)
-            ) : catFilter === "food" ? (
-              // Food / restaurant items
+            ) : isFoodView ? (
+              // Food / restaurant items (restaurant-only businesses or when "food" tab selected)
               filteredFood.length === 0 ? (
                 <p className="col-span-4 text-center py-12 text-muted-foreground">No food items found</p>
               ) : (
@@ -458,7 +465,10 @@ export default function BarPOSPage() {
 
             <div className="flex-1 overflow-y-auto px-4 py-2">
               {tabItems.length === 0 ? (
-                <p className="text-center text-muted-foreground text-sm py-8">No items yet.<br />Select drinks from the menu.</p>
+                <p className="text-center text-muted-foreground text-sm py-8">
+                  No items yet.<br />
+                  {hasBar && !hasRestaurant ? "Select drinks from the menu." : !hasBar ? "Select food from the menu." : "Select drinks or food from the menu."}
+                </p>
               ) : (
                 tabItems.map((item) => (
                   <TabItem key={item.id} item={item} onRemove={removeItem} />
