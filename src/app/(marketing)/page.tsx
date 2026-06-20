@@ -571,7 +571,7 @@ export default async function MarketingPage() {
           <div className="text-center mb-16 reveal">
             <p className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-3">Why DELRON?</p>
             <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">How We Compare</h2>
-            <p className="text-slate-400">DELRON AI POS vs Kayko Web vs Spreadsheets — across the 12 features that matter most.</p>
+            <p className="text-slate-400">DELRON AI POS vs Traditional POS Systems vs Spreadsheets — across the 12 features that matter most.</p>
           </div>
           <div className="rounded-2xl border border-slate-700/60 overflow-hidden reveal">
             <table className="w-full">
@@ -581,7 +581,7 @@ export default async function MarketingPage() {
                   <th className="px-4 py-4 text-center">
                     <span className="text-blue-400 font-black text-sm">DELRON AI POS</span>
                   </th>
-                  <th className="px-4 py-4 text-center text-slate-500 font-semibold text-xs">Kayko Web</th>
+                  <th className="px-4 py-4 text-center text-slate-500 font-semibold text-xs">Traditional POS</th>
                   <th className="px-4 py-4 text-center text-slate-500 font-semibold text-xs">Spreadsheets</th>
                 </tr>
               </thead>
@@ -622,7 +622,6 @@ export default async function MarketingPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-slate-700 text-xs text-center mt-4">Based on publicly available information. Last updated June 2026.</p>
         </div>
       </section>
 
@@ -763,8 +762,8 @@ export default async function MarketingPage() {
                a:"All data is encrypted in transit and at rest using Supabase (PostgreSQL) with row-level security. Your data is never shared or sold. Automated hourly backups run continuously."},
               {q:"Can the AI speak Kinyarwanda?",
                a:"Yes. The DELRON AI assistant (powered by Google Gemini) understands and responds in Kinyarwanda. Ask about your sales, inventory, or staff performance in Kinyarwanda and get a clear, accurate answer."},
-              {q:"How is DELRON different from Kayko?",
-               a:"Kayko is a solid general POS with good hardware products. DELRON is an AI-first, multi-module platform built for businesses that run a supermarket, bakery, or bar — often all three. DELRON adds AI daily briefings, bakery production tracking, shot variance theft detection, and Kinyarwanda SMS that Kayko does not offer. Both start at RWF 35,000/month for their full software — but DELRON includes a 14-day free trial and features Kayko charges extra for or doesn't have."},
+              {q:"How is DELRON different from other POS systems?",
+               a:"Most POS systems are built for simple retail — they record a sale and print a receipt. DELRON goes further: AI daily briefings that analyse your data every morning, bakery production tracking with ingredient costing, shot variance detection that flags bartender theft before it compounds, and Kinyarwanda SMS alerts your staff actually read. Generic POS software treats a supermarket, bakery, and bar the same way — DELRON has dedicated modules with workflows specific to each business type. You also get a 14-day free trial with no credit card, and features most competitors charge extra for or don't offer at all."},
               {q:"Can I install DELRON as an app on my computer or phone?",
                a:"Yes. DELRON is a Progressive Web App (PWA) — install it directly from your browser with no app store required. On Windows or Mac, click 'Install' in your browser's address bar. On Android, tap 'Add to Home Screen'. On iPhone, use Safari's Share menu → 'Add to Home Screen'. Once installed, it launches like a native app, works offline for core POS functions, and updates automatically — no manual downloads ever needed."},
             ].map(({q,a}) => (
