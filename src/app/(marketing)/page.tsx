@@ -5,7 +5,7 @@ import {
   ArrowRight, Play, Check, X as XIcon, Zap, Brain,
   BarChart3, ShoppingCart, Cake, Beer, CreditCard,
   MessageSquare, Printer, Receipt, ChevronDown,
-  Utensils, Bot, Star, CheckCircle2,
+  Utensils, Bot, Star, CheckCircle2, Clock, ClipboardCheck,
 } from "lucide-react";
 
 export const metadata = {
@@ -462,6 +462,12 @@ export default async function MarketingPage() {
               {icon:<Receipt className="w-5 h-5 text-orange-400" />, b:"border-orange-500/20 hover:border-orange-500/40 bg-orange-500/5",
                title:"RRA/EBM Receipts",
                desc:"Generate RRA-compliant electronic receipts with built-in EBM support — stay tax-compliant automatically."},
+              {icon:<Clock className="w-5 h-5 text-violet-400" />, b:"border-violet-500/20 hover:border-violet-500/40 bg-violet-500/5",
+               title:"Shift Management & Cash Reconciliation",
+               desc:"Every staff member clocks in and out with automatic cash counting, stock variance detection, and SMS alerts to the owner when shortages occur."},
+              {icon:<ClipboardCheck className="w-5 h-5 text-sky-400" />, b:"border-sky-500/20 hover:border-sky-500/40 bg-sky-500/5",
+               title:"Daily Stock Reconciliation",
+               desc:"Restock and closing count workflows across every module — supermarket, bakery, and bar — with automatic theft and waste detection at end of day."},
             ].map((f,i) => (
               <div key={f.title} className={`border rounded-xl p-6 ${f.b} transition-all hover:-translate-y-0.5 reveal reveal-d${(i%3)+1}`}>
                 <div className="mb-4">{f.icon}</div>
@@ -499,7 +505,7 @@ export default async function MarketingPage() {
               {icon:<Utensils className="w-7 h-7" />, color:"text-purple-400",
                grad:"from-purple-600/15 to-transparent", border:"border-purple-500/20",
                title:"Restaurant",
-               pains:["Table orders get lost or duplicated","Staff discounts not tracked","No daily summary for the owner","Credit customers never pay"]},
+               pains:["Full menu management with categories & modifiers","Kitchen Display System — orders appear live at the kitchen","Waiter table assignment and order tracking per cover","Food POS with combo meals and item-level discounts"]},
             ].map((ind,i) => (
               <div key={ind.title} className={`border ${ind.border} rounded-2xl overflow-hidden reveal reveal-d${i+1} hover:-translate-y-1 transition-transform`}>
                 <div className={`bg-gradient-to-b ${ind.grad} p-6`}>
@@ -588,7 +594,7 @@ export default async function MarketingPage() {
                     ["Kinyarwanda SMS Alerts",             true,       false,     false],
                     ["Barcode Label Printing",             true,       "Partial", false],
                     ["Credit Customer Tracking",           true,       "Partial", false],
-                    ["Multi-Module (Super + Bakery + Bar)",true,       false,     false],
+                    ["Multi-Module (Super + Bakery + Bar + Restaurant)",true,       false,     false],
                     ["Real-Time Sales Analytics",          true,       true,      false],
                     ["Staff Performance Tracking",         true,       "Partial", false],
                     ["RRA/EBM Receipt Support",            true,       true,      false],
@@ -678,11 +684,11 @@ export default async function MarketingPage() {
             {[
               {name:"Starter", price:"RWF 15,000", period:"/month",
                desc:"One module — perfect for a single business type going digital.",
-               features:["1 module (Super, Bakery, or Bar)","Up to 3 staff accounts","AI daily briefings","SMS notifications","PDF & Excel exports"],
+               features:["1 module (Super, Bakery, Bar, or Restaurant)","Up to 3 staff accounts","AI daily briefings","SMS notifications","PDF & Excel exports"],
                cta:"Start Free Trial", href:"/onboarding", highlight:false},
               {name:"Professional", price:"RWF 35,000", period:"/month",
                desc:"Full platform — all modules, more staff, priority support.",
-               features:["All 3 modules included","Up to 20 staff accounts","AI daily briefings","Unlimited SMS","Full reports & exports","Priority support","Multi-branch support"],
+               features:["All 4 modules included","Up to 20 staff accounts","AI daily briefings","Unlimited SMS","Full reports & exports","Priority support","Multi-branch support"],
                cta:"Get Professional", href:"/onboarding", highlight:true},
               {name:"Enterprise", price:"Custom", period:"tailored",
                desc:"For chains, franchises, and businesses with advanced compliance needs.",
@@ -759,6 +765,8 @@ export default async function MarketingPage() {
                a:"Yes. The DELRON AI assistant (powered by Google Gemini) understands and responds in Kinyarwanda. Ask about your sales, inventory, or staff performance in Kinyarwanda and get a clear, accurate answer."},
               {q:"How is DELRON different from Kayko?",
                a:"Kayko is a solid general POS with good hardware products. DELRON is an AI-first, multi-module platform built for businesses that run a supermarket, bakery, or bar — often all three. DELRON adds AI daily briefings, bakery production tracking, shot variance theft detection, and Kinyarwanda SMS that Kayko does not offer. Both start at RWF 35,000/month for their full software — but DELRON includes a 14-day free trial and features Kayko charges extra for or doesn't have."},
+              {q:"Can I install DELRON as an app on my computer or phone?",
+               a:"Yes. DELRON is a Progressive Web App (PWA) — install it directly from your browser with no app store required. On Windows or Mac, click 'Install' in your browser's address bar. On Android, tap 'Add to Home Screen'. On iPhone, use Safari's Share menu → 'Add to Home Screen'. Once installed, it launches like a native app, works offline for core POS functions, and updates automatically — no manual downloads ever needed."},
             ].map(({q,a}) => (
               <details key={q}
                 className="group border border-slate-700/50 rounded-xl bg-slate-800/30 hover:border-slate-600/60 transition-colors">
