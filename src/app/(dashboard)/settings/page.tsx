@@ -377,11 +377,41 @@ function ReceiptTab() {
 
 // ─── Security Tab ─────────────────────────────────────────────────
 function SecurityTab() {
+  const { staff } = useAuthStore();
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [pinForm, setPinForm] = useState({ current: "", next: "" });
   const [showPw, setShowPw] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
   const [savingPin, setSavingPin] = useState(false);
+
+  // 2FA state (owner only)
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const [twoFALoading, setTwoFALoading] = useState(true);
+  const [twoFASaving, setTwoFASaving]   = useState(false);
+  const isOwner = staff?.role === "owner";
+
+  useEffect(() => {
+    if (!isOwner) { setTwoFALoading(false); return; }
+    fetch("/api/settings/security/2fa")
+      .then(r => r.json())
+      .then((d: { enabled: boolean }) => setTwoFAEnabled(d.enabled ?? false))
+      .finally(() => setTwoFALoading(false));
+  }, [isOwner]);
+
+  const toggle2FA = async (next: boolean) => {
+    setTwoFASaving(true);
+    try {
+      const res = await fetch("/api/settings/security/2fa", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: next }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setTwoFAEnabled(next);
+      toast.success(next ? "Two-factor authentication enabled" : "Two-factor authentication disabled");
+    } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Failed to update"); }
+    setTwoFASaving(false);
+  };
 
   const changePassword = async () => {
     if (pwForm.next !== pwForm.confirm) { toast.error("Passwords don't match"); return; }
@@ -435,6 +465,38 @@ function SecurityTab() {
           {savingPin && <Loader2 className="w-4 h-4 animate-spin" />}Update PIN
         </button>
       </div>
+      {/* Two-Factor Authentication — owner only */}
+      {isOwner && (
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="w-4 h-4 text-blue-400" />
+            <h4 className="font-semibold text-white">Two-Factor Authentication</h4>
+          </div>
+          <p className="text-xs text-slate-400 mb-4">
+            When enabled, you will be asked to verify your identity via a 6-digit email code each time you log in. Staff PIN logins are not affected.
+          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-white">
+                {twoFAEnabled ? "2FA is enabled" : "2FA is disabled"}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {twoFAEnabled ? "Your account requires email verification on login" : "Turn on for extra account security"}
+              </p>
+            </div>
+            {twoFALoading || twoFASaving ? (
+              <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+            ) : (
+              <button
+                onClick={() => toggle2FA(!twoFAEnabled)}
+                className={cn("w-11 h-6 rounded-full border transition-all relative", twoFAEnabled ? "bg-blue-500 border-blue-400" : "bg-slate-700 border-slate-600")}
+              >
+                <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow", twoFAEnabled ? "left-[calc(100%-22px)]" : "left-0.5")} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
