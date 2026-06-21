@@ -50,6 +50,7 @@ export async function updateSession(request: NextRequest) {
   const publicRoutes = [
     "/login", "/onboarding", "/", "/pos-login",
     "/api/auth/pos-staff", "/api/auth/pin-login",
+    "/api/cron",
     "/supermarket", "/supermarket/pos",
     "/customer-display",
     "/api/pwa-icon",
