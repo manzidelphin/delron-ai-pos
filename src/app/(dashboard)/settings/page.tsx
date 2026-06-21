@@ -217,7 +217,7 @@ function StaffTab() {
     else toast.error("Failed to deactivate");
   };
 
-  const ROLE_BADGE: Record<string, string> = { owner: "bg-purple-500/10 text-purple-400 border-purple-500/20", manager: "bg-blue-500/10 text-blue-400 border-blue-500/20", cashier: "bg-green-500/10 text-green-400 border-green-500/20", baker: "bg-amber-500/10 text-amber-400 border-amber-500/20", waiter: "bg-orange-500/10 text-orange-400 border-orange-500/20", bartender: "bg-teal-500/10 text-teal-400 border-teal-500/20" };
+  const ROLE_BADGE: Record<string, string> = { owner: "bg-purple-500/10 text-purple-400 border-purple-500/20", manager: "bg-blue-500/10 text-blue-400 border-blue-500/20", cashier: "bg-green-500/10 text-green-400 border-green-500/20", baker: "bg-amber-500/10 text-amber-400 border-amber-500/20", waiter: "bg-orange-500/10 text-orange-400 border-orange-500/20", bartender: "bg-teal-500/10 text-teal-400 border-teal-500/20", chef: "bg-red-500/10 text-red-400 border-red-500/20" };
 
   return (
     <div className="space-y-4">
@@ -271,7 +271,7 @@ function StaffTab() {
               </>}
               <div><label className="text-xs text-slate-400 mb-1 block">Role *</label>
                 <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value as UserRole }))} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-                  {(["manager","cashier","baker","waiter","bartender"] as UserRole[]).map(r => <option key={r} value={r} className="capitalize">{r}</option>)}
+                  {(["manager","cashier","baker","waiter","bartender","chef"] as UserRole[]).map(r => <option key={r} value={r} className="capitalize">{r}</option>)}
                 </select>
               </div>
               {branches.length > 1 && <div><label className="text-xs text-slate-400 mb-1 block">Branch</label>

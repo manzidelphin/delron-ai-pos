@@ -151,6 +151,7 @@ export default function PosLoginPage() {
         bartender: "/bar/pos",
         waiter:    "/bar/tables",
         baker:     "/bakery",
+        chef:      "/restaurant/kds",
         manager:   "/dashboard",
         owner:     "/dashboard",
       };
@@ -165,7 +166,7 @@ export default function PosLoginPage() {
       }
 
       // All other shift-eligible roles: start shift silently then redirect
-      const shiftRoles = ["bartender", "baker", "waiter"];
+      const shiftRoles = ["bartender", "baker", "waiter", "chef"];
       if (shiftRoles.includes(staffData.role)) {
         fetch("/api/shifts/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) })
           .catch(() => { /* non-blocking */ });

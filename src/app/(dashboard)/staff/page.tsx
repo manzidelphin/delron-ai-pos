@@ -62,9 +62,10 @@ const ROLE_META: Record<string, { label: string; icon: React.ReactNode; color: s
   baker:     { label: "Baker",      icon: <ChefHat className="w-3 h-3" />,          color: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" },
   waiter:    { label: "Waiter",     icon: <UtensilsCrossed className="w-3 h-3" />,  color: "text-orange-400 bg-orange-500/10 border-orange-500/20" },
   bartender: { label: "Bartender",  icon: <Beer className="w-3 h-3" />,             color: "text-pink-400 bg-pink-500/10 border-pink-500/20" },
+  chef:      { label: "Chef",       icon: <ChefHat className="w-3 h-3" />,          color: "text-red-400 bg-red-500/10 border-red-500/20" },
 };
 
-const ROLES: UserRole[] = ["cashier", "manager", "baker", "waiter", "bartender"];
+const ROLES: UserRole[] = ["cashier", "manager", "baker", "waiter", "bartender", "chef"];
 
 export default function StaffPage() {
   const { staff: currentStaff, branches } = useAuthStore();
