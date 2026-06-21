@@ -12,6 +12,28 @@ export async function GET(req: NextRequest) {
   const date = searchParams.get("date") ?? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const supabase = createAdminClient();
+
+  // Debug: log resolved context so Vercel logs reveal mismatches
+  const { dayStart, dayEnd } = (() => {
+    const RW = 2 * 60 * 60 * 1000;
+    const [y, m, d] = date.split("-").map(Number);
+    return {
+      dayStart: new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0) - RW).toISOString(),
+      dayEnd:   new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999) - RW).toISOString(),
+    };
+  })();
+  const { data: orderCount } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("business_id", auth.businessId)
+    .eq("status", "completed")
+    .gte("created_at", dayStart)
+    .lte("created_at", dayEnd);
+  console.error(
+    "[daily-report GET]",
+    JSON.stringify({ businessId: auth.businessId, staffId: auth.staffId, date, dayStart, dayEnd, orderCount })
+  );
+
   const data = await buildDailyReportData(supabase, auth.businessId, date);
   return NextResponse.json(data);
 }

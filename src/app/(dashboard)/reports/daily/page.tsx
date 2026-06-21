@@ -38,7 +38,8 @@ function fmtNum(n: number | null | undefined): string {
 }
 
 function todayStr(): string {
-  return new Date().toISOString().split("T")[0];
+  // Use Rwanda date (UTC+2), not UTC date
+  return new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().split("T")[0];
 }
 
 function SkeletonRow({ cols }: { cols: number }) {
