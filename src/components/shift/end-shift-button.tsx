@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useAuthStore } from "@/store/auth-store";
 import { LogOut, Loader2, CheckCircle2, AlertTriangle, X, DollarSign, ChefHat, Beer, ShoppingCart, Flame } from "lucide-react";
 import { formatRWF } from "@/lib/utils";
@@ -133,7 +134,7 @@ function EndShiftButtonInner({
         {isOpen && <span>End Shift</span>}
       </button>
 
-      {state !== "idle" && (
+      {state !== "idle" && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           {state === "confirm" && (
             <ConfirmModal name={name} role={role} onConfirm={handleConfirm} onClose={() => setState("idle")} />
@@ -155,7 +156,8 @@ function EndShiftButtonInner({
           {state === "error" && (
             <ErrorScreen message={errorMsg} onClose={() => setState("idle")} />
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
