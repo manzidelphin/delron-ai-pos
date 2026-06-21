@@ -15,10 +15,11 @@ export async function GET() {
   // Today's production
   const { data: todayLogs } = await supabase
     .from("production_logs")
-    .select("quantity_produced, finished_good_id, finished_goods(name, selling_price, cost_price)")
+    .select("quantity_produced, finished_good_id, production_time, staff!baker_id(name), finished_goods(name, selling_price, cost_price)")
     .eq("business_id", auth.businessId)
     .gte("production_time", todayStart)
-    .lte("production_time", todayEnd);
+    .lte("production_time", todayEnd)
+    .order("production_time", { ascending: false });
 
   const producedToday = (todayLogs ?? []).reduce((sum, l) => sum + l.quantity_produced, 0);
   const productionCostToday = (todayLogs ?? []).reduce((sum, l) => {
