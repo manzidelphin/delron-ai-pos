@@ -38,7 +38,7 @@ interface Shortage {
 
 export default function ProductionPage() {
   const router = useRouter();
-  const { isLoaded, business } = useAuthStore();
+  const { isLoaded, business, activeOperator, staff } = useAuthStore();
   const [items, setItems] = useState<FinishedGood[]>([]);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -162,7 +162,7 @@ export default function ProductionPage() {
       <div className="p-6 space-y-6 max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center py-4">
-          <p className="text-3xl font-black text-white">{greeting}, Baker! 👋</p>
+          <p className="text-3xl font-black text-white">{greeting}, {activeOperator?.name ?? staff?.name ?? "Baker"}! 👋</p>
           <p className="text-slate-400 mt-1">
             {today.toLocaleDateString("en-RW", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
