@@ -305,6 +305,7 @@ export default function POSPage() {
       clearCart();
       setActiveModal(null);
       setShowReceipt(true);
+      loadProducts();
     } catch (err) {
       alert((err as Error).message || "Error processing order");
     } finally {
