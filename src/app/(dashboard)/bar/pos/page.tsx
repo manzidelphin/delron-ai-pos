@@ -8,7 +8,6 @@ import { TabItem } from "@/components/bar/tab-item";
 import { SplitBillModal } from "@/components/bar/split-bill-modal";
 import { TableCard } from "@/components/bar/table-card";
 import { BarReceipt } from "@/components/bar/bar-receipt";
-import { EndShiftButton } from "@/components/bar/end-shift-button";
 import { formatRWF } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -357,7 +356,6 @@ export default function BarPOSPage() {
             </div>
           )}
         </div>
-        <EndShiftButton />
       </div>
 
       {/* Center: Product grid */}
