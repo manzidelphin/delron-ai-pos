@@ -336,12 +336,12 @@ export default function PosLoginPage() {
                       colors
                     )}
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-xl font-bold text-white shadow-inner">
-                      {s.name.charAt(0).toUpperCase()}
+                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-base font-bold text-white shadow-inner">
+                      {s.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
                     </div>
                     <div className="text-center">
-                      <p className="text-white font-semibold text-sm leading-tight">
-                        {s.name.split(" ")[0]}
+                      <p className="text-white font-semibold text-sm leading-tight line-clamp-2">
+                        {s.name}
                       </p>
                       <p className="text-xs opacity-70 mt-0.5">{ROLE_LABELS[s.role]}</p>
                     </div>
