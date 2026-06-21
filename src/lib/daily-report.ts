@@ -43,14 +43,22 @@ function itemTypeToModule(itemType: string): string {
   }
 }
 
+// Rwanda is UTC+2. Convert a "YYYY-MM-DD" Rwanda calendar date to UTC bounds.
+function rwandaDayBounds(date: string): { dayStart: string; dayEnd: string } {
+  const [y, m, d] = date.split("-").map(Number);
+  const RW_OFFSET_MS = 2 * 60 * 60 * 1000;
+  const startUTC = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0) - RW_OFFSET_MS);
+  const endUTC   = new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999) - RW_OFFSET_MS);
+  return { dayStart: startUTC.toISOString(), dayEnd: endUTC.toISOString() };
+}
+
 export async function buildDailyReportData(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any>,
   businessId: string,
   date: string
 ): Promise<DailyReportData> {
-  const dayStart = date + "T00:00:00.000Z";
-  const dayEnd   = date + "T23:59:59.999Z";
+  const { dayStart, dayEnd } = rwandaDayBounds(date);
 
   // 1. Completed orders for the date
   const { data: ordersRaw } = await supabase

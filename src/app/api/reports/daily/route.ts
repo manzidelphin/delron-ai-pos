@@ -8,7 +8,8 @@ export async function GET(req: NextRequest) {
   if (auth.error) return auth.error;
 
   const { searchParams } = new URL(req.url);
-  const date = searchParams.get("date") ?? new Date().toISOString().split("T")[0];
+  // Default to today in Rwanda time (UTC+2)
+  const date = searchParams.get("date") ?? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const supabase = createAdminClient();
   const data = await buildDailyReportData(supabase, auth.businessId, date);
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (auth.error) return auth.error;
 
   const body = await req.json();
-  const date = body.date ?? new Date().toISOString().split("T")[0];
+  const date = body.date ?? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const supabase = createAdminClient();
   const data = await buildDailyReportData(supabase, auth.businessId, date);
