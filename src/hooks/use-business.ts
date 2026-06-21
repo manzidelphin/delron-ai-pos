@@ -107,12 +107,18 @@ export function useBusiness() {
 
         if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
           if (session?.user) {
-            // Only fetch if data isn't already in the store (covers normal
-            // in-app navigations where the hook remounts but Zustand still
-            // has the persisted data from localStorage).
             const state = useAuthStore.getState();
-            if (!state.staff) {
-              loadFromSession(session.user.id);
+            const uid = session.user.id;
+            // If no staff loaded yet, or the stored staff belongs to a
+            // different auth user (account switch without explicit logout),
+            // clear stale data and reload.  Without this check, the store
+            // keeps User A's business while the Supabase cookie is User B.
+            if (!state.staff || state.staff.user_id !== uid) {
+              if (state.staff?.user_id && state.staff.user_id !== uid) {
+                console.log("[use-business] uid mismatch — clearing stale session");
+                reset();
+              }
+              loadFromSession(uid);
             } else if (!state.isLoaded) {
               setLoaded(true);
             }
