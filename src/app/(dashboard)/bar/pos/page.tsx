@@ -49,6 +49,8 @@ interface OrderItem {
   unit_price: number;
   total_price: number;
   serve_as: "bottle" | "shot";
+  item_type: string;
+  notes?: string | null;
   status: string;
 }
 
