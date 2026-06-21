@@ -538,7 +538,7 @@ export default async function MarketingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {num:"01",title:"Create Account",    desc:"Sign up with your email. Your business profile is ready in 2 minutes."},
-              {num:"02",title:"Choose Modules",    desc:"Select Supermarket, Bakery, Bar — or all three. Enable exactly what you need."},
+              {num:"02",title:"Choose Modules",    desc:"Select Supermarket, Bakery, Bar, Restaurant — or any combination. Enable exactly what you need."},
               {num:"03",title:"Add Products",      desc:"Import with barcodes, set prices, and configure inventory and recipes."},
               {num:"04",title:"Start Selling",     desc:"Hand the tablet to your cashier. Your first AI briefing arrives tomorrow morning."},
             ].map((step,i) => (
