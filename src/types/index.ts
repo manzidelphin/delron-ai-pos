@@ -9,7 +9,8 @@ export type UserRole =
   | "cashier"
   | "baker"
   | "waiter"
-  | "bartender";
+  | "bartender"
+  | "chef";
 
 export type BusinessModule =
   | "supermarket"

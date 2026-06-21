@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
-import { LogOut, Loader2, CheckCircle2, AlertTriangle, X, DollarSign, ChefHat, Beer, ShoppingCart } from "lucide-react";
+import { LogOut, Loader2, CheckCircle2, AlertTriangle, X, DollarSign, ChefHat, Beer, ShoppingCart, Flame } from "lucide-react";
 import { formatRWF } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -23,13 +23,14 @@ interface ShiftSummary {
 
 type ModalState = "idle" | "confirm" | "cash" | "loading" | "success" | "error";
 
-const SHIFT_ROLES = ["cashier", "baker", "bartender", "waiter"];
+const SHIFT_ROLES = ["cashier", "baker", "bartender", "waiter", "chef"];
 
 const ROLE_ICON: Record<string, React.ReactNode> = {
   cashier:   <ShoppingCart className="w-5 h-5" />,
   baker:     <ChefHat className="w-5 h-5" />,
   bartender: <Beer className="w-5 h-5" />,
   waiter:    <LogOut className="w-5 h-5" />,
+  chef:      <Flame className="w-5 h-5" />,
 };
 
 const ROLE_ACTIONS: Record<string, string[]> = {
@@ -37,6 +38,7 @@ const ROLE_ACTIONS: Record<string, string[]> = {
   baker:     ["📊 Save your production summary for today", "📩 Notify the owner with your shift summary", "🔒 Lock this terminal back to PIN login"],
   bartender: ["📦 Save a stock snapshot for all bar items", "💰 Record cash in till if applicable", "📩 Notify the owner via SMS", "🔒 Lock this terminal back to PIN login"],
   waiter:    ["📊 Save your orders summary", "📩 Notify the owner with your shift summary", "🔒 Lock this terminal back to PIN login"],
+  chef:      ["🍳 Save your kitchen shift summary", "📩 Notify the owner with your shift summary", "🔒 Lock this terminal back to PIN login"],
 };
 
 const CASH_ROLES = ["cashier", "bartender"];

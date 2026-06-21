@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { User, Building2, Calendar, KeyRound, Loader2, AlertTriangle, Eye, EyeOff, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const ROLE_COLOR: Record<string, string> = { owner: "bg-purple-500/10 text-purple-400 border-purple-500/20", manager: "bg-blue-500/10 text-blue-400 border-blue-500/20", cashier: "bg-green-500/10 text-green-400 border-green-500/20", baker: "bg-amber-500/10 text-amber-400 border-amber-500/20", waiter: "bg-orange-500/10 text-orange-400 border-orange-500/20", bartender: "bg-teal-500/10 text-teal-400 border-teal-500/20" };
+const ROLE_COLOR: Record<string, string> = { owner: "bg-purple-500/10 text-purple-400 border-purple-500/20", manager: "bg-blue-500/10 text-blue-400 border-blue-500/20", cashier: "bg-green-500/10 text-green-400 border-green-500/20", baker: "bg-amber-500/10 text-amber-400 border-amber-500/20", waiter: "bg-orange-500/10 text-orange-400 border-orange-500/20", bartender: "bg-teal-500/10 text-teal-400 border-teal-500/20", chef: "bg-red-500/10 text-red-400 border-red-500/20" };
 
 export default function ProfilePage() {
   const router = useRouter();
