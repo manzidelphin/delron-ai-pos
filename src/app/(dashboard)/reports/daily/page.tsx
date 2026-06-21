@@ -380,9 +380,13 @@ export default function DailyReportPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-700 bg-slate-900/50">
-                {["Item", "Module", "Opening Stock", "Qty Sold", "Closing Stock", "Revenue", "Sold By"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-slate-400 font-medium text-xs whitespace-nowrap">{h}</th>
-                ))}
+                <th className="px-4 py-3 text-left   text-slate-400 font-medium text-xs whitespace-nowrap">Item</th>
+                <th className="px-4 py-3 text-left   text-slate-400 font-medium text-xs whitespace-nowrap">Module</th>
+                <th className="px-4 py-3 text-right  text-slate-400 font-medium text-xs whitespace-nowrap">Opening Stock</th>
+                <th className="px-4 py-3 text-right  text-slate-400 font-medium text-xs whitespace-nowrap">Qty Sold</th>
+                <th className="px-4 py-3 text-right  text-slate-400 font-medium text-xs whitespace-nowrap">Closing Stock</th>
+                <th className="px-4 py-3 text-right  text-slate-400 font-medium text-xs whitespace-nowrap">Revenue</th>
+                <th className="px-4 py-3 text-left   text-slate-400 font-medium text-xs whitespace-nowrap">Sold By</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/50">
@@ -405,11 +409,11 @@ export default function DailyReportPage() {
                         {p.module}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-400 text-right font-mono text-xs">{fmtNum(p.opening_stock)}</td>
-                    <td className="px-4 py-3 text-white font-bold text-right font-mono text-xs">{fmtNum(p.qty_sold)}</td>
-                    <td className="px-4 py-3 text-slate-400 text-right font-mono text-xs">{fmtNum(p.closing_stock)}</td>
-                    <td className="px-4 py-3 font-semibold text-blue-400 whitespace-nowrap">{formatRWF(p.revenue)}</td>
-                    <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">{p.sold_by}</td>
+                    <td className="px-4 py-3 text-right text-slate-400 font-mono text-xs">{fmtNum(p.opening_stock)}</td>
+                    <td className="px-4 py-3 text-right text-white font-bold font-mono text-xs">{fmtNum(p.qty_sold)}</td>
+                    <td className="px-4 py-3 text-right text-slate-400 font-mono text-xs">{fmtNum(p.closing_stock)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-blue-400 whitespace-nowrap">{formatRWF(p.revenue)}</td>
+                    <td className="px-4 py-3 text-left  text-slate-400 text-xs whitespace-nowrap">{p.sold_by}</td>
                   </tr>
                 ))
               }
@@ -428,9 +432,11 @@ export default function DailyReportPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-700 bg-slate-900/50">
-                {["Staff Member", "Role", "Transactions", "Total Revenue", "Items Sold"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-slate-400 font-medium text-xs">{h}</th>
-                ))}
+                <th className="px-4 py-3 text-left  text-slate-400 font-medium text-xs whitespace-nowrap">Staff Member</th>
+                <th className="px-4 py-3 text-left  text-slate-400 font-medium text-xs whitespace-nowrap">Role</th>
+                <th className="px-4 py-3 text-right text-slate-400 font-medium text-xs whitespace-nowrap">Transactions</th>
+                <th className="px-4 py-3 text-right text-slate-400 font-medium text-xs whitespace-nowrap">Total Revenue</th>
+                <th className="px-4 py-3 text-right text-slate-400 font-medium text-xs whitespace-nowrap">Items Sold</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/50">
@@ -447,13 +453,13 @@ export default function DailyReportPage() {
                 )
                 : viewData.staff_breakdown.map((s, i) => (
                   <tr key={i} className="hover:bg-slate-700/20 transition-colors">
-                    <td className="px-4 py-3 font-medium text-white">{s.staff_name}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-left  font-medium text-white">{s.staff_name}</td>
+                    <td className="px-4 py-3 text-left">
                       <span className="text-xs text-slate-400 capitalize">{s.role}</span>
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{s.transactions}</td>
-                    <td className="px-4 py-3 font-semibold text-blue-400">{formatRWF(s.total_revenue)}</td>
-                    <td className="px-4 py-3 text-slate-300">{fmtNum(s.items_sold)}</td>
+                    <td className="px-4 py-3 text-right text-slate-300 font-mono text-xs">{s.transactions}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-blue-400 whitespace-nowrap">{formatRWF(s.total_revenue)}</td>
+                    <td className="px-4 py-3 text-right text-slate-300 font-mono text-xs">{fmtNum(s.items_sold)}</td>
                   </tr>
                 ))
               }
