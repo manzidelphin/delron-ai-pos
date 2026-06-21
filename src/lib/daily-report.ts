@@ -196,27 +196,34 @@ export async function buildDailyReportData(
     })
     .sort((a, b) => b.revenue - a.revenue);
 
-  // 9. Staff breakdown from transactions
-  const staffTxAgg: Record<string, { total: number; count: number }> = {};
+  // 9. Staff breakdown — revenue from transactions, order count from orders
+  //    (credit sales create orders but no transaction row, so we must union both)
+  const staffTxAgg: Record<string, { total: number }> = {};
   for (const tx of transactions) {
     const sid = tx.cashier_id ?? "__anon";
-    if (!staffTxAgg[sid]) staffTxAgg[sid] = { total: 0, count: 0 };
+    if (!staffTxAgg[sid]) staffTxAgg[sid] = { total: 0 };
     staffTxAgg[sid].total += tx.total ?? 0;
-    staffTxAgg[sid].count++;
   }
+
+  const staffOrderCount: Record<string, number> = {};
+  for (const o of orders) {
+    if (o.staff_id) staffOrderCount[o.staff_id] = (staffOrderCount[o.staff_id] ?? 0) + 1;
+  }
+
   const staffItemsAgg: Record<string, number> = {};
   for (const item of orderItems) {
     const sid = orderStaffMap[item.order_id];
     if (sid) staffItemsAgg[sid] = (staffItemsAgg[sid] ?? 0) + (item.quantity ?? 0);
   }
 
-  const staff_breakdown: StaffBreakdownRow[] = Object.entries(staffTxAgg)
-    .map(([sid, agg]) => ({
+  const allStaffIds = new Set([...Object.keys(staffTxAgg), ...Object.keys(staffItemsAgg)]);
+  const staff_breakdown: StaffBreakdownRow[] = Array.from(allStaffIds)
+    .map((sid) => ({
       staff_id:      sid,
       staff_name:    staffMap[sid]?.name ?? (sid === "__anon" ? "—" : "Unknown"),
       role:          staffMap[sid]?.role ?? "—",
-      transactions:  agg.count,
-      total_revenue: agg.total,
+      transactions:  staffOrderCount[sid] ?? 0,
+      total_revenue: staffTxAgg[sid]?.total ?? 0,
       items_sold:    staffItemsAgg[sid] ?? 0,
     }))
     .sort((a, b) => b.total_revenue - a.total_revenue);
