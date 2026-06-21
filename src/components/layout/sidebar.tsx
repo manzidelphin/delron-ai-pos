@@ -28,6 +28,7 @@ import {
   ClipboardList,
   Monitor,
   Clock,
+  FileText,
 } from "lucide-react";
 import { EndShiftButton } from "@/components/shift/end-shift-button";
 import type { BusinessModule, UserRole } from "@/types";
@@ -89,6 +90,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Credits", href: "/reports/credits", icon: <CreditCard className="w-4 h-4" />, roles: ["owner", "manager"] },
   { label: "Staff", href: "/reports/staff", icon: <Users className="w-4 h-4" />, roles: ["owner", "manager"] },
   { label: "Shifts", href: "/reports/shifts", icon: <Clock className="w-4 h-4" />, roles: ["owner", "manager"] },
+  { label: "Daily Report", href: "/reports/daily", icon: <FileText className="w-4 h-4" />, roles: ["owner", "manager"] },
   // System
   // System section
   { label: "Notifications", href: "/notifications", icon: <Bell className="w-4 h-4" />, roles: ["owner", "manager"], sectionLabel: "System" },
