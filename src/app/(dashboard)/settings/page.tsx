@@ -300,47 +300,123 @@ function NotificationsTab() {
   const { business } = useAuthStore();
   const [ownerPhone, setOwnerPhone] = useState("");
   const [largeAmount, setLargeAmount] = useState("50000");
-  const [toggles, setToggles] = useState({ credit_created: true, credit_overdue: true, low_stock: true, daily_summary: true, large_transaction: false });
-  const [saving, setSaving] = useState(false);
+  const [smsToggles, setSmsToggles] = useState({ credit_created: true, credit_overdue: true, low_stock: true, daily_summary: true, large_transaction: false });
+  const [smsSaving, setSmsSaving] = useState(false);
+
+  // daily_report_email is persisted to the businesses table
+  const [reportEmail, setReportEmail]   = useState(true);
+  const [reportEmailSaving, setReportEmailSaving] = useState(false);
+  const [reportEmailLoaded, setReportEmailLoaded] = useState(false);
 
   useEffect(() => { if (business?.phone) setOwnerPhone(business.phone); }, [business]);
 
-  const save = async () => {
-    setSaving(true);
-    await new Promise(r => setTimeout(r, 600));
-    toast.success("Notification settings saved");
-    setSaving(false);
+  // Load the current daily_report_email value from the API
+  useEffect(() => {
+    fetch("/api/settings/business")
+      .then((r) => r.json())
+      .then((d: { daily_report_email?: boolean }) => {
+        setReportEmail(d.daily_report_email !== false); // default true
+        setReportEmailLoaded(true);
+      })
+      .catch(() => setReportEmailLoaded(true));
+  }, []);
+
+  const toggleReportEmail = async (next: boolean) => {
+    setReportEmail(next);
+    setReportEmailSaving(true);
+    try {
+      const res = await fetch("/api/settings/business", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ daily_report_email: next }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(next ? "Daily report email enabled" : "Daily report email disabled");
+    } catch {
+      setReportEmail(!next); // revert on failure
+      toast.error("Failed to update notification settings");
+    }
+    setReportEmailSaving(false);
   };
 
-  const TOGGLES = [
-    { key: "credit_created" as const, label: "Credit created alert", desc: "Notified when a new credit sale is made" },
-    { key: "credit_overdue" as const, label: "Credit overdue alert", desc: "Reminded when credits become overdue" },
-    { key: "low_stock" as const, label: "Low stock alert", desc: "Warned when items fall below minimum stock" },
-    { key: "daily_summary" as const, label: "Daily summary SMS", desc: "Receive daily business summary at 6AM" },
-    { key: "large_transaction" as const, label: `Large transaction alert (above ${largeAmount} RWF)`, desc: "Notified for unusually large sales" },
+  const saveSms = async () => {
+    setSmsSaving(true);
+    await new Promise(r => setTimeout(r, 600));
+    toast.success("SMS notification settings saved");
+    setSmsSaving(false);
+  };
+
+  const SMS_TOGGLES = [
+    { key: "credit_created"   as const, label: "Credit created alert",     desc: "Notified when a new credit sale is made" },
+    { key: "credit_overdue"   as const, label: "Credit overdue alert",      desc: "Reminded when credits become overdue" },
+    { key: "low_stock"        as const, label: "Low stock alert",           desc: "Warned when items fall below minimum stock" },
+    { key: "daily_summary"    as const, label: "Daily summary SMS",         desc: "Receive daily business summary at 6AM" },
+    { key: "large_transaction"as const, label: `Large transaction alert (above ${largeAmount} RWF)`, desc: "Notified for unusually large sales" },
   ];
 
   return (
-    <div className="space-y-6 max-w-xl">
-      <div><h3 className="text-lg font-semibold text-white mb-1">SMS Notification Settings</h3><p className="text-sm text-slate-400">Choose which alerts you receive via SMS</p></div>
-      <div><label className="text-sm font-medium text-slate-300 mb-1.5 block">Owner SMS Number</label><input value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} placeholder="+250 7XX XXX XXX" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" /></div>
-      <div className="space-y-3">
-        {TOGGLES.map((t) => (
-          <div key={t.key} className="flex items-center gap-4 p-4 bg-slate-800 border border-slate-700 rounded-xl">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">{t.label}</p>
-              <p className="text-xs text-slate-400">{t.desc}</p>
-            </div>
-            <button onClick={() => setToggles(p => ({ ...p, [t.key]: !p[t.key] }))} className={cn("w-11 h-6 rounded-full border transition-all relative", toggles[t.key] ? "bg-blue-500 border-blue-400" : "bg-slate-700 border-slate-600")}>
-              <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow", toggles[t.key] ? "left-[calc(100%-22px)]" : "left-0.5")} />
-            </button>
+    <div className="space-y-8 max-w-xl">
+
+      {/* Email notifications */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-1">Email Notifications</h3>
+          <p className="text-sm text-slate-400">Automated emails sent to the owner account</p>
+        </div>
+        <div className={cn("flex items-center gap-4 p-4 bg-slate-800 border rounded-xl transition-all", reportEmail ? "border-blue-500/30" : "border-slate-700")}>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-white">Daily report email</p>
+            <p className="text-xs text-slate-400">
+              Receive a snapshot of today&apos;s revenue, top products, and any cash variances at 23:55 Rwanda time
+            </p>
           </div>
-        ))}
+          {!reportEmailLoaded || reportEmailSaving ? (
+            <Loader2 className="w-5 h-5 animate-spin text-blue-400 flex-shrink-0" />
+          ) : (
+            <button
+              onClick={() => toggleReportEmail(!reportEmail)}
+              className={cn("w-11 h-6 rounded-full border transition-all relative flex-shrink-0", reportEmail ? "bg-blue-500 border-blue-400" : "bg-slate-700 border-slate-600")}
+            >
+              <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow", reportEmail ? "left-[calc(100%-22px)]" : "left-0.5")} />
+            </button>
+          )}
+        </div>
       </div>
-      {toggles.large_transaction && <div><label className="text-sm font-medium text-slate-300 mb-1.5 block">Large transaction threshold (RWF)</label><input value={largeAmount} onChange={e => setLargeAmount(e.target.value.replace(/\D/g,""))} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" /></div>}
-      <button onClick={save} disabled={saving} className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50 transition-colors">
-        {saving && <Loader2 className="w-4 h-4 animate-spin" />}Save Settings
-      </button>
+
+      {/* SMS notifications */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-1">SMS Notifications</h3>
+          <p className="text-sm text-slate-400">Choose which alerts you receive via SMS</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-slate-300 mb-1.5 block">Owner SMS Number</label>
+          <input value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} placeholder="+250 7XX XXX XXX" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div className="space-y-3">
+          {SMS_TOGGLES.map((t) => (
+            <div key={t.key} className="flex items-center gap-4 p-4 bg-slate-800 border border-slate-700 rounded-xl">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white">{t.label}</p>
+                <p className="text-xs text-slate-400">{t.desc}</p>
+              </div>
+              <button onClick={() => setSmsToggles(p => ({ ...p, [t.key]: !p[t.key] }))} className={cn("w-11 h-6 rounded-full border transition-all relative", smsToggles[t.key] ? "bg-blue-500 border-blue-400" : "bg-slate-700 border-slate-600")}>
+                <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow", smsToggles[t.key] ? "left-[calc(100%-22px)]" : "left-0.5")} />
+              </button>
+            </div>
+          ))}
+        </div>
+        {smsToggles.large_transaction && (
+          <div>
+            <label className="text-sm font-medium text-slate-300 mb-1.5 block">Large transaction threshold (RWF)</label>
+            <input value={largeAmount} onChange={e => setLargeAmount(e.target.value.replace(/\D/g, ""))} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+          </div>
+        )}
+        <button onClick={saveSms} disabled={smsSaving} className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50 transition-colors">
+          {smsSaving && <Loader2 className="w-4 h-4 animate-spin" />}Save SMS Settings
+        </button>
+      </div>
+
     </div>
   );
 }
