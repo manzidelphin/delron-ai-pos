@@ -174,6 +174,14 @@ async function run() {
   ];
 
   for (const p of superProducts) {
+    const { data: existing } = await sb
+      .from("products")
+      .select("id")
+      .eq("business_id", BIZ_ID)
+      .eq("name", p.name)
+      .maybeSingle();
+    if (existing) { console.log(`  ↩ product ${p.name} already exists`); continue; }
+
     const { error } = await sb.from("products").insert({
       ...p,
       business_id: BIZ_ID,
@@ -181,9 +189,8 @@ async function run() {
       stock_type: "supermarket",
       is_active: true,
     });
-    if (error && !isDupe(error)) { ok(`product ${p.name}`, error); allOk = false; }
-    else if (!error) ok(`product ${p.name}`, null);
-    else console.log(`  ↩ product ${p.name} already exists`);
+    if (error) { ok(`product ${p.name}`, error); allOk = false; }
+    else ok(`product ${p.name}`, null);
   }
 
   // ── 8. Bakery finished goods ──────────────────────────────────────────────
@@ -195,24 +202,21 @@ async function run() {
 
   const goodIds = {};
   for (const g of finishedGoods) {
+    const { data: existing } = await sb
+      .from("finished_goods")
+      .select("id")
+      .eq("business_id", BIZ_ID)
+      .eq("name", g.name)
+      .maybeSingle();
+    if (existing) { console.log(`  ↩ finished_good ${g.name} already exists`); goodIds[g.name] = existing.id; continue; }
+
     const { data, error } = await sb
       .from("finished_goods")
       .insert({ ...g, business_id: BIZ_ID, branch_id: BRANCH_ID, is_active: true })
       .select("id")
       .single();
-    if (error && !isDupe(error)) { ok(`finished_good ${g.name}`, error); allOk = false; }
-    else if (!error) { ok(`finished_good ${g.name}`, null); goodIds[g.name] = data.id; }
-    else {
-      console.log(`  ↩ finished_good ${g.name} already exists`);
-      // Fetch existing ID for recipe linking
-      const { data: existing } = await sb
-        .from("finished_goods")
-        .select("id")
-        .eq("business_id", BIZ_ID)
-        .eq("name", g.name)
-        .maybeSingle();
-      if (existing) goodIds[g.name] = existing.id;
-    }
+    if (error) { ok(`finished_good ${g.name}`, error); allOk = false; }
+    else { ok(`finished_good ${g.name}`, null); goodIds[g.name] = data.id; }
   }
 
   // ── 9. Bakery raw materials ───────────────────────────────────────────────
@@ -225,23 +229,21 @@ async function run() {
 
   const rmIds = {};
   for (const r of rawMaterials) {
+    const { data: existing } = await sb
+      .from("raw_materials")
+      .select("id")
+      .eq("business_id", BIZ_ID)
+      .eq("name", r.name)
+      .maybeSingle();
+    if (existing) { console.log(`  ↩ raw_material ${r.name} already exists`); rmIds[r.name] = existing.id; continue; }
+
     const { data, error } = await sb
       .from("raw_materials")
       .insert({ ...r, business_id: BIZ_ID, branch_id: BRANCH_ID })
       .select("id")
       .single();
-    if (error && !isDupe(error)) { ok(`raw_material ${r.name}`, error); allOk = false; }
-    else if (!error) { ok(`raw_material ${r.name}`, null); rmIds[r.name] = data.id; }
-    else {
-      console.log(`  ↩ raw_material ${r.name} already exists`);
-      const { data: existing } = await sb
-        .from("raw_materials")
-        .select("id")
-        .eq("business_id", BIZ_ID)
-        .eq("name", r.name)
-        .maybeSingle();
-      if (existing) rmIds[r.name] = existing.id;
-    }
+    if (error) { ok(`raw_material ${r.name}`, error); allOk = false; }
+    else { ok(`raw_material ${r.name}`, null); rmIds[r.name] = data.id; }
   }
 
   // ── 10. Recipe: Bread Loaf → Flour + Yeast ───────────────────────────────

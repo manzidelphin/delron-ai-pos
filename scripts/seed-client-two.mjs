@@ -179,15 +179,22 @@ async function run() {
   ];
 
   for (const item of barItems) {
+    const { data: existing } = await sb
+      .from("bar_items")
+      .select("id")
+      .eq("business_id", BIZ_ID)
+      .eq("name", item.name)
+      .maybeSingle();
+    if (existing) { console.log(`  ↩ bar_item ${item.name} already exists`); continue; }
+
     const { error } = await sb.from("bar_items").insert({
       ...item,
       business_id: BIZ_ID,
       branch_id: BRANCH_ID,
       is_active: true,
     });
-    if (error && !isDupe(error)) { ok(`bar_item ${item.name}`, error); allOk = false; }
-    else if (!error) ok(`bar_item ${item.name}`, null);
-    else console.log(`  ↩ bar_item ${item.name} already exists`);
+    if (error) { ok(`bar_item ${item.name}`, error); allOk = false; }
+    else ok(`bar_item ${item.name}`, null);
   }
 
   // ── 8. Raw materials (for restaurant recipes) ─────────────────────────────
@@ -201,23 +208,21 @@ async function run() {
 
   const rmIds = {};
   for (const r of rawMaterials) {
+    const { data: existing } = await sb
+      .from("raw_materials")
+      .select("id")
+      .eq("business_id", BIZ_ID)
+      .eq("name", r.name)
+      .maybeSingle();
+    if (existing) { console.log(`  ↩ raw_material ${r.name} already exists`); rmIds[r.name] = existing.id; continue; }
+
     const { data, error } = await sb
       .from("raw_materials")
       .insert({ ...r, business_id: BIZ_ID, branch_id: BRANCH_ID })
       .select("id")
       .single();
-    if (error && !isDupe(error)) { ok(`raw_material ${r.name}`, error); allOk = false; }
-    else if (!error) { ok(`raw_material ${r.name}`, null); rmIds[r.name] = data.id; }
-    else {
-      console.log(`  ↩ raw_material ${r.name} already exists`);
-      const { data: existing } = await sb
-        .from("raw_materials")
-        .select("id")
-        .eq("business_id", BIZ_ID)
-        .eq("name", r.name)
-        .maybeSingle();
-      if (existing) rmIds[r.name] = existing.id;
-    }
+    if (error) { ok(`raw_material ${r.name}`, error); allOk = false; }
+    else { ok(`raw_material ${r.name}`, null); rmIds[r.name] = data.id; }
   }
 
   // ── 9. Menu items ─────────────────────────────────────────────────────────
@@ -230,23 +235,21 @@ async function run() {
 
   const menuIds = {};
   for (const m of menuItems) {
+    const { data: existing } = await sb
+      .from("menu_items")
+      .select("id")
+      .eq("business_id", BIZ_ID)
+      .eq("name", m.name)
+      .maybeSingle();
+    if (existing) { console.log(`  ↩ menu_item ${m.name} already exists`); menuIds[m.name] = existing.id; continue; }
+
     const { data, error } = await sb
       .from("menu_items")
       .insert({ ...m, business_id: BIZ_ID, branch_id: BRANCH_ID, is_active: true })
       .select("id")
       .single();
-    if (error && !isDupe(error)) { ok(`menu_item ${m.name}`, error); allOk = false; }
-    else if (!error) { ok(`menu_item ${m.name}`, null); menuIds[m.name] = data.id; }
-    else {
-      console.log(`  ↩ menu_item ${m.name} already exists`);
-      const { data: existing } = await sb
-        .from("menu_items")
-        .select("id")
-        .eq("business_id", BIZ_ID)
-        .eq("name", m.name)
-        .maybeSingle();
-      if (existing) menuIds[m.name] = existing.id;
-    }
+    if (error) { ok(`menu_item ${m.name}`, error); allOk = false; }
+    else { ok(`menu_item ${m.name}`, null); menuIds[m.name] = data.id; }
   }
 
   // ── 10. Menu recipes ──────────────────────────────────────────────────────
@@ -318,14 +321,21 @@ async function run() {
   ];
 
   for (const t of tables) {
+    const { data: existing } = await sb
+      .from("floor_tables")
+      .select("id")
+      .eq("business_id", BIZ_ID)
+      .eq("table_number", t.table_number)
+      .maybeSingle();
+    if (existing) { console.log(`  ↩ table ${t.table_number} (${t.section}) already exists`); continue; }
+
     const { error } = await sb.from("floor_tables").insert({
       ...t,
       business_id: BIZ_ID,
       branch_id: BRANCH_ID,
     });
-    if (error && !isDupe(error)) { ok(`table ${t.table_number} (${t.section})`, error); allOk = false; }
-    else if (!error) ok(`table ${t.table_number} (${t.section})`, null);
-    else console.log(`  ↩ table ${t.table_number} already exists`);
+    if (error) { ok(`table ${t.table_number} (${t.section})`, error); allOk = false; }
+    else ok(`table ${t.table_number} (${t.section})`, null);
   }
 
   // ── Summary ───────────────────────────────────────────────────────────────
