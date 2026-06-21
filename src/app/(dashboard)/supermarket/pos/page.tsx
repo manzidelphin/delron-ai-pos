@@ -216,6 +216,7 @@ export default function POSPage() {
           quantity: 1,
           unit_price: price,
           total_price: price,
+          unit: item.unit ?? 'piece',
         });
       } catch {
         setBarcodeError("Failed to lookup barcode");
@@ -234,6 +235,7 @@ export default function POSPage() {
       quantity: 1,
       unit_price: item.price,
       total_price: item.price,
+      unit: item.unit,
     });
   };
 
@@ -580,6 +582,7 @@ export default function POSPage() {
               quantity: qty,
               unit_price: genericModal.price,
               total_price: genericModal.price * qty,
+              unit: genericModal.unit,
             });
             setGenericModal(null);
           }}

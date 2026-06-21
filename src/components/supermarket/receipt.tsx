@@ -34,6 +34,14 @@ export function Receipt({
 }: ReceiptProps) {
   const date = timestamp ? new Date(timestamp) : new Date();
 
+  const WEIGHT_UNITS = new Set(["kg", "g", "litre", "l", "ml", "gram", "grams", "liter", "liters"]);
+  const fmtQty = (qty: number, unit?: string) => {
+    if (WEIGHT_UNITS.has((unit ?? "").toLowerCase())) {
+      return parseFloat(qty.toFixed(3)) + " " + unit;
+    }
+    return String(Math.round(qty));
+  };
+
   const paymentLabel: Record<string, string> = {
     cash: "Cash",
     mtn_momo: "MTN MoMo",
@@ -84,7 +92,7 @@ export function Receipt({
               <span className="font-bold">{formatRWF(item.total_price)}</span>
             </div>
             <div className="text-xs text-gray-500 pl-2">
-              {item.quantity} × {formatRWF(item.unit_price)}
+              {fmtQty(item.quantity, item.unit)} × {formatRWF(item.unit_price)}
             </div>
           </div>
         ))}
