@@ -67,7 +67,7 @@ const PAYMENT_LABELS: Record<string, string> = {
 const BAR_CATEGORIES = ["All", "spirits", "wine", "beer", "cocktail", "soft_drink", "juice", "other"];
 
 export default function BarPOSPage() {
-  const { staff, business, currentBranch, hasModule } = useAuthStore();
+  const { staff, business, currentBranch, hasModule, activeOperator } = useAuthStore();
   const hasBar        = hasModule("bar");
   const hasRestaurant = hasModule("restaurant");
   const { broadcast, openDisplay } = useCustomerDisplay(business?.id);
@@ -756,7 +756,7 @@ export default function BarPOSPage() {
               receiptNumber={receipt.receiptNumber}
               businessName={business?.name ?? "My Business"}
               branchName={currentBranch?.name ?? ""}
-              cashierName={staff?.name ?? "Cashier"}
+              cashierName={activeOperator?.name ?? staff?.name ?? "Cashier"}
               items={receipt.items}
               total={receipt.items.reduce((s, i) => s + i.total_price, 0)}
               paymentMethod={payMethod}
