@@ -149,6 +149,14 @@ async function run() {
   ];
 
   for (const s of shiftStaff) {
+    const { data: existing } = await sb
+      .from("staff")
+      .select("id")
+      .eq("business_id", BIZ_ID)
+      .eq("name", s.name)
+      .maybeSingle();
+    if (existing) { console.log(`  ↩ staff ${s.name} already exists`); continue; }
+
     const { error } = await sb.from("staff").insert({
       business_id: BIZ_ID,
       branch_id: BRANCH_ID,
@@ -158,9 +166,8 @@ async function run() {
       pin: "2002",
       is_active: true,
     });
-    if (error && !isDupe(error)) { ok(`staff ${s.name}`, error); allOk = false; }
-    else if (!error) ok(`staff ${s.name}`, null);
-    else console.log(`  ↩ staff ${s.name} already exists`);
+    if (error) { ok(`staff ${s.name}`, error); allOk = false; }
+    else ok(`staff ${s.name}`, null);
   }
 
   // ── 7. Bar items ──────────────────────────────────────────────────────────
