@@ -173,7 +173,7 @@ function ConfirmModal({ name, role, onConfirm, onClose }: {
         </div>
         <h2 className="text-xl font-bold text-white">End your shift?</h2>
         <p className="text-slate-400 text-sm">
-          Hi <span className="text-white font-medium">{name.split(" ")[0]}</span> — this will lock your session.
+          Hi <span className="text-white font-medium">{name}</span> — this will lock your session.
         </p>
       </div>
       <ul className="space-y-2 text-sm text-slate-300">
@@ -201,7 +201,7 @@ function CashModal({ name, closingCash, setClosingCash, errorMsg, onSubmit, onCl
         </div>
         <h2 className="text-xl font-bold text-white">Count Your Cash</h2>
         <p className="text-slate-400 text-sm">
-          {name.split(" ")[0]}, count all notes and coins in the till, then enter the total below.
+          {name}, count all notes and coins in the till, then enter the total below.
         </p>
       </div>
 
