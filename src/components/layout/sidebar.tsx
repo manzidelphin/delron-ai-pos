@@ -29,6 +29,7 @@ import {
   Monitor,
   Clock,
   FileText,
+  ShoppingBag,
 } from "lucide-react";
 import { EndShiftButton } from "@/components/shift/end-shift-button";
 import type { BusinessModule, UserRole } from "@/types";
@@ -64,6 +65,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Restock", href: "/bakery/stock/restock", icon: <RefreshCw className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager"] },
   { label: "Closing Count", href: "/bakery/stock/closing", icon: <ClipboardList className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager"] },
   { label: "Waste Log", href: "/bakery/waste", icon: <AlertTriangle className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager", "baker"] },
+  { label: "Custom Orders", href: "/bakery/custom-orders", icon: <ShoppingBag className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager", "baker", "cashier"] },
   { label: "Bar", href: "/bar", icon: <Beer className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender"] },
   { label: "Bar Items", href: "/bar/items", icon: <Package className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
   { label: "Bar POS", labelFn: (hm) => hm("restaurant") ? "POS" : "Bar POS", href: "/bar/pos", icon: <ShoppingCart className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender", "cashier", "waiter"] },
