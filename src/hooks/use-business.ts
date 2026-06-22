@@ -13,12 +13,14 @@ export function useBusiness() {
     branches,
     isLoaded,
     impersonation,
+    isPlatformAdmin,
     setStaff,
     setBusiness,
     setCurrentBranch,
     setBranches,
     setLoaded,
     setImpersonation,
+    setIsPlatformAdmin,
     reset,
   } = useAuthStore();
 
@@ -56,6 +58,7 @@ export function useBusiness() {
               setBranches(data.branches);
               if (data.branches.length > 0) setCurrentBranch(data.branches[0]);
               setImpersonation({ business_id: data.business.id, business_name: data.business.name });
+              setIsPlatformAdmin(true);
               setLoaded(true);
               loading.current = false;
               return;
@@ -65,6 +68,15 @@ export function useBusiness() {
       } catch {
         // Not impersonating or network error — continue with normal loading.
       }
+
+      // Check platform admin status independently of business/staff membership.
+      // Uses the platform_admins table which is keyed by user_id only and never cascades.
+      const { data: adminRecord } = await supabase
+        .from("platform_admins")
+        .select("user_id")
+        .eq("user_id", uid)
+        .maybeSingle();
+      setIsPlatformAdmin(!!adminRecord);
 
       // Load staff profile via auth user_id
       const { data: profile, error: staffError } = await supabase
@@ -82,13 +94,10 @@ export function useBusiness() {
       );
 
       if (!profile) {
-        // ❌ No active staff row for this auth uid.
-        // Root causes: (a) staff row missing, (b) wrong user_id on staff row,
-        // (c) is_active=false, (d) RLS blocking the read.
-        // Run: node scripts/create-test-users.mjs  to repair test accounts.
-        console.error(
-          "[use-business] ❌ No active staff record for uid", uid,
-          "— dashboard will show empty until this is resolved."
+        // No active staff row — platform admin without a business, or account issue.
+        console.log(
+          "[use-business] No active staff record for uid", uid,
+          adminRecord ? "— platform admin with no business (normal)" : "— check staff table"
         );
         setLoaded(true);
         loading.current = false;
@@ -146,6 +155,16 @@ export function useBusiness() {
               }
               loadFromSession(uid);
             } else if (!state.isLoaded) {
+              // Staff already loaded for this uid — just mark loaded.
+              // But still check platform admin status in case it wasn't set.
+              if (!state.isPlatformAdmin) {
+                supabase
+                  .from("platform_admins")
+                  .select("user_id")
+                  .eq("user_id", uid)
+                  .maybeSingle()
+                  .then(({ data }) => setIsPlatformAdmin(!!data));
+              }
               setLoaded(true);
             }
           } else if (event === "INITIAL_SESSION") {
@@ -167,5 +186,5 @@ export function useBusiness() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Intentionally stable — re-subscribing on every render would fire INITIAL_SESSION repeatedly.
 
-  return { staff, business, currentBranch, branches, isLoaded, impersonation };
+  return { staff, business, currentBranch, branches, isLoaded, impersonation, isPlatformAdmin };
 }

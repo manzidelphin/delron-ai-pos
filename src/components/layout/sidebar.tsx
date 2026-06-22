@@ -105,7 +105,7 @@ const NAV_ITEMS: NavItem[] = [
 export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { business, staff, activeOperator, clearOperator, hasModule, canAccess } = useAuthStore();
+  const { business, staff, activeOperator, clearOperator, hasModule, canAccess, isPlatformAdmin } = useAuthStore();
   const { setOpen: openAI } = useAIStore();
 
   const handleLockScreen = async () => {
@@ -185,8 +185,8 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
         })}
       </nav>
 
-      {/* Platform Admin link — only visible to is_platform_admin staff */}
-      {staff?.is_platform_admin && (
+      {/* Platform Admin link — visible to any user in the platform_admins table */}
+      {isPlatformAdmin && (
         <div className="px-2 pb-2">
           {isOpen && (
             <div className="px-3 pt-3 pb-1">

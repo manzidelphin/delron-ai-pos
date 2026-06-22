@@ -8,14 +8,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!user) redirect("/login");
 
-  const { data: staffRecord } = await supabase
-    .from("staff")
-    .select("is_platform_admin")
+  const { data: adminRecord } = await supabase
+    .from("platform_admins")
+    .select("user_id")
     .eq("user_id", user.id)
-    .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
-  if (!staffRecord?.is_platform_admin) redirect("/dashboard");
+  if (!adminRecord) redirect("/dashboard");
 
   return <AdminShell>{children}</AdminShell>;
 }

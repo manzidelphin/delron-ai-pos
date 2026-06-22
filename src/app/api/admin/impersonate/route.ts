@@ -29,8 +29,8 @@ export async function GET() {
 
 /** POST — start impersonating a business. Body: { business_id: string } */
 export async function POST(req: Request) {
-  const { admin, userId, error } = await checkPlatformAdmin();
-  if (error || !admin || !userId) return error ?? NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { userId, staffId, error } = await checkPlatformAdmin();
+  if (error || !userId) return error ?? NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { business_id } = await req.json();
   if (!business_id) return NextResponse.json({ error: "business_id required" }, { status: 400 });
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
   // Log impersonation to audit trail
   await adminClient.from("admin_audit_log").insert({
     admin_user_id: userId,
-    admin_staff_id: admin.id,
+    admin_staff_id: staffId,
     target_business_id: business_id,
     action: "impersonate_start",
     metadata: { target_business_name: business.name },
@@ -96,8 +96,8 @@ export async function POST(req: Request) {
 
 /** DELETE — end impersonation session */
 export async function DELETE() {
-  const { admin, userId, error } = await checkPlatformAdmin();
-  if (error || !admin || !userId) return error ?? NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { userId, staffId, error } = await checkPlatformAdmin();
+  if (error || !userId) return error ?? NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   // Read current impersonation for audit log
   const cookieStore = cookies();
@@ -114,7 +114,7 @@ export async function DELETE() {
   const adminClient = createAdminClient();
   await adminClient.from("admin_audit_log").insert({
     admin_user_id: userId,
-    admin_staff_id: admin.id,
+    admin_staff_id: staffId,
     target_business_id: targetBusinessId,
     action: "impersonate_end",
     metadata: {},

@@ -2,42 +2,41 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 interface AdminCheck {
-  admin: { id: string; business_id: string } | null;
   userId: string | null;
+  /** Staff ID if the platform admin also has a staff record; null if they have no business. */
+  staffId: string | null;
   error: NextResponse | null;
 }
 
-/** Verify the caller is a platform admin. Use at the top of every /api/admin/* route. */
+/**
+ * Verify the caller is a platform admin by checking the platform_admins table.
+ * Independent of any business/staff membership — survives business deletion.
+ */
 export async function checkPlatformAdmin(): Promise<AdminCheck> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return {
-      admin: null,
-      userId: null,
-      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-    };
+    return { userId: null, staffId: null, error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
+  const { data: adminRecord } = await supabase
+    .from("platform_admins")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!adminRecord) {
+    return { userId: user.id, staffId: null, error: NextResponse.json({ error: "Forbidden — platform admin only" }, { status: 403 }) };
+  }
+
+  // Look up a staff record if one exists (optional — used for audit log attribution).
   const { data: staffRecord } = await supabase
     .from("staff")
-    .select("id, business_id, is_platform_admin")
+    .select("id")
     .eq("user_id", user.id)
     .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
-  if (!staffRecord?.is_platform_admin) {
-    return {
-      admin: null,
-      userId: user.id,
-      error: NextResponse.json({ error: "Forbidden — platform admin only" }, { status: 403 }),
-    };
-  }
-
-  return {
-    admin: { id: staffRecord.id, business_id: staffRecord.business_id },
-    userId: user.id,
-    error: null,
-  };
+  return { userId: user.id, staffId: staffRecord?.id ?? null, error: null };
 }
