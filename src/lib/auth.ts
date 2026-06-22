@@ -59,13 +59,12 @@ export async function getAuthContext(): Promise<
         target_main_branch_id: string | null;
       };
       const { data: adminCheck } = await supabase
-        .from("staff")
-        .select("is_platform_admin")
+        .from("platform_admins")
+        .select("user_id")
         .eq("user_id", user.id)
-        .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
-      if (adminCheck?.is_platform_admin && imp.target_business_id) {
+      if (adminCheck && imp.target_business_id) {
         return {
           businessId: imp.target_business_id,
           branchId: imp.target_main_branch_id ?? imp.target_business_id,

@@ -25,6 +25,8 @@ interface AuthState {
   activeOperator: ActiveOperator | null;
   /** Set when a platform admin is viewing another business. Never persisted. */
   impersonation: Impersonation | null;
+  /** True if the logged-in user is in platform_admins table. Never persisted — derived on each session load. */
+  isPlatformAdmin: boolean;
 
   setStaff: (staff: Staff | null) => void;
   setBusiness: (business: Business | null) => void;
@@ -34,6 +36,7 @@ interface AuthState {
   setActiveOperator: (op: ActiveOperator | null) => void;
   clearOperator: () => void;
   setImpersonation: (imp: Impersonation | null) => void;
+  setIsPlatformAdmin: (v: boolean) => void;
   reset: () => void;
 
   hasModule: (module: BusinessModule) => boolean;
@@ -53,6 +56,7 @@ export const useAuthStore = create<AuthState>()(
       isLoaded: false,
       activeOperator: null,
       impersonation: null,
+      isPlatformAdmin: false,
 
       setStaff: (staff) => set({ staff }),
       setBusiness: (business) => set({ business }),
@@ -62,6 +66,7 @@ export const useAuthStore = create<AuthState>()(
       setActiveOperator: (op) => set({ activeOperator: op }),
       clearOperator: () => set({ activeOperator: null }),
       setImpersonation: (imp) => set({ impersonation: imp }),
+      setIsPlatformAdmin: (v) => set({ isPlatformAdmin: v }),
 
       reset: () =>
         set({
@@ -72,6 +77,7 @@ export const useAuthStore = create<AuthState>()(
           isLoaded: false,
           activeOperator: null,
           impersonation: null,
+          isPlatformAdmin: false,
         }),
 
       hasModule: (module) => {
