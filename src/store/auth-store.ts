@@ -11,6 +11,11 @@ interface ActiveOperator {
   branch_id: string | null;
 }
 
+interface Impersonation {
+  business_id: string;
+  business_name: string;
+}
+
 interface AuthState {
   staff: Staff | null;
   business: Business | null;
@@ -18,6 +23,8 @@ interface AuthState {
   branches: Branch[];
   isLoaded: boolean;
   activeOperator: ActiveOperator | null;
+  /** Set when a platform admin is viewing another business. Never persisted. */
+  impersonation: Impersonation | null;
 
   setStaff: (staff: Staff | null) => void;
   setBusiness: (business: Business | null) => void;
@@ -26,6 +33,7 @@ interface AuthState {
   setLoaded: (loaded: boolean) => void;
   setActiveOperator: (op: ActiveOperator | null) => void;
   clearOperator: () => void;
+  setImpersonation: (imp: Impersonation | null) => void;
   reset: () => void;
 
   hasModule: (module: BusinessModule) => boolean;
@@ -44,6 +52,7 @@ export const useAuthStore = create<AuthState>()(
       branches: [],
       isLoaded: false,
       activeOperator: null,
+      impersonation: null,
 
       setStaff: (staff) => set({ staff }),
       setBusiness: (business) => set({ business }),
@@ -52,6 +61,7 @@ export const useAuthStore = create<AuthState>()(
       setLoaded: (loaded) => set({ isLoaded: loaded }),
       setActiveOperator: (op) => set({ activeOperator: op }),
       clearOperator: () => set({ activeOperator: null }),
+      setImpersonation: (imp) => set({ impersonation: imp }),
 
       reset: () =>
         set({
@@ -61,6 +71,7 @@ export const useAuthStore = create<AuthState>()(
           branches: [],
           isLoaded: false,
           activeOperator: null,
+          impersonation: null,
         }),
 
       hasModule: (module) => {

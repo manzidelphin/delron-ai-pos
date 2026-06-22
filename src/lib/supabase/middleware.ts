@@ -84,6 +84,23 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Protect /admin routes: requires is_platform_admin = true in the staff table.
+  if (user && pathname.startsWith("/admin") && !pathname.startsWith("/api/admin")) {
+    const { data: staffRecord } = await supabase
+      .from("staff")
+      .select("is_platform_admin")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .single();
+
+    if (!staffRecord?.is_platform_admin) {
+      console.log("[middleware] /admin access denied — not a platform admin:", user.id);
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (user && pathname === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
