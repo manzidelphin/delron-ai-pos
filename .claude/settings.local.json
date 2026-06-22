@@ -57,7 +57,26 @@
       "Bash(npm run *)",
       "Bash(echo \"Dev server starting in background \\(PID: $!\\)\")",
       "Bash(node -e ' *)",
-      "Bash(npx supabase *)"
+      "Bash(npx supabase *)",
+      "Bash(curl -s https://hfjggupbkbudnqplxviq.supabase.co/rest/v1/rpc/query -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmamdndXBia2J1ZG5xcGx4dmlxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTQ1MzA5MywiZXhwIjoyMDk3MDI5MDkzfQ.sDxVRUjYEOube85pxwKkT3j1b8BtApaR20UC0Cc4Li0' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmamdndXBia2J1ZG5xcGx4dmlxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTQ1MzA5MywiZXhwIjoyMDk3MDI5MDkzfQ.sDxVRUjYEOube85pxwKkT3j1b8BtApaR20UC0Cc4Li0' -H 'Content-Type: application/json' -d '{\"query\":\"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '\\\\''credits'\\\\'' ORDER BY ordinal_position\"}')",
+      "Bash(curl *)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d[0].keys\\(\\)\\) if d else 'empty'\\)\")",
+      "Bash(node scripts/create-test-users.mjs)",
+      "Bash(node --max-old-space-size=4096 ./node_modules/.bin/next build)",
+      "Bash(grep -v \"^$\")",
+      "Bash(node --input-type=module)",
+      "Bash(node scripts/verify-test-users.mjs)",
+      "Bash(node scripts/seed-test-businesses.mjs)",
+      "Bash(vercel logs *)",
+      "Bash(npx vercel *)",
+      "Bash(python3 -c \"import sys,json; [print\\(l['message']\\) for obj in \\(json.loads\\(line\\) for line in sys.stdin\\) for l in obj.get\\('logs',[]\\)]\")",
+      "Bash(node scripts/create-test-produce.mjs)",
+      "Bash(node *)",
+      "Bash(grep -v \"//\\\\|WEIGHT\\\\|isWeight\\\\|fmtQty\\\\|unit_price\")",
+      "Bash(VERCEL_TOKEN='' node -e ' *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('token','NO_TOKEN'\\)[:20]\\)\")",
+      "Bash(npm_config_cache=\"D:/npm-cache\" npx --yes vercel@latest logs delron-ai-pos.vercel.app --scope dellon --limit 50)",
+      "Bash(python -m json.tool)"
     ]
   }
 }
