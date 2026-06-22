@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { format } from "date-fns";
-import { startOfDay, startOfWeek, startOfMonth } from "date-fns";
-import { ArrowLeft, Users, GitBranch, CreditCard } from "lucide-react";
+import { format, startOfDay, startOfWeek, startOfMonth } from "date-fns";
+import { ArrowLeft, Users, GitBranch } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import ImpersonateButton from "@/components/admin/impersonate-button";
+import BillingSection from "@/components/admin/billing-section";
 
 export const dynamic = "force-dynamic";
 
@@ -29,11 +29,12 @@ const ROLE_COLORS: Record<string, string> = {
 async function getBusinessDetail(id: string) {
   const admin = createAdminClient();
 
-  const [bizRes, staffRes, branchRes, txnRes] = await Promise.all([
+  const [bizRes, staffRes, branchRes, txnRes, paymentsRes] = await Promise.all([
     admin.from("businesses").select("*").eq("id", id).single(),
     admin.from("staff").select("id, name, email, phone, role, is_active, created_at, user_id").eq("business_id", id).order("created_at"),
     admin.from("branches").select("*").eq("business_id", id),
-    admin.from("transactions").select("total, created_at, payment_method").eq("business_id", id).order("created_at", { ascending: false }),
+    admin.from("transactions").select("total, created_at").eq("business_id", id).order("created_at", { ascending: false }),
+    admin.from("billing_payments").select("*").eq("business_id", id).order("payment_date", { ascending: false }),
   ]);
 
   if (!bizRes.data) return null;
@@ -57,11 +58,22 @@ async function getBusinessDetail(id: string) {
     if (t.created_at >= monthStart) { revenueMonth += amt; txnMonth++; }
   });
 
+  const biz = bizRes.data as Record<string, unknown>;
+
   return {
     business: bizRes.data,
     owner_email: ownerUser?.email ?? null,
     staff: staffRes.data ?? [],
     branches: branchRes.data ?? [],
+    payments: paymentsRes.data ?? [],
+    billing: {
+      subscription_plan: (biz.subscription_plan as string) ?? "trial",
+      subscription_status: (biz.subscription_status as string) ?? "active",
+      billing_cycle: (biz.billing_cycle as string) ?? "monthly",
+      next_payment_due: (biz.next_payment_due as string | null) ?? null,
+      last_payment_date: (biz.last_payment_date as string | null) ?? null,
+      monthly_amount: (biz.monthly_amount as number) ?? 0,
+    },
     revenue: { today: revenueToday, this_week: revenueWeek, this_month: revenueMonth, total: revenueTotal },
     transaction_count: { today: txnToday, this_month: txnMonth, total: txnTotal },
   };
@@ -75,10 +87,10 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
   const data = await getBusinessDetail(params.id);
   if (!data) notFound();
 
-  const { business, owner_email, staff, branches, revenue, transaction_count } = data;
+  const { business, owner_email, staff, branches, payments, billing, revenue, transaction_count } = data;
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-8 max-w-5xl mx-auto space-y-10">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -123,10 +135,6 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
       {/* Info row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <p className="text-xs text-zinc-500 uppercase tracking-wide">Plan</p>
-          <p className="text-sm font-semibold text-white mt-1 capitalize">{business.plan}</p>
-        </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
           <p className="text-xs text-zinc-500 uppercase tracking-wide">Branches</p>
           <p className="text-sm font-semibold text-white mt-1">{branches.length}</p>
         </div>
@@ -138,16 +146,22 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
           <p className="text-xs text-zinc-500 uppercase tracking-wide">Created</p>
           <p className="text-sm font-semibold text-white mt-1">{format(new Date(business.created_at), "dd MMM yyyy")}</p>
         </div>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <p className="text-xs text-zinc-500 uppercase tracking-wide">Last Activity</p>
+          <p className="text-sm font-semibold text-white mt-1">
+            {(business as Record<string,unknown>).last_activity
+              ? format(new Date((business as Record<string,unknown>).last_activity as string), "dd MMM yyyy")
+              : "—"}
+          </p>
+        </div>
       </div>
 
-      {/* Subscription placeholder */}
-      <div className="bg-zinc-900 border border-dashed border-zinc-700 rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-2">
-          <CreditCard className="w-4 h-4 text-zinc-500" />
-          <p className="text-sm font-medium text-zinc-400">Subscription</p>
-        </div>
-        <p className="text-xs text-zinc-600">Billing integration coming soon. Current plan: <span className="text-zinc-400 capitalize">{business.plan}</span></p>
-      </div>
+      {/* Billing section */}
+      <BillingSection
+        businessId={business.id}
+        initialBilling={billing}
+        payments={payments}
+      />
 
       {/* Staff list */}
       <div>
