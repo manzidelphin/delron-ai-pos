@@ -5,7 +5,8 @@ import { NextResponse } from "next/server";
 /** Resolve the authenticated business context.
  *  - businessId always comes from the owner's Supabase session.
  *  - staffId uses the PIN-switched operator (pos_operator cookie) when present,
- *    so sales/orders are attributed to the cashier, not the owner. */
+ *    so sales/orders are attributed to the cashier, not the owner.
+ *  - When a platform admin is impersonating, returns the target business context. */
 export async function getAuthContext(): Promise<
   | { businessId: string; branchId: string; staffId: string; ownerStaffId: string; error: null }
   | { businessId: null; branchId: null; staffId: null; ownerStaffId: null; error: NextResponse }
@@ -15,9 +16,10 @@ export async function getAuthContext(): Promise<
     data: { user },
   } = await supabase.auth.getUser();
 
+  const cookieStore = cookies();
+
   if (!user) {
     // No Supabase session — try PIN-only authentication (cashier on dedicated POS device).
-    const cookieStore = cookies();
     const operatorRaw = cookieStore.get("pos_operator")?.value;
     const businessId = cookieStore.get("pos_business_id")?.value;
     if (operatorRaw && businessId) {
@@ -43,6 +45,38 @@ export async function getAuthContext(): Promise<
       ownerStaffId: null,
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
+  }
+
+  // Check for active platform admin impersonation.
+  // If the admin_impersonation cookie is present and the caller is verified as a platform admin,
+  // return the target business context so all API routes transparently serve that business's data.
+  const impersonationRaw = cookieStore.get("admin_impersonation")?.value;
+  if (impersonationRaw) {
+    try {
+      const imp = JSON.parse(impersonationRaw) as {
+        target_business_id: string;
+        target_owner_staff_id: string | null;
+        target_main_branch_id: string | null;
+      };
+      const { data: adminCheck } = await supabase
+        .from("staff")
+        .select("is_platform_admin")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .single();
+
+      if (adminCheck?.is_platform_admin && imp.target_business_id) {
+        return {
+          businessId: imp.target_business_id,
+          branchId: imp.target_main_branch_id ?? imp.target_business_id,
+          staffId: imp.target_owner_staff_id ?? imp.target_business_id,
+          ownerStaffId: imp.target_owner_staff_id ?? imp.target_business_id,
+          error: null,
+        };
+      }
+    } catch {
+      // Malformed cookie — continue with normal auth context.
+    }
   }
 
   const { data: profile } = await supabase
@@ -71,7 +105,6 @@ export async function getAuthContext(): Promise<
   let branchId = profile.branch_id ?? profile.business_id;
 
   try {
-    const cookieStore = cookies();
     const operatorCookie = cookieStore.get("pos_operator");
     if (operatorCookie?.value) {
       const op = JSON.parse(operatorCookie.value) as {

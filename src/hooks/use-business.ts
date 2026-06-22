@@ -12,11 +12,13 @@ export function useBusiness() {
     currentBranch,
     branches,
     isLoaded,
+    impersonation,
     setStaff,
     setBusiness,
     setCurrentBranch,
     setBranches,
     setLoaded,
+    setImpersonation,
     reset,
   } = useAuthStore();
 
@@ -39,6 +41,30 @@ export function useBusiness() {
       if (loading.current) return;
       loading.current = true;
       console.log("[use-business] loadFromSession uid=", uid);
+
+      // Platform admin impersonation: load the target business instead of the admin's own.
+      try {
+        const impRes = await fetch("/api/admin/impersonate", { cache: "no-store" });
+        if (impRes.ok) {
+          const imp = await impRes.json();
+          if (imp.active) {
+            const dataRes = await fetch("/api/admin/impersonate-data", { cache: "no-store" });
+            if (dataRes.ok) {
+              const data = await dataRes.json();
+              setStaff(data.staff);
+              setBusiness(data.business);
+              setBranches(data.branches);
+              if (data.branches.length > 0) setCurrentBranch(data.branches[0]);
+              setImpersonation({ business_id: data.business.id, business_name: data.business.name });
+              setLoaded(true);
+              loading.current = false;
+              return;
+            }
+          }
+        }
+      } catch {
+        // Not impersonating or network error — continue with normal loading.
+      }
 
       // Load staff profile via auth user_id
       const { data: profile, error: staffError } = await supabase
@@ -141,5 +167,5 @@ export function useBusiness() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Intentionally stable — re-subscribing on every render would fire INITIAL_SESSION repeatedly.
 
-  return { staff, business, currentBranch, branches, isLoaded };
+  return { staff, business, currentBranch, branches, isLoaded, impersonation };
 }

@@ -92,6 +92,8 @@ export interface Staff {
   role: UserRole;
   pin: string | null;
   is_active: boolean;
+  /** Platform-level admin flag. Can ONLY be set via direct DB access — no API/UI path. */
+  is_platform_admin?: boolean;
   created_at: string;
 }
 

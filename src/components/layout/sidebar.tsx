@@ -30,6 +30,7 @@ import {
   Clock,
   FileText,
   ShoppingBag,
+  Shield,
 } from "lucide-react";
 import { EndShiftButton } from "@/components/shift/end-shift-button";
 import type { BusinessModule, UserRole } from "@/types";
@@ -183,6 +184,29 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
           );
         })}
       </nav>
+
+      {/* Platform Admin link — only visible to is_platform_admin staff */}
+      {staff?.is_platform_admin && (
+        <div className="px-2 pb-2">
+          {isOpen && (
+            <div className="px-3 pt-3 pb-1">
+              <p className="text-[10px] font-semibold text-violet-400/60 uppercase tracking-widest">Platform</p>
+            </div>
+          )}
+          {!isOpen && <div className="my-1 mx-2 h-px bg-violet-500/20" />}
+          <button
+            onClick={() => router.push("/admin/businesses")}
+            title={!isOpen ? "Platform Admin" : undefined}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+              "bg-violet-600/10 border border-violet-500/20 text-violet-400 hover:bg-violet-600/20 hover:text-violet-300"
+            )}
+          >
+            <Shield className="w-4 h-4 flex-shrink-0" />
+            {isOpen && <span className="truncate">Platform Admin</span>}
+          </button>
+        </div>
+      )}
 
       {/* Lock Screen + AI */}
       <div className="p-3 border-t border-sidebar-border space-y-2">
