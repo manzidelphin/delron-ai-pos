@@ -60,22 +60,33 @@ export async function buildDailyReportData(
 ): Promise<DailyReportData> {
   const { dayStart, dayEnd } = rwandaDayBounds(date);
 
-  // 1. Completed orders for the date
-  const { data: ordersRaw } = await supabase
-    .from("orders")
-    .select("id, staff_id")
+  // 1. Transactions for the date — payment date is the primary anchor.
+  //    Bar tabs are opened (order.created_at) before payment (transaction.created_at),
+  //    so anchoring on order.created_at splits revenue and products across Rwanda day
+  //    boundaries. Using transaction.created_at keeps everything consistent.
+  const { data: txRaw } = await supabase
+    .from("transactions")
+    .select("cashier_id, total, order_id")
     .eq("business_id", businessId)
-    .eq("status", "completed")
     .gte("created_at", dayStart)
-    .lte("created_at", dayEnd)
-    .limit(2000);
+    .lte("created_at", dayEnd);
+  const transactions: { cashier_id: string | null; total: number; order_id: string | null }[] = txRaw ?? [];
 
-  const orders: { id: string; staff_id: string }[] = ordersRaw ?? [];
-  const orderIds = orders.map((o) => o.id);
+  const orderIds = [...new Set(
+    transactions.map((tx) => tx.order_id).filter((id): id is string => !!id)
+  )];
+
+  // 2. Orders — fetched by the IDs from transactions (for staff attribution only)
   const orderStaffMap: Record<string, string> = {};
-  for (const o of orders) if (o.staff_id) orderStaffMap[o.id] = o.staff_id;
+  if (orderIds.length > 0) {
+    const { data: ordersRaw } = await supabase
+      .from("orders")
+      .select("id, staff_id")
+      .in("id", orderIds);
+    for (const o of ordersRaw ?? []) if (o.staff_id) orderStaffMap[o.id] = o.staff_id;
+  }
 
-  // 2. Order items
+  // 3. Order items from paid orders only
   let orderItems: {
     item_id: string; item_name: string; item_type: string;
     quantity: number; total_price: number; order_id: string;
@@ -88,15 +99,6 @@ export async function buildDailyReportData(
     orderItems = data ?? [];
   }
 
-  // 3. Transactions for the date
-  const { data: txRaw } = await supabase
-    .from("transactions")
-    .select("cashier_id, total")
-    .eq("business_id", businessId)
-    .gte("created_at", dayStart)
-    .lte("created_at", dayEnd);
-  const transactions: { cashier_id: string | null; total: number }[] = txRaw ?? [];
-
   // 4. Shifts started on this date
   const { count: shiftsCount } = await supabase
     .from("shifts")
@@ -108,7 +110,7 @@ export async function buildDailyReportData(
   // 5. Collect and fetch staff names
   const staffIdSet = new Set<string>();
   for (const tx of transactions) { if (tx.cashier_id) staffIdSet.add(tx.cashier_id); }
-  for (const o of orders)        { if (o.staff_id)    staffIdSet.add(o.staff_id); }
+  for (const sid of Object.values(orderStaffMap)) staffIdSet.add(sid);
   const staffIds = Array.from(staffIdSet);
 
   const staffMap: Record<string, { name: string; role: string }> = {};
@@ -196,18 +198,13 @@ export async function buildDailyReportData(
     })
     .sort((a, b) => b.revenue - a.revenue);
 
-  // 9. Staff breakdown — revenue from transactions, order count from orders
-  //    (credit sales create orders but no transaction row, so we must union both)
-  const staffTxAgg: Record<string, { total: number }> = {};
+  // 9. Staff breakdown — all anchored on transactions (payment date)
+  const staffTxAgg: Record<string, { total: number; count: number }> = {};
   for (const tx of transactions) {
     const sid = tx.cashier_id ?? "__anon";
-    if (!staffTxAgg[sid]) staffTxAgg[sid] = { total: 0 };
+    if (!staffTxAgg[sid]) staffTxAgg[sid] = { total: 0, count: 0 };
     staffTxAgg[sid].total += tx.total ?? 0;
-  }
-
-  const staffOrderCount: Record<string, number> = {};
-  for (const o of orders) {
-    if (o.staff_id) staffOrderCount[o.staff_id] = (staffOrderCount[o.staff_id] ?? 0) + 1;
+    staffTxAgg[sid].count += 1;
   }
 
   const staffItemsAgg: Record<string, number> = {};
@@ -222,7 +219,7 @@ export async function buildDailyReportData(
       staff_id:      sid,
       staff_name:    staffMap[sid]?.name ?? (sid === "__anon" ? "—" : "Unknown"),
       role:          staffMap[sid]?.role ?? "—",
-      transactions:  staffOrderCount[sid] ?? 0,
+      transactions:  staffTxAgg[sid]?.count ?? 0,
       total_revenue: staffTxAgg[sid]?.total ?? 0,
       items_sold:    staffItemsAgg[sid] ?? 0,
     }))
