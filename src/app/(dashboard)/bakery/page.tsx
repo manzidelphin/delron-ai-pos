@@ -9,9 +9,18 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import {
-  ChefHat, Package, TrendingUp, AlertTriangle, Loader2, RotateCcw,
+  ChefHat, Package, TrendingUp, AlertTriangle, Loader2, RotateCcw, Calendar, ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
+
+interface UpcomingCustomOrder {
+  id: string;
+  customer_name: string;
+  description: string;
+  due_date: string;
+  status: string;
+  balance_due: number;
+}
 
 interface DashboardData {
   stats: {
@@ -32,19 +41,25 @@ export default function BakeryDashboard() {
   const { isLoaded } = useAuthStore();
   const [data, setData] = useState<DashboardData | null>(null);
   const [finishedGoods, setFinishedGoods] = useState<Array<{ id: string; name: string; quantity: number }>>([]);
+  const [upcomingOrders, setUpcomingOrders] = useState<UpcomingCustomOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [dashRes, itemsRes] = await Promise.all([
+      const [dashRes, itemsRes, ordersRes] = await Promise.all([
         fetch("/api/bakery/dashboard"),
         fetch("/api/bakery/finished-goods"),
+        fetch("/api/bakery/custom-orders?filter=active"),
       ]);
       if (dashRes.ok) setData(await dashRes.json());
       if (itemsRes.ok) {
         const json = await itemsRes.json();
         setFinishedGoods(json.items ?? []);
+      }
+      if (ordersRes.ok) {
+        const json = await ordersRes.json();
+        setUpcomingOrders((json.orders ?? []).slice(0, 5));
       }
     } finally {
       setIsLoading(false);
@@ -225,6 +240,47 @@ export default function BakeryDashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Upcoming Custom Orders */}
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4 text-amber-400" />
+            <h3 className="font-semibold text-white">Upcoming Custom Orders</h3>
+          </div>
+          <Link href="/bakery/custom-orders" className="text-xs text-amber-400 hover:underline">View all →</Link>
+        </div>
+        {isLoading ? (
+          <div className="p-4 space-y-2">
+            {[1, 2, 3].map((i) => <div key={i} className="h-12 bg-slate-700/50 rounded-xl animate-pulse" />)}
+          </div>
+        ) : upcomingOrders.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-sm">No upcoming custom orders</div>
+        ) : (
+          <div className="divide-y divide-slate-700/50">
+            {upcomingOrders.map((o) => {
+              const days = Math.round((new Date(o.due_date + "T00:00:00").getTime() - new Date().setHours(0,0,0,0)) / 86400000);
+              const dueFmt = new Date(o.due_date + "T00:00:00").toLocaleDateString("en-RW", { day: "numeric", month: "short" });
+              return (
+                <div key={o.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{o.customer_name}</p>
+                    <p className="text-xs text-slate-400 truncate">{o.description}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className={`text-xs font-semibold ${days < 0 ? "text-red-400" : days === 0 ? "text-amber-400" : "text-slate-300"}`}>
+                      <Calendar className="w-3 h-3 inline mr-1" />{dueFmt}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "Due today" : `${days}d left`}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
