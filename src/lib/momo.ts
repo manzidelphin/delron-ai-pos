@@ -88,10 +88,10 @@ export async function momoRequestToPay(opts: RequestToPayOptions): Promise<Reque
   }
 
   const token = await getAccessToken();
+  console.log("[MoMo RTP] Token acquired, length:", token.length);
 
-  // MTN sandbox rejects callback URLs with query parameters — keep it clean.
-  // We identify the invoice via externalId in the callback body instead.
-  const callbackUrl = CALLBACK_URL || undefined;
+  // MTN sandbox rejects X-Callback-Url — only send it in production.
+  const callbackUrl = TARGET_ENV !== "sandbox" ? (CALLBACK_URL || undefined) : undefined;
 
   const headers: Record<string, string> = {
     Authorization:               `Bearer ${token}`,
