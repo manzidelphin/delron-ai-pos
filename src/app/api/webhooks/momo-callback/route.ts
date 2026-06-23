@@ -24,6 +24,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyMoMoSecret } from "@/lib/momo";
 import { addMonths, addYears, format } from "date-fns";
+import { sendPaymentReceivedEmail } from "@/lib/email";
 
 interface MoMoCallbackBody {
   financialTransactionId?: string;
@@ -104,10 +105,10 @@ export async function POST(req: Request) {
     const paymentDate = format(new Date(), "yyyy-MM-dd");
     const amount = inv.amount;
 
-    // Fetch billing cycle for next_due calculation
+    // Fetch billing cycle + name for next_due calculation and email
     const { data: biz } = await supabase
       .from("businesses")
-      .select("billing_cycle")
+      .select("name, billing_cycle")
       .eq("id", inv.business_id)
       .single();
 
@@ -139,6 +140,16 @@ export async function POST(req: Request) {
     }).eq("id", inv.business_id);
 
     console.log(`[momo-callback] ✓ SUCCESSFUL — invoice ${inv.id}, business ${inv.business_id}, next_due=${nextDue}`);
+
+    sendPaymentReceivedEmail({
+      businessId:    inv.business_id,
+      businessName:  biz?.name ?? inv.business_id,
+      amount:        amount,
+      paymentDate:   paymentDate,
+      paymentMethod: "momo",
+      nextPaymentDue: nextDue,
+      recordedBy:    "MTN MoMo (automatic)",
+    }).catch((e) => console.error("[momo-callback] notify email failed:", e));
 
   } else {
     // FAILED or TIMEOUT

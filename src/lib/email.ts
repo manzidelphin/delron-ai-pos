@@ -9,6 +9,9 @@ const isRealKey = key.startsWith("re_") && key !== "re_placeholder";
 
 const resend = isRealKey ? new Resend(key) : null;
 
+const FOUNDER_EMAIL  = "manzidelphin2@gmail.com";
+const ADMIN_BASE_URL = "https://delron-ai-pos.vercel.app/admin/businesses";
+
 export async function sendOTPEmail(to: string, otp: string, businessName: string): Promise<boolean> {
   const subject = `Your DELRON login code: ${otp}`;
   const html = `
@@ -46,6 +49,211 @@ export async function sendOTPEmail(to: string, otp: string, businessName: string
   } catch (e) {
     console.error("[email] Send failed:", e);
     return false;
+  }
+}
+
+// ── Founder: New Signup Notification ─────────────────────────────────────────
+
+export async function sendNewSignupEmail(opts: {
+  businessId:   string;
+  businessName: string;
+  ownerEmail:   string;
+  ownerPhone:   string | null;
+  modules:      string[];
+  signupDate:   string;
+}): Promise<void> {
+  const { businessId, businessName, ownerEmail, ownerPhone, modules, signupDate } = opts;
+
+  const subject    = `New DELRON Signup — ${businessName}`;
+  const adminUrl   = `${ADMIN_BASE_URL}/${businessId}`;
+  const displayDate = new Date(signupDate + "T12:00:00").toLocaleDateString("en-US", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
+  const moduleBadges = modules.length
+    ? modules.map((m) => `<span style="display:inline-block;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;margin:2px 3px 2px 0;text-transform:capitalize">${m}</span>`).join("")
+    : `<span style="color:#9ca3af;font-size:13px">None selected</span>`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+<div style="max-width:520px;margin:32px auto;padding:0 16px 32px">
+
+  <div style="background:#0f172a;border-radius:16px 16px 0 0;padding:20px 28px;display:flex;align-items:center;gap:12px">
+    <div style="background:#3b82f6;width:38px;height:38px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:white;flex-shrink:0">D</div>
+    <div>
+      <p style="color:#f8fafc;font-size:15px;font-weight:700;margin:0">DELRON AI POS</p>
+      <p style="color:#94a3b8;font-size:12px;margin:2px 0 0">Founder Alert</p>
+    </div>
+  </div>
+
+  <div style="background:#1e293b;padding:14px 28px;border-bottom:1px solid #334155">
+    <p style="color:#f8fafc;font-size:17px;font-weight:700;margin:0">New Business Signup</p>
+    <p style="color:#64748b;font-size:12px;margin:3px 0 0">${displayDate}</p>
+  </div>
+
+  <div style="background:#ffffff;border:1px solid #e2e8f0;border-top:none;padding:24px 28px">
+
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px 20px;margin-bottom:20px">
+      <p style="color:#1d4ed8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px">Business</p>
+      <p style="color:#1e293b;font-size:22px;font-weight:800;margin:0">${businessName}</p>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <tr style="border-bottom:1px solid #f1f5f9">
+        <td style="padding:10px 0;color:#64748b;font-size:13px;width:36%">Owner email</td>
+        <td style="padding:10px 0;color:#1e293b;font-size:13px;font-weight:600">${ownerEmail}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f1f5f9">
+        <td style="padding:10px 0;color:#64748b;font-size:13px">Phone</td>
+        <td style="padding:10px 0;color:#1e293b;font-size:13px;font-weight:600">${ownerPhone ?? "—"}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f1f5f9">
+        <td style="padding:10px 0;color:#64748b;font-size:13px;vertical-align:top">Modules</td>
+        <td style="padding:10px 0">${moduleBadges}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;color:#64748b;font-size:13px">Signed up</td>
+        <td style="padding:10px 0;color:#1e293b;font-size:13px;font-weight:600">${displayDate}</td>
+      </tr>
+    </table>
+
+    <div style="text-align:center">
+      <a href="${adminUrl}" style="display:inline-block;background:#3b82f6;color:white;text-decoration:none;padding:12px 32px;border-radius:8px;font-weight:600;font-size:14px">View in Platform Admin →</a>
+    </div>
+  </div>
+
+  <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 16px 16px;padding:14px 28px;text-align:center">
+    <p style="color:#94a3b8;font-size:11px;margin:0">Powered by <strong style="color:#64748b">DELRON AI POS</strong> · Built for Rwanda</p>
+  </div>
+
+</div>
+</body>
+</html>`;
+
+  if (!resend) {
+    console.log("════════════════════════════════════════════════════════════");
+    console.log(`[Founder Signup] To:       ${FOUNDER_EMAIL}`);
+    console.log(`[Founder Signup] Business: ${businessName}`);
+    console.log(`[Founder Signup] Owner:    ${ownerEmail} | ${ownerPhone ?? "no phone"}`);
+    console.log(`[Founder Signup] Modules:  ${modules.join(", ") || "none"}`);
+    console.log(`[Founder Signup] Date:     ${signupDate}`);
+    console.log(`[Founder Signup] Admin:    ${adminUrl}`);
+    console.log("════════════════════════════════════════════════════════════");
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({ from, to: FOUNDER_EMAIL, subject, html });
+    if (error) console.error("[email] Signup notify Resend error:", error);
+  } catch (e) {
+    console.error("[email] Signup notify failed:", e);
+  }
+}
+
+// ── Founder: Payment Received Notification ────────────────────────────────────
+
+export async function sendPaymentReceivedEmail(opts: {
+  businessId:     string;
+  businessName:   string;
+  amount:         number;
+  paymentDate:    string;
+  paymentMethod:  string;
+  nextPaymentDue: string | null;
+  recordedBy:     string;
+}): Promise<void> {
+  const { businessId, businessName, amount, paymentDate, paymentMethod, nextPaymentDue, recordedBy } = opts;
+
+  const subject     = `Payment Received — ${businessName} — RWF ${amount.toLocaleString()}`;
+  const adminUrl    = `${ADMIN_BASE_URL}/${businessId}`;
+  const fmtDate     = (d: string) => new Date(d + "T12:00:00").toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+  });
+  const methodLabel: Record<string, string> = {
+    momo: "MTN MoMo", airtel: "Airtel Money", cash: "Cash", bank: "Bank Transfer",
+  };
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+<div style="max-width:520px;margin:32px auto;padding:0 16px 32px">
+
+  <div style="background:#0f172a;border-radius:16px 16px 0 0;padding:20px 28px;display:flex;align-items:center;gap:12px">
+    <div style="background:#3b82f6;width:38px;height:38px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:white;flex-shrink:0">D</div>
+    <div>
+      <p style="color:#f8fafc;font-size:15px;font-weight:700;margin:0">DELRON AI POS</p>
+      <p style="color:#94a3b8;font-size:12px;margin:2px 0 0">Founder Alert</p>
+    </div>
+  </div>
+
+  <div style="background:#1e293b;padding:14px 28px;border-bottom:1px solid #334155">
+    <p style="color:#f8fafc;font-size:17px;font-weight:700;margin:0">Payment Received</p>
+    <p style="color:#64748b;font-size:12px;margin:3px 0 0">${businessName}</p>
+  </div>
+
+  <div style="background:#ffffff;border:1px solid #e2e8f0;border-top:none;padding:24px 28px">
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 20px;margin-bottom:20px;text-align:center">
+      <p style="color:#15803d;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px">Amount Received</p>
+      <p style="color:#14532d;font-size:34px;font-weight:800;margin:0">RWF ${amount.toLocaleString()}</p>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <tr style="border-bottom:1px solid #f1f5f9">
+        <td style="padding:10px 0;color:#64748b;font-size:13px;width:40%">Business</td>
+        <td style="padding:10px 0;color:#1e293b;font-size:13px;font-weight:600">${businessName}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f1f5f9">
+        <td style="padding:10px 0;color:#64748b;font-size:13px">Method</td>
+        <td style="padding:10px 0;color:#1e293b;font-size:13px;font-weight:600">${methodLabel[paymentMethod] ?? paymentMethod}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f1f5f9">
+        <td style="padding:10px 0;color:#64748b;font-size:13px">Payment date</td>
+        <td style="padding:10px 0;color:#1e293b;font-size:13px;font-weight:600">${fmtDate(paymentDate)}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f1f5f9">
+        <td style="padding:10px 0;color:#64748b;font-size:13px">Recorded by</td>
+        <td style="padding:10px 0;color:#1e293b;font-size:13px;font-weight:600">${recordedBy}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;color:#64748b;font-size:13px">Next due</td>
+        <td style="padding:10px 0;color:#1e293b;font-size:13px;font-weight:600">${nextPaymentDue ? fmtDate(nextPaymentDue) : "—"}</td>
+      </tr>
+    </table>
+
+    <div style="text-align:center">
+      <a href="${adminUrl}" style="display:inline-block;background:#3b82f6;color:white;text-decoration:none;padding:12px 32px;border-radius:8px;font-weight:600;font-size:14px">View in Platform Admin →</a>
+    </div>
+  </div>
+
+  <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 16px 16px;padding:14px 28px;text-align:center">
+    <p style="color:#94a3b8;font-size:11px;margin:0">Powered by <strong style="color:#64748b">DELRON AI POS</strong> · Built for Rwanda</p>
+  </div>
+
+</div>
+</body>
+</html>`;
+
+  if (!resend) {
+    console.log("════════════════════════════════════════════════════════════");
+    console.log(`[Founder Payment] To:      ${FOUNDER_EMAIL}`);
+    console.log(`[Founder Payment] Business: ${businessName}`);
+    console.log(`[Founder Payment] Amount:   RWF ${amount.toLocaleString()}`);
+    console.log(`[Founder Payment] Method:   ${methodLabel[paymentMethod] ?? paymentMethod}`);
+    console.log(`[Founder Payment] Date:     ${paymentDate}`);
+    console.log(`[Founder Payment] By:       ${recordedBy}`);
+    console.log(`[Founder Payment] Next due: ${nextPaymentDue ?? "—"}`);
+    console.log(`[Founder Payment] Admin:    ${adminUrl}`);
+    console.log("════════════════════════════════════════════════════════════");
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({ from, to: FOUNDER_EMAIL, subject, html });
+    if (error) console.error("[email] Payment notify Resend error:", error);
+  } catch (e) {
+    console.error("[email] Payment notify failed:", e);
   }
 }
 
