@@ -5,7 +5,7 @@ import { ArrowLeft, Users, GitBranch } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import ImpersonateButton from "@/components/admin/impersonate-button";
-import BillingSection from "@/components/admin/billing-section";
+import BillingTabs from "@/components/admin/billing-tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -29,12 +29,13 @@ const ROLE_COLORS: Record<string, string> = {
 async function getBusinessDetail(id: string) {
   const admin = createAdminClient();
 
-  const [bizRes, staffRes, branchRes, txnRes, paymentsRes] = await Promise.all([
+  const [bizRes, staffRes, branchRes, txnRes, paymentsRes, invoicesRes] = await Promise.all([
     admin.from("businesses").select("*").eq("id", id).single(),
     admin.from("staff").select("id, name, email, phone, role, is_active, created_at, user_id").eq("business_id", id).order("created_at"),
     admin.from("branches").select("*").eq("business_id", id),
     admin.from("transactions").select("total, created_at").eq("business_id", id).order("created_at", { ascending: false }),
     admin.from("billing_payments").select("*").eq("business_id", id).order("payment_date", { ascending: false }),
+    admin.from("invoices").select("*").eq("business_id", id).order("created_at", { ascending: false }),
   ]);
 
   if (!bizRes.data) return null;
@@ -66,6 +67,7 @@ async function getBusinessDetail(id: string) {
     staff: staffRes.data ?? [],
     branches: branchRes.data ?? [],
     payments: paymentsRes.data ?? [],
+    invoices: invoicesRes.data ?? [],
     billing: {
       subscription_plan: (biz.subscription_plan as string) ?? "trial",
       subscription_status: (biz.subscription_status as string) ?? "active",
@@ -87,7 +89,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
   const data = await getBusinessDetail(params.id);
   if (!data) notFound();
 
-  const { business, owner_email, staff, branches, payments, billing, revenue, transaction_count } = data;
+  const { business, owner_email, staff, branches, payments, invoices, billing, revenue, transaction_count } = data;
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-10">
@@ -156,11 +158,12 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
         </div>
       </div>
 
-      {/* Billing section */}
-      <BillingSection
+      {/* Billing + Invoices tabs */}
+      <BillingTabs
         businessId={business.id}
         initialBilling={billing}
         payments={payments}
+        invoices={invoices}
       />
 
       {/* Staff list */}
