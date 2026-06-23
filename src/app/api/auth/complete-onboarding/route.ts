@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendNewSignupEmail } from "@/lib/email";
+import { sendNewSignupEmail, sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -91,7 +91,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Non-blocking founder notification — never let email failure affect signup
+    // Non-blocking emails — never let failure affect the signup response
+    if (email) {
+      sendWelcomeEmail({
+        to:           email,
+        ownerName:    full_name,
+        businessName: business_name,
+        modules:      modules ?? [],
+      }).catch((e) => console.error("[onboarding] welcome email failed:", e));
+    }
+
     sendNewSignupEmail({
       businessId:   business.id,
       businessName: business_name,
