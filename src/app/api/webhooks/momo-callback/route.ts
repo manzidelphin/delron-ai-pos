@@ -141,15 +141,17 @@ export async function POST(req: Request) {
 
     console.log(`[momo-callback] ✓ SUCCESSFUL — invoice ${inv.id}, business ${inv.business_id}, next_due=${nextDue}`);
 
-    sendPaymentReceivedEmail({
-      businessId:    inv.business_id,
-      businessName:  biz?.name ?? inv.business_id,
-      amount:        amount,
-      paymentDate:   paymentDate,
-      paymentMethod: "momo",
-      nextPaymentDue: nextDue,
-      recordedBy:    "MTN MoMo (automatic)",
-    }).catch((e) => console.error("[momo-callback] notify email failed:", e));
+    try {
+      await sendPaymentReceivedEmail({
+        businessId:    inv.business_id,
+        businessName:  biz?.name ?? inv.business_id,
+        amount:        amount,
+        paymentDate:   paymentDate,
+        paymentMethod: "momo",
+        nextPaymentDue: nextDue,
+        recordedBy:    "MTN MoMo (automatic)",
+      });
+    } catch (e) { console.error("[momo-callback] notify email failed:", e); }
 
   } else {
     // FAILED or TIMEOUT

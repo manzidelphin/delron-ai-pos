@@ -66,15 +66,17 @@ export async function POST(
     .then((r) => r.data.user?.email ?? `admin:${userId}`)
     .catch(() => `admin:${userId}`);
 
-  sendPaymentReceivedEmail({
-    businessId:    params.id,
-    businessName:  biz.name,
-    amount:        Math.round(amount),
-    paymentDate:   payment_date,
-    paymentMethod: payment_method,
-    nextPaymentDue: nextDueStr,
-    recordedBy:    adminEmail,
-  }).catch((e) => console.error("[billing/payments] notify email failed:", e));
+  try {
+    await sendPaymentReceivedEmail({
+      businessId:    params.id,
+      businessName:  biz.name,
+      amount:        Math.round(amount),
+      paymentDate:   payment_date,
+      paymentMethod: payment_method,
+      nextPaymentDue: nextDueStr,
+      recordedBy:    adminEmail,
+    });
+  } catch (e) { console.error("[billing/payments] notify email failed:", e); }
 
   return NextResponse.json({ success: true, next_payment_due: nextDueStr });
 }
