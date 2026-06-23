@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkPlatformAdmin } from "@/lib/admin-auth";
 import { addMonths, addYears, format } from "date-fns";
+import { sendPaymentReceivedEmail } from "@/lib/email";
 
 const VALID_METHODS = ["cash", "momo", "airtel", "bank"];
 
@@ -26,7 +27,7 @@ export async function POST(
   // Fetch current billing cycle to calculate next_payment_due
   const { data: biz } = await admin
     .from("businesses")
-    .select("billing_cycle, subscription_status")
+    .select("name, billing_cycle, subscription_status")
     .eq("id", params.id)
     .single();
 
@@ -59,6 +60,21 @@ export async function POST(
   if (biz.subscription_status === "overdue") bizUpdate.subscription_status = "active";
 
   await admin.from("businesses").update(bizUpdate).eq("id", params.id);
+
+  // Fetch the admin's email for the "recorded by" field — best-effort, non-blocking
+  const adminEmail = await admin.auth.admin.getUserById(userId)
+    .then((r) => r.data.user?.email ?? `admin:${userId}`)
+    .catch(() => `admin:${userId}`);
+
+  sendPaymentReceivedEmail({
+    businessId:    params.id,
+    businessName:  biz.name,
+    amount:        Math.round(amount),
+    paymentDate:   payment_date,
+    paymentMethod: payment_method,
+    nextPaymentDue: nextDueStr,
+    recordedBy:    adminEmail,
+  }).catch((e) => console.error("[billing/payments] notify email failed:", e));
 
   return NextResponse.json({ success: true, next_payment_due: nextDueStr });
 }
