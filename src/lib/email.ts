@@ -49,6 +49,90 @@ export async function sendOTPEmail(to: string, otp: string, businessName: string
   }
 }
 
+// ── Invoice / Billing Email ───────────────────────────────────────────────────
+
+export async function sendInvoiceEmail(opts: {
+  to: string;
+  businessName: string;
+  invoiceNumber: string;
+  amount: number;
+  dueDate: string;
+  phoneNumber: string;
+  isPlaceholder: boolean;
+}): Promise<boolean> {
+  const { to, businessName, invoiceNumber, amount, dueDate, phoneNumber, isPlaceholder } = opts;
+  const subject = `Invoice ${invoiceNumber} — ${businessName} — RWF ${amount.toLocaleString()}`;
+  const displayDate = new Date(dueDate + "T12:00:00").toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+  });
+  const momoNote = isPlaceholder
+    ? `<p style="color:#94a3b8;font-size:13px;margin:0 0 8px"><em>(Sandbox mode — no real MoMo request sent)</em></p>`
+    : `<p style="color:#d1d5db;font-size:14px;margin:0 0 16px">A payment request of <strong style="color:white">RWF ${amount.toLocaleString()}</strong> has been sent to <strong style="color:white">${phoneNumber}</strong> via MTN MoMo.</p>
+       <p style="color:#9ca3af;font-size:13px;margin:0 0 16px">Open your MTN MoMo app or dial <strong>*182#</strong>, then approve the payment request to keep your account active.</p>`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+<div style="max-width:520px;margin:32px auto;padding:0 16px 32px">
+
+  <div style="background:#1e293b;border-radius:16px 16px 0 0;padding:20px 28px;border-bottom:1px solid #334155">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="background:#7c3aed;width:38px;height:38px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:white;flex-shrink:0">D</div>
+      <div>
+        <p style="color:#f8fafc;font-size:15px;font-weight:700;margin:0">DELRON AI POS</p>
+        <p style="color:#94a3b8;font-size:12px;margin:2px 0 0">${businessName}</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#111827;border:1px solid #1f2937;border-top:none;padding:28px">
+    <p style="color:#94a3b8;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin:0 0 4px">Invoice</p>
+    <h1 style="color:white;font-size:22px;font-weight:800;margin:0 0 4px">${invoiceNumber}</h1>
+    <p style="color:#6b7280;font-size:13px;margin:0 0 24px">Due by ${displayDate}</p>
+
+    <div style="background:#1f2937;border-radius:12px;padding:20px;margin:0 0 24px;text-align:center">
+      <p style="color:#9ca3af;font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px">Amount Due</p>
+      <p style="color:#a78bfa;font-size:36px;font-weight:800;margin:0">RWF ${amount.toLocaleString()}</p>
+    </div>
+
+    ${momoNote}
+
+    <div style="border-top:1px solid #1f2937;padding-top:16px;margin-top:8px">
+      <p style="color:#6b7280;font-size:12px;margin:0">If you have already paid or have questions, contact <strong style="color:#9ca3af">support@delronpos.rw</strong>.</p>
+    </div>
+  </div>
+
+  <div style="background:#1e293b;border:1px solid #1f2937;border-top:none;border-radius:0 0 16px 16px;padding:14px 28px;text-align:center">
+    <p style="color:#4b5563;font-size:11px;margin:0">Powered by <strong style="color:#6b7280">DELRON AI POS</strong> · Built for Rwanda</p>
+  </div>
+</div>
+</body>
+</html>`;
+
+  if (!resend) {
+    console.log("════════════════════════════════════════════════════════════");
+    console.log(`[Invoice Email] To:      ${to}`);
+    console.log(`[Invoice Email] Subject: ${subject}`);
+    console.log(`[Invoice Email] Invoice: ${invoiceNumber}`);
+    console.log(`[Invoice Email] Amount:  RWF ${amount.toLocaleString()}`);
+    console.log(`[Invoice Email] Due:     ${dueDate}`);
+    console.log(`[Invoice Email] Phone:   ${phoneNumber}`);
+    console.log(`[Invoice Email] (Set RESEND_API_KEY to send real emails)`);
+    console.log("════════════════════════════════════════════════════════════");
+    return true;
+  }
+
+  try {
+    const { error } = await resend.emails.send({ from, to, subject, html });
+    if (error) { console.error("[email] Invoice Resend error:", error); return false; }
+    return true;
+  } catch (e) {
+    console.error("[email] Invoice send failed:", e);
+    return false;
+  }
+}
+
 // ── Daily Report Email ────────────────────────────────────────────────────────
 
 export async function sendDailyReportEmail(opts: {

@@ -25,11 +25,9 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet: Array<{ name: string; value: string; options?: CookieOptions }>) {
-          // Update mutable request cookies (this also updates request.headers.cookie)
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          // Rebuild headers from the updated request (includes new cookies) + x-pathname
           const updatedHeaders = new Headers(request.headers);
           updatedHeaders.set("x-pathname", pathname);
           supabaseResponse = NextResponse.next({
@@ -51,6 +49,7 @@ export async function updateSession(request: NextRequest) {
     "/login", "/onboarding", "/", "/pos-login",
     "/api/auth/pos-staff", "/api/auth/pin-login",
     "/api/cron",
+    "/api/webhooks",
     "/supermarket", "/supermarket/pos",
     "/customer-display",
     "/api/pwa-icon",
@@ -104,6 +103,63 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  // ── Suspension hard lock ────────────────────────────────────────────────────
+  // For authenticated users on non-public, non-API, non-admin, non-suspended routes:
+  // check if their business is suspended and redirect to /account-suspended.
+  // Platform admins are excluded; impersonating admins pass through (they need access
+  // to suspended businesses to help resolve billing issues).
+  if (
+    user &&
+    !isPublicRoute &&
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/admin") &&
+    pathname !== "/account-suspended"
+  ) {
+    // Allow platform admins through unconditionally
+    const { data: adminRecord } = await supabase
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!adminRecord) {
+      // Check for active impersonation (admin viewing a suspended business — let through)
+      const impCookie = request.cookies.get("admin_impersonation")?.value;
+      let isImpersonating = false;
+      if (impCookie) {
+        try {
+          const imp = JSON.parse(impCookie) as { target_business_id?: string };
+          isImpersonating = !!imp.target_business_id;
+        } catch { /* ignore */ }
+      }
+
+      if (!isImpersonating) {
+        // Look up user's business subscription status
+        const { data: staffRecord } = await supabase
+          .from("staff")
+          .select("business_id")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (staffRecord?.business_id) {
+          const { data: bizStatus } = await supabase
+            .from("businesses")
+            .select("subscription_status")
+            .eq("id", staffRecord.business_id)
+            .single();
+
+          if (bizStatus?.subscription_status === "suspended") {
+            console.log("[middleware] Suspended business → /account-suspended for user:", user.id);
+            const url = request.nextUrl.clone();
+            url.pathname = "/account-suspended";
+            return NextResponse.redirect(url);
+          }
+        }
+      }
+    }
   }
 
   // Stamp this device with the owner's businessId so /pos-login works without a session
