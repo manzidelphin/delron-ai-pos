@@ -2,7 +2,8 @@ import { Resend } from "resend";
 import type { ProductSoldRow } from "@/lib/daily-report";
 
 const key  = process.env.RESEND_API_KEY ?? "";
-const from = process.env.RESEND_FROM_EMAIL ?? "noreply@delronpos.rw";
+// Use onboarding@resend.dev until delronpos.rw domain is verified in Resend dashboard.
+const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
 
 // Real key starts with "re_" and is not the literal placeholder
 const isRealKey = key.startsWith("re_") && key !== "re_placeholder";
@@ -43,11 +44,12 @@ export async function sendOTPEmail(to: string, otp: string, businessName: string
   }
 
   try {
-    const { error } = await resend.emails.send({ from, to, subject, html });
-    if (error) { console.error("[email] Resend error:", error); return false; }
+    const { data, error } = await resend.emails.send({ from, to, subject, html });
+    if (error) { console.error("[email] OTP FAILED — from:", from, "| error:", JSON.stringify(error)); return false; }
+    console.log("[email] OTP sent — id:", data?.id);
     return true;
   } catch (e) {
-    console.error("[email] Send failed:", e);
+    console.error("[email] OTP exception:", e);
     return false;
   }
 }
@@ -144,10 +146,11 @@ export async function sendNewSignupEmail(opts: {
   }
 
   try {
-    const { error } = await resend.emails.send({ from, to: FOUNDER_EMAIL, subject, html });
-    if (error) console.error("[email] Signup notify Resend error:", error);
+    const { data, error } = await resend.emails.send({ from, to: FOUNDER_EMAIL, subject, html });
+    if (error) console.error("[email] Signup notify FAILED — from:", from, "| error:", JSON.stringify(error));
+    else console.log("[email] Signup notify sent — id:", data?.id, "| to:", FOUNDER_EMAIL);
   } catch (e) {
-    console.error("[email] Signup notify failed:", e);
+    console.error("[email] Signup notify exception:", e);
   }
 }
 
@@ -250,10 +253,11 @@ export async function sendPaymentReceivedEmail(opts: {
   }
 
   try {
-    const { error } = await resend.emails.send({ from, to: FOUNDER_EMAIL, subject, html });
-    if (error) console.error("[email] Payment notify Resend error:", error);
+    const { data, error } = await resend.emails.send({ from, to: FOUNDER_EMAIL, subject, html });
+    if (error) console.error("[email] Payment notify FAILED — from:", from, "| error:", JSON.stringify(error));
+    else console.log("[email] Payment notify sent — id:", data?.id, "| to:", FOUNDER_EMAIL);
   } catch (e) {
-    console.error("[email] Payment notify failed:", e);
+    console.error("[email] Payment notify exception:", e);
   }
 }
 
@@ -332,11 +336,12 @@ export async function sendInvoiceEmail(opts: {
   }
 
   try {
-    const { error } = await resend.emails.send({ from, to, subject, html });
-    if (error) { console.error("[email] Invoice Resend error:", error); return false; }
+    const { data, error } = await resend.emails.send({ from, to, subject, html });
+    if (error) { console.error("[email] Invoice FAILED — from:", from, "| error:", JSON.stringify(error)); return false; }
+    console.log("[email] Invoice sent — id:", data?.id);
     return true;
   } catch (e) {
-    console.error("[email] Invoice send failed:", e);
+    console.error("[email] Invoice exception:", e);
     return false;
   }
 }
@@ -488,11 +493,12 @@ export async function sendDailyReportEmail(opts: {
   }
 
   try {
-    const { error } = await resend.emails.send({ from, to, subject, html });
-    if (error) { console.error("[email] Daily report Resend error:", error); return false; }
+    const { data, error } = await resend.emails.send({ from, to, subject, html });
+    if (error) { console.error("[email] Daily report FAILED — from:", from, "| error:", JSON.stringify(error)); return false; }
+    console.log("[email] Daily report sent — id:", data?.id);
     return true;
   } catch (e) {
-    console.error("[email] Daily report send failed:", e);
+    console.error("[email] Daily report exception:", e);
     return false;
   }
 }
