@@ -102,13 +102,16 @@ export async function momoRequestToPay(opts: RequestToPayOptions): Promise<Reque
   };
   if (callbackUrl) headers["X-Callback-Url"] = callbackUrl;
 
+  // MTN MoMo rejects non-ASCII characters — strip to printable ASCII.
+  const toAscii = (s: string) => s.replace(/[^\x20-\x7E]/g, "-").slice(0, 160);
+
   const requestBody = {
     amount:       String(opts.amount),
     currency:     CURRENCY,
     externalId:   opts.externalId,
     payer:        { partyIdType: "MSISDN", partyId: msisdn },
-    payerMessage: opts.payerMessage.slice(0, 160),
-    payeeNote:    opts.payeeNote.slice(0, 160),
+    payerMessage: toAscii(opts.payerMessage),
+    payeeNote:    toAscii(opts.payeeNote),
   };
 
   console.log("[MoMo RTP] Sending:", {
