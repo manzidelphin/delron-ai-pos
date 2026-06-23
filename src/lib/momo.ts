@@ -102,21 +102,35 @@ export async function momoRequestToPay(opts: RequestToPayOptions): Promise<Reque
   };
   if (callbackUrl) headers["X-Callback-Url"] = callbackUrl;
 
+  const requestBody = {
+    amount:       String(opts.amount),
+    currency:     CURRENCY,
+    externalId:   opts.externalId,
+    payer:        { partyIdType: "MSISDN", partyId: msisdn },
+    payerMessage: opts.payerMessage.slice(0, 160),
+    payeeNote:    opts.payeeNote.slice(0, 160),
+  };
+
+  console.log("[MoMo RTP] Sending:", {
+    msisdn,
+    amount: requestBody.amount,
+    currency: CURRENCY,
+    externalId: opts.externalId,
+    hasCallback: !!callbackUrl,
+    targetEnv: TARGET_ENV,
+  });
+
   const res = await fetch(`${BASE_URL}/collection/v1_0/requesttopay`, {
     method: "POST",
     headers,
-    body: JSON.stringify({
-      amount:       String(opts.amount),
-      currency:     CURRENCY,
-      externalId:   opts.externalId,
-      payer:        { partyIdType: "MSISDN", partyId: msisdn },
-      payerMessage: opts.payerMessage.slice(0, 160),
-      payeeNote:    opts.payeeNote.slice(0, 160),
-    }),
+    body: JSON.stringify(requestBody),
   });
 
+  const text = await res.text();
   if (res.status !== 202) {
-    const text = await res.text();
+    const respHeaders: Record<string, string> = {};
+    res.headers.forEach((v, k) => { respHeaders[k] = v; });
+    console.error("[MoMo RTP] FAILED", res.status, "| body:", JSON.stringify(text), "| resp-headers:", JSON.stringify(respHeaders));
     throw new Error(`MoMo requesttopay ${res.status}: ${text}`);
   }
 
