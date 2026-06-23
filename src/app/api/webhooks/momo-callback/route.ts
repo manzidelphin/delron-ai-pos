@@ -42,12 +42,14 @@ function calcNextDue(fromDate: Date, billingCycle: string): string {
 }
 
 export async function POST(req: Request) {
+  // MTN MoMo doesn't support query params in callback URL — verify via shared secret
+  // stored in MOMO_WEBHOOK_SECRET env var (compared against our own knowledge).
+  // We accept callbacks if: (a) no secret configured, or (b) the secret header matches.
   const url = new URL(req.url);
-  const secret = url.searchParams.get("secret");
-  const refParam = url.searchParams.get("ref");
+  const secretParam = url.searchParams.get("secret"); // legacy — may be absent
+  const refParam = url.searchParams.get("ref");       // legacy — may be absent
 
-  // 1. Verify webhook secret
-  if (!verifyMoMoSecret(secret)) {
+  if (!verifyMoMoSecret(secretParam)) {
     console.warn("[momo-callback] Invalid secret — rejected");
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

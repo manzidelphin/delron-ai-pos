@@ -64,14 +64,19 @@ export interface RequestToPayResult {
   isPlaceholder: boolean;
 }
 
+// MTN sandbox only accepts its own test MSISDN — real numbers return 400.
+const SANDBOX_TEST_MSISDN = "46733123450";
+
 export async function momoRequestToPay(opts: RequestToPayOptions): Promise<RequestToPayResult> {
   const referenceId = crypto.randomUUID();
-  const msisdn = normalizeMsisdn(opts.phoneNumber);
+  const realMsisdn = normalizeMsisdn(opts.phoneNumber);
+  // In sandbox, substitute the MTN test number; in production, use the real owner number.
+  const msisdn = TARGET_ENV === "sandbox" ? SANDBOX_TEST_MSISDN : realMsisdn;
 
   if (MOMO_IS_PLACEHOLDER) {
     console.log("════════════════════════════════════════════════════════════");
     console.log("[MoMo RTP] ▶ PLACEHOLDER — Request to Pay NOT sent to MTN");
-    console.log(`[MoMo RTP] Phone:       ${msisdn} (${opts.phoneNumber})`);
+    console.log(`[MoMo RTP] Phone:       ${realMsisdn} (${opts.phoneNumber})`);
     console.log(`[MoMo RTP] Amount:      ${opts.amount} ${CURRENCY}`);
     console.log(`[MoMo RTP] ExternalId:  ${opts.externalId}`);
     console.log(`[MoMo RTP] Message:     ${opts.payerMessage}`);
@@ -84,10 +89,9 @@ export async function momoRequestToPay(opts: RequestToPayOptions): Promise<Reque
 
   const token = await getAccessToken();
 
-  const webhookSecret = process.env.MOMO_WEBHOOK_SECRET;
-  const callbackUrl = CALLBACK_URL
-    ? `${CALLBACK_URL}?ref=${referenceId}${webhookSecret ? `&secret=${webhookSecret}` : ""}`
-    : undefined;
+  // MTN sandbox rejects callback URLs with query parameters — keep it clean.
+  // We identify the invoice via externalId in the callback body instead.
+  const callbackUrl = CALLBACK_URL || undefined;
 
   const headers: Record<string, string> = {
     Authorization:               `Bearer ${token}`,
