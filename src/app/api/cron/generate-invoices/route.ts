@@ -124,12 +124,14 @@ export async function POST(req: Request) {
       if (amount > 0 && ownerPhone) {
         try {
           const msisdn = normalizeMsisdn(ownerPhone);
+          // MTN MoMo rejects non-ASCII chars (em dash, etc.) — strip to ASCII.
+          const ascii = (s: string) => s.replace(/[^\x20-\x7E]/g, "-");
           const { referenceId } = await momoRequestToPay({
             amount,
             phoneNumber:  msisdn,
             externalId:   invoice.id,
-            payerMessage: `${biz.name} — Subscription ${invoiceNumber}`,
-            payeeNote:    `DELRON POS subscription ${invoiceNumber}`,
+            payerMessage: ascii(`${biz.name} - Subscription ${invoiceNumber}`),
+            payeeNote:    ascii(`DELRON POS subscription ${invoiceNumber}`),
           });
           momoRequestId = referenceId;
 
