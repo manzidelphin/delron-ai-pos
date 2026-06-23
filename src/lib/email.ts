@@ -54,6 +54,131 @@ export async function sendOTPEmail(to: string, otp: string, businessName: string
   }
 }
 
+// ── Owner: Welcome Email ──────────────────────────────────────────────────────
+
+const MODULE_LABELS: Record<string, string> = {
+  pos:         "Point of Sale (POS)",
+  bar:         "Bar & Drinks",
+  bakery:      "Bakery",
+  restaurant:  "Restaurant / KDS",
+  supermarket: "Supermarket",
+  credits:     "Credits & Accounts",
+};
+
+export async function sendWelcomeEmail(opts: {
+  to:           string;
+  ownerName:    string;
+  businessName: string;
+  modules:      string[];
+}): Promise<void> {
+  const { to, ownerName, businessName, modules } = opts;
+
+  const subject     = `Welcome to DELRON AI POS — ${businessName} is ready!`;
+  const loginUrl    = "https://delron-ai-pos.vercel.app/login";
+  const firstName   = ownerName.split(" ")[0];
+
+  const moduleList = modules.length
+    ? modules.map((m) => `
+        <li style="padding:4px 0;color:#374151;font-size:14px">
+          <span style="color:#3b82f6;font-weight:700;margin-right:6px">✓</span>${MODULE_LABELS[m] ?? m}
+        </li>`).join("")
+    : `<li style="padding:4px 0;color:#9ca3af;font-size:14px">No modules selected yet — add them from Settings</li>`;
+
+  const productStep = modules.includes("bakery")    ? "Bakery Items"
+    : modules.includes("bar")         ? "Bar Items"
+    : modules.includes("restaurant")  ? "Menu Items"
+    : modules.includes("supermarket") ? "Products"
+    : "Products";
+
+  const steps = [
+    { n: "1", text: `Log in with your email and password at <a href="${loginUrl}" style="color:#3b82f6;text-decoration:none;font-weight:600">delron-ai-pos.vercel.app</a>` },
+    { n: "2", text: "Add your staff members and set their PINs — go to <strong>Settings → Staff</strong>" },
+    { n: "3", text: `Add your products or items — find the <strong>${productStep}</strong> section in the sidebar` },
+    { n: "4", text: "Make your first sale — open the POS or your module and start recording transactions!" },
+  ];
+
+  const stepRows = steps.map((s) => `
+    <tr>
+      <td style="padding:10px 0;vertical-align:top;width:32px">
+        <div style="background:#3b82f6;color:white;font-size:12px;font-weight:700;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:24px">${s.n}</div>
+      </td>
+      <td style="padding:10px 0 10px 12px;color:#374151;font-size:14px;line-height:1.5">${s.text}</td>
+    </tr>`).join("");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+<div style="max-width:560px;margin:32px auto;padding:0 16px 32px">
+
+  <div style="background:#0f172a;border-radius:16px 16px 0 0;padding:20px 28px;display:flex;align-items:center;gap:12px">
+    <div style="background:#3b82f6;width:38px;height:38px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:white;flex-shrink:0">D</div>
+    <div>
+      <p style="color:#f8fafc;font-size:15px;font-weight:700;margin:0">DELRON AI POS</p>
+      <p style="color:#94a3b8;font-size:12px;margin:2px 0 0">Welcome aboard</p>
+    </div>
+  </div>
+
+  <div style="background:#ffffff;border:1px solid #e2e8f0;border-top:none;padding:32px 28px">
+
+    <h1 style="color:#0f172a;font-size:22px;font-weight:800;margin:0 0 8px">Welcome, ${firstName}! 🎉</h1>
+    <p style="color:#475569;font-size:15px;margin:0 0 24px">
+      <strong style="color:#0f172a">${businessName}</strong> is set up and ready to go on DELRON AI POS.
+      Your account has been created successfully.
+    </p>
+
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:18px 20px;margin-bottom:24px">
+      <p style="color:#1d4ed8;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px">Modules Enabled</p>
+      <ul style="margin:0;padding:0;list-style:none">${moduleList}</ul>
+    </div>
+
+    <p style="color:#374151;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin:0 0 12px">Getting Started</p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+      ${stepRows}
+    </table>
+
+    <div style="text-align:center;margin-bottom:24px">
+      <a href="${loginUrl}" style="display:inline-block;background:#3b82f6;color:white;text-decoration:none;padding:14px 40px;border-radius:8px;font-weight:700;font-size:15px">Log In Now →</a>
+    </div>
+
+    <div style="border-top:1px solid #f1f5f9;padding-top:20px">
+      <p style="color:#64748b;font-size:13px;margin:0">
+        Questions or need help? Reach out at
+        <a href="mailto:support@delronpos.rw" style="color:#3b82f6;text-decoration:none">support@delronpos.rw</a>
+        — we're here for you.
+      </p>
+    </div>
+
+  </div>
+
+  <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 16px 16px;padding:14px 28px;text-align:center">
+    <p style="color:#94a3b8;font-size:11px;margin:0">Powered by <strong style="color:#64748b">DELRON AI POS</strong> · Built for Rwanda</p>
+  </div>
+
+</div>
+</body>
+</html>`;
+
+  if (!resend) {
+    console.log("════════════════════════════════════════════════════════════");
+    console.log(`[Welcome Email] To:       ${to}`);
+    console.log(`[Welcome Email] Business: ${businessName}`);
+    console.log(`[Welcome Email] Owner:    ${ownerName}`);
+    console.log(`[Welcome Email] Modules:  ${modules.join(", ") || "none"}`);
+    console.log(`[Welcome Email] Login:    ${loginUrl}`);
+    console.log("════════════════════════════════════════════════════════════");
+    return;
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({ from, to, subject, html });
+    if (error) console.error("[email] Welcome FAILED — from:", from, "| to:", to, "| error:", JSON.stringify(error));
+    else console.log("[email] Welcome sent — id:", data?.id, "| to:", to);
+  } catch (e) {
+    console.error("[email] Welcome exception:", e);
+  }
+}
+
 // ── Founder: New Signup Notification ─────────────────────────────────────────
 
 export async function sendNewSignupEmail(opts: {
