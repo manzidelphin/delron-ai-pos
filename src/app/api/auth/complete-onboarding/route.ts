@@ -91,24 +91,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Non-blocking emails — never let failure affect the signup response
+    // Await both emails inside try/catch — failure never blocks signup,
+    // but awaiting ensures the function doesn't terminate before Resend responds.
     if (email) {
-      sendWelcomeEmail({
-        to:           email,
-        ownerName:    full_name,
-        businessName: business_name,
-        modules:      modules ?? [],
-      }).catch((e) => console.error("[onboarding] welcome email failed:", e));
+      try {
+        await sendWelcomeEmail({
+          to:           email,
+          ownerName:    full_name,
+          businessName: business_name,
+          modules:      modules ?? [],
+        });
+      } catch (e) { console.error("[onboarding] welcome email failed:", e); }
     }
 
-    sendNewSignupEmail({
-      businessId:   business.id,
-      businessName: business_name,
-      ownerEmail:   email ?? "",
-      ownerPhone:   phone ?? null,
-      modules:      modules ?? [],
-      signupDate:   new Date().toISOString().split("T")[0],
-    }).catch((e) => console.error("[onboarding] signup email failed:", e));
+    try {
+      await sendNewSignupEmail({
+        businessId:   business.id,
+        businessName: business_name,
+        ownerEmail:   email ?? "",
+        ownerPhone:   phone ?? null,
+        modules:      modules ?? [],
+        signupDate:   new Date().toISOString().split("T")[0],
+      });
+    } catch (e) { console.error("[onboarding] signup email failed:", e); }
 
     return NextResponse.json({ business, branch });
   } catch (err) {
