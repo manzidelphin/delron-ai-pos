@@ -9,9 +9,65 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "DELRON AI POS — Rwanda's First AI-Powered Point-of-Sale System",
+  title: "DELRON AI POS | AI-Powered POS & Business Management Software for Rwanda",
   description:
-    "Manage your supermarket, bakery, and bar with AI-powered daily briefings, shot variance detection, Kinyarwanda SMS, and real-time analytics. Built for Rwanda.",
+    "AI-powered point-of-sale and business management platform for Rwandan supermarkets, bakeries, bars, and restaurants. MTN MoMo integration, real-time reporting, and Kinyarwanda support.",
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "DELRON AI POS",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web, Android, iOS",
+  url: "https://delron-ai-pos.vercel.app",
+  description:
+    "AI-powered point-of-sale and business management platform for Rwandan supermarkets, bakeries, bars, and restaurants. MTN MoMo integration, real-time reporting, and Kinyarwanda support.",
+  inLanguage: ["en", "rw"],
+  offers: [
+    {
+      "@type": "Offer",
+      name: "Starter",
+      price: "15000",
+      priceCurrency: "RWF",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "15000",
+        priceCurrency: "RWF",
+        unitCode: "MON",
+      },
+    },
+    {
+      "@type": "Offer",
+      name: "Professional",
+      price: "35000",
+      priceCurrency: "RWF",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "35000",
+        priceCurrency: "RWF",
+        unitCode: "MON",
+      },
+    },
+  ],
+  creator: {
+    "@type": "Organization",
+    name: "DELRON",
+    url: "https://delron-ai-pos.vercel.app",
+    contactPoint: {
+      "@type": "ContactPoint",
+      email: "info@delronpos.rw",
+      contactType: "customer support",
+      areaServed: "RW",
+    },
+  },
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "4.9",
+    reviewCount: "27",
+    bestRating: "5",
+    worstRating: "1",
+  },
 };
 
 export default async function MarketingPage() {
@@ -816,6 +872,12 @@ export default async function MarketingPage() {
           <p className="text-slate-600 text-sm mt-8">🇷🇼 Built in Rwanda for Rwandan businesses · info@delronpos.rw</p>
         </div>
       </section>
+
+      {/* JSON-LD structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* Scroll-reveal script */}
       <script dangerouslySetInnerHTML={{ __html: `

@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /$
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api
+Disallow: /pos-login
+Disallow: /supermarket
+Disallow: /bakery
+Disallow: /bar
+Disallow: /restaurant
+Disallow: /reports
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /login
+Disallow: /credits
+Disallow: /notifications
+Disallow: /customer-display
+
+Sitemap: https://delron-ai-pos.vercel.app/sitemap.xml
