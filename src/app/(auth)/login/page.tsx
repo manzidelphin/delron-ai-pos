@@ -38,7 +38,14 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) { toast.error(error.message); return; }
+      if (error) {
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+          return;
+        }
+        toast.error(error.message);
+        return;
+      }
 
       // Check if 2FA is enabled for this account
       const checkRes = await fetch("/api/auth/2fa/check");

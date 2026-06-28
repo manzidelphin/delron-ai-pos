@@ -45,6 +45,22 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Email verification gate — redirect unverified owners to the check-inbox page.
+  // Exempt: /auth/* (the callback that sets email_confirmed_at), /verify-email itself,
+  // and all /api/* routes (server-side calls that don't need browser auth).
+  if (user && !user.email_confirmed_at) {
+    const isVerifyExempt =
+      pathname === "/verify-email" ||
+      pathname.startsWith("/auth/") ||
+      pathname.startsWith("/api/");
+    if (!isVerifyExempt) {
+      console.log("[middleware] Unverified email → /verify-email for user:", user.id);
+      const url = request.nextUrl.clone();
+      url.pathname = "/verify-email";
+      return NextResponse.redirect(url);
+    }
+  }
+
   const publicRoutes = [
     "/login", "/onboarding", "/", "/pos-login",
     "/api/auth/pos-staff", "/api/auth/pin-login", "/api/auth/complete-onboarding",
@@ -54,6 +70,8 @@ export async function updateSession(request: NextRequest) {
     "/customer-display",
     "/api/pwa-icon",
     "/offline.html",
+    "/verify-email",  // accessible without session (user may have closed browser)
+    "/auth",          // covers /auth/callback — must be reachable without session
   ];
   const isPublicRoute = publicRoutes.some(
     (route) =>
