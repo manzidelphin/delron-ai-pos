@@ -2,7 +2,6 @@ import { Resend } from "resend";
 import type { ProductSoldRow } from "@/lib/daily-report";
 
 const key  = process.env.RESEND_API_KEY ?? "";
-// Use onboarding@resend.dev until delronpos.rw domain is verified in Resend dashboard.
 const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
 
 // Real key starts with "re_" and is not the literal placeholder
@@ -12,6 +11,9 @@ const resend = isRealKey ? new Resend(key) : null;
 
 const FOUNDER_EMAIL  = "manzidelphin2@gmail.com";
 const ADMIN_BASE_URL = "https://delron-ai-pos.vercel.app/admin/businesses";
+
+const WELCOME_FROM  = "info@delronpos.com";
+const SUPPORT_EMAIL = "support@delronpos.com";
 
 export async function sendOTPEmail(to: string, otp: string, businessName: string): Promise<boolean> {
   const subject = `Your DELRON login code: ${otp}`;
@@ -144,7 +146,7 @@ export async function sendWelcomeEmail(opts: {
     <div style="border-top:1px solid #f1f5f9;padding-top:20px">
       <p style="color:#64748b;font-size:13px;margin:0">
         Questions or need help? Reach out at
-        <a href="mailto:support@delronpos.rw" style="color:#3b82f6;text-decoration:none">support@delronpos.rw</a>
+        <a href="mailto:${SUPPORT_EMAIL}" style="color:#3b82f6;text-decoration:none">${SUPPORT_EMAIL}</a>
         — we're here for you.
       </p>
     </div>
@@ -171,8 +173,8 @@ export async function sendWelcomeEmail(opts: {
   }
 
   try {
-    const { data, error } = await resend.emails.send({ from, to, subject, html });
-    if (error) console.error("[email] Welcome FAILED — from:", from, "| to:", to, "| error:", JSON.stringify(error));
+    const { data, error } = await resend.emails.send({ from: WELCOME_FROM, replyTo: SUPPORT_EMAIL, to, subject, html });
+    if (error) console.error("[email] Welcome FAILED — from:", WELCOME_FROM, "| to:", to, "| error:", JSON.stringify(error));
     else console.log("[email] Welcome sent — id:", data?.id, "| to:", to);
   } catch (e) {
     console.error("[email] Welcome exception:", e);
@@ -436,7 +438,7 @@ export async function sendInvoiceEmail(opts: {
     ${momoNote}
 
     <div style="border-top:1px solid #1f2937;padding-top:16px;margin-top:8px">
-      <p style="color:#6b7280;font-size:12px;margin:0">If you have already paid or have questions, contact <strong style="color:#9ca3af">support@delronpos.rw</strong>.</p>
+      <p style="color:#6b7280;font-size:12px;margin:0">If you have already paid or have questions, contact <strong style="color:#9ca3af">${SUPPORT_EMAIL}</strong>.</p>
     </div>
   </div>
 
