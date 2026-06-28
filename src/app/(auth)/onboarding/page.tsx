@@ -101,7 +101,10 @@ export default function OnboardingPage() {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        options: { data: { full_name: data.full_name } },
+        options: {
+          data: { full_name: data.full_name },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
       if (authError || !authData.user) {
@@ -411,17 +414,18 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* STEP 5 */}
+          {/* STEP 5 — verify email */}
           {step === 5 && (
             <div className="text-center space-y-6 py-4">
-              <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto border-2 border-green-500/30">
-                <CheckCircle2 className="w-10 h-10 text-green-400" />
+              <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto border-2 border-blue-500/30">
+                <CheckCircle2 className="w-10 h-10 text-blue-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white mb-2">You&apos;re live!</h2>
-                <p className="text-slate-400">
-                  Welcome to DELRON AI POS,{" "}
-                  <span className="text-white font-semibold">{data.full_name.split(" ")[0]}</span>. Your dashboard is ready.
+                <h2 className="text-2xl font-bold text-white mb-2">Almost there!</h2>
+                <p className="text-slate-400 text-sm">
+                  We&apos;ve sent a verification link to{" "}
+                  <span className="text-white font-semibold">{data.email}</span>.
+                  Click it to confirm your account and access your dashboard.
                 </p>
               </div>
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 text-left space-y-2">
@@ -431,12 +435,16 @@ export default function OnboardingPage() {
                 <SummaryRow label="Language" value={data.language === "en" ? "English" : "Kinyarwanda"} />
                 <SummaryRow label="Branches" value={data.branch_count.toString()} />
               </div>
-              <button
-                onClick={() => { window.location.href = "/dashboard"; }}
-                className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
-              >
-                Go to Dashboard <ArrowRight className="w-4 h-4" />
-              </button>
+              <p className="text-slate-500 text-xs">
+                Didn&apos;t get the email? Check your spam folder, or go back to{" "}
+                <button
+                  onClick={() => { window.location.href = `/verify-email?email=${encodeURIComponent(data.email)}`; }}
+                  className="text-blue-400 hover:text-blue-300 underline"
+                >
+                  resend the verification email
+                </button>
+                .
+              </p>
             </div>
           )}
         </div>
