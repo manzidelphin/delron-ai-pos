@@ -14,6 +14,7 @@ const ADMIN_BASE_URL = "https://delron-ai-pos.vercel.app/admin/businesses";
 
 const WELCOME_FROM  = "info@delronpos.com";
 const SUPPORT_EMAIL = "support@delronpos.com";
+const SUPPORT_PHONE = "+250 785 995 840";
 
 export async function sendOTPEmail(to: string, otp: string, businessName: string): Promise<boolean> {
   const subject = `Your DELRON login code: ${otp}`;
@@ -147,6 +148,7 @@ export async function sendWelcomeEmail(opts: {
       <p style="color:#64748b;font-size:13px;margin:0">
         Questions or need help? Reach out at
         <a href="mailto:${SUPPORT_EMAIL}" style="color:#3b82f6;text-decoration:none">${SUPPORT_EMAIL}</a>
+        or call <a href="tel:${SUPPORT_PHONE.replace(/\s/g, '')}" style="color:#3b82f6;text-decoration:none">${SUPPORT_PHONE}</a>
         — we're here for you.
       </p>
     </div>
@@ -438,7 +440,7 @@ export async function sendInvoiceEmail(opts: {
     ${momoNote}
 
     <div style="border-top:1px solid #1f2937;padding-top:16px;margin-top:8px">
-      <p style="color:#6b7280;font-size:12px;margin:0">If you have already paid or have questions, contact <strong style="color:#9ca3af">${SUPPORT_EMAIL}</strong>.</p>
+      <p style="color:#6b7280;font-size:12px;margin:0">If you have already paid or have questions, contact <strong style="color:#9ca3af">${SUPPORT_EMAIL}</strong> or call <strong style="color:#9ca3af">${SUPPORT_PHONE}</strong>.</p>
     </div>
   </div>
 
