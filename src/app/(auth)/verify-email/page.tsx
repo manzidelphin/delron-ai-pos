@@ -7,12 +7,13 @@ import { Mail, Zap, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 function VerifyEmailContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const [email, setEmail]       = useState("");
-  const [cooldown, setCooldown] = useState(0);
+  const searchParams  = useSearchParams();
+  const router        = useRouter();
+  const [email, setEmail]         = useState("");
+  const [cooldown, setCooldown]   = useState(0);
   const [isSending, setIsSending] = useState(false);
-  const [resent, setResent]     = useState(false);
+  const [resent, setResent]       = useState(false);
+  const linkAlreadyUsed           = searchParams.get("error") === "link_used";
 
   useEffect(() => {
     const emailParam = searchParams.get("email");
@@ -23,7 +24,6 @@ function VerifyEmailContent() {
     // Fallback: pull from live Supabase session
     createClient().auth.getUser().then(({ data: { user } }) => {
       if (user?.email_confirmed_at) {
-        // Already verified — send to dashboard
         router.replace("/dashboard");
         return;
       }
@@ -44,7 +44,7 @@ function VerifyEmailContent() {
       const { error } = await createClient().auth.resend({
         type: "signup",
         email,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
       });
       if (error) {
         toast.error(error.message);
@@ -91,6 +91,20 @@ function VerifyEmailContent() {
               </p>
             )}
           </div>
+
+          {linkAlreadyUsed && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 text-left">
+              <p className="text-amber-300 text-sm font-semibold mb-1">Verification link already used</p>
+              <p className="text-amber-200/70 text-xs">
+                Your email security scanner likely opened the link before you did — this is common with Gmail and Outlook.
+                Your account may already be verified.{" "}
+                <button onClick={() => router.push("/login")} className="underline hover:text-amber-100">
+                  Try logging in
+                </button>
+                , or resend a fresh link below.
+              </p>
+            </div>
+          )}
 
           <p className="text-slate-400 text-sm">
             Click the link in that email to confirm your account and access your dashboard.
