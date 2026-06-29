@@ -406,10 +406,19 @@ export async function sendInvoiceEmail(opts: {
   const displayDate = new Date(dueDate + "T12:00:00").toLocaleDateString("en-US", {
     year: "numeric", month: "long", day: "numeric",
   });
-  const momoNote = isPlaceholder
-    ? `<p style="color:#94a3b8;font-size:13px;margin:0 0 8px"><em>(Sandbox mode — no real MoMo request sent)</em></p>`
-    : `<p style="color:#d1d5db;font-size:14px;margin:0 0 16px">A payment request of <strong style="color:white">RWF ${amount.toLocaleString()}</strong> has been sent to <strong style="color:white">${phoneNumber}</strong> via MTN MoMo.</p>
-       <p style="color:#9ca3af;font-size:13px;margin:0 0 16px">Open your MTN MoMo app or dial <strong>*182#</strong>, then approve the payment request to keep your account active.</p>`;
+  void isPlaceholder; // dormant automated-flow flag — kept for future use
+  const momoNote = `
+    <div style="background:#1f2937;border-radius:10px;padding:18px 20px;margin:0 0 20px">
+      <p style="color:#9ca3af;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin:0 0 12px">How to pay</p>
+      <table style="width:100%;border-collapse:collapse">
+        <tr><td style="padding:6px 0;vertical-align:top;width:20px"><span style="color:#a78bfa;font-weight:700;font-size:13px">1.</span></td>
+            <td style="padding:6px 0 6px 8px;color:#d1d5db;font-size:13px;line-height:1.5">Send <strong style="color:white">RWF ${amount.toLocaleString()}</strong> via MTN MoMo or Airtel Money to <strong style="color:white;font-family:monospace">0785 995 840</strong></td></tr>
+        <tr><td style="padding:6px 0;vertical-align:top"><span style="color:#a78bfa;font-weight:700;font-size:13px">2.</span></td>
+            <td style="padding:6px 0 6px 8px;color:#d1d5db;font-size:13px;line-height:1.5">Send a screenshot of the payment confirmation via WhatsApp to <strong style="color:white">+250 785 995 840</strong></td></tr>
+        <tr><td style="padding:6px 0;vertical-align:top"><span style="color:#a78bfa;font-weight:700;font-size:13px">3.</span></td>
+            <td style="padding:6px 0 6px 8px;color:#d1d5db;font-size:13px;line-height:1.5">Your account will be reactivated once payment is confirmed <span style="color:#6b7280">(usually within a few hours)</span></td></tr>
+      </table>
+    </div>`;
 
   const html = `<!DOCTYPE html>
 <html>

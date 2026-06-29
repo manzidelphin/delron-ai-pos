@@ -183,7 +183,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             <div>
               <p className="font-semibold text-sm mb-4 text-slate-200">Contact</p>
               <ul className="space-y-2.5 text-slate-400 text-xs">
-                <li>info@delronpos.rw</li>
+                <li>info@delronpos.com</li>
                 <li>+250 788 000 000</li>
                 <li>Kigali, Rwanda</li>
               </ul>

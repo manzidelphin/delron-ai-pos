@@ -99,27 +99,30 @@ export default async function AccountSuspendedPage() {
           )}
         </div>
 
-        {/* MoMo payment instructions */}
+        {/* Payment instructions */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-4">
           <p className="text-sm font-semibold text-white mb-3">How to reactivate your account</p>
-          <ol className="space-y-2 text-sm text-zinc-400">
+          <ol className="space-y-3 text-sm text-zinc-400">
             <li className="flex gap-2">
-              <span className="text-violet-400 font-bold">1.</span>
-              Dial <span className="text-white font-mono">*182#</span> on your MTN line
+              <span className="text-violet-400 font-bold flex-shrink-0">1.</span>
+              Send <span className="text-white font-semibold">{fmtRwf(outstanding)}</span> via MTN MoMo or Airtel Money to{" "}
+              <span className="text-white font-mono">0785 995 840</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-violet-400 font-bold">2.</span>
-              Approve the pending payment request for {fmtRwf(outstanding)}
+              <span className="text-violet-400 font-bold flex-shrink-0">2.</span>
+              Send a screenshot of the payment confirmation via WhatsApp to{" "}
+              <span className="text-white font-mono">+250 785 995 840</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-violet-400 font-bold">3.</span>
-              Your account will be reactivated automatically within minutes
+              <span className="text-violet-400 font-bold flex-shrink-0">3.</span>
+              Your account will be reactivated once payment is confirmed{" "}
+              <span className="text-zinc-500">(usually within a few hours)</span>
             </li>
           </ol>
           <p className="text-xs text-zinc-600 mt-4">
-            No pending request? Contact{" "}
-            <span className="text-zinc-400">support@delronpos.rw</span>{" "}
-            or call your account manager.
+            Questions? Contact{" "}
+            <a href="mailto:support@delronpos.com" className="text-zinc-400 hover:text-white transition-colors">support@delronpos.com</a>
+            {" "}or WhatsApp us at +250 785 995 840.
           </p>
         </div>
 

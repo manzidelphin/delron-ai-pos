@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Zap, Delete, LogIn, Loader2, ArrowLeft } from "lucide-react";
+import { Zap, Delete, LogIn, Loader2, ArrowLeft, Phone, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -54,6 +54,13 @@ export default function PosLoginPage() {
   const [openingCashError, setOpeningCashError] = useState("");
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
+  // Phone-based business lookup (for devices without pos_business_id cookie)
+  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+  const [bizMatches, setBizMatches] = useState<Array<{ businessId: string; businessName: string }>>([]);
+  const phoneRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     async function load() {
       try {
@@ -97,6 +104,55 @@ export default function PosLoginPage() {
     }
     load();
   }, []);
+
+  const loadBusiness = async (bId: string, bName: string) => {
+    setBusinessId(bId);
+    setBusinessName(bName);
+    setBizMatches([]);
+    setLoadingStaff(true);
+    try {
+      const staffRes = await fetch(`/api/auth/pos-staff?businessId=${bId}`);
+      if (staffRes.ok) {
+        const d = await staffRes.json();
+        setStaffList(d.staff ?? []);
+      } else {
+        toast.error("Could not load staff list");
+      }
+    } catch {
+      toast.error("Could not load staff list");
+    } finally {
+      setLoadingStaff(false);
+    }
+  };
+
+  const handlePhoneLookup = async () => {
+    const phone = phoneInput.trim();
+    if (!phone || phoneLoading) return;
+    setPhoneLoading(true);
+    setPhoneError("");
+    try {
+      const res = await fetch("/api/auth/staff-by-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json() as { matches?: Array<{ businessId: string; businessName: string }>; error?: string };
+      if (!res.ok) {
+        setPhoneError(data.error ?? "Phone number not found");
+        return;
+      }
+      const matches = data.matches ?? [];
+      if (matches.length === 1) {
+        await loadBusiness(matches[0].businessId, matches[0].businessName);
+      } else {
+        setBizMatches(matches);
+      }
+    } catch {
+      setPhoneError("Connection error. Please try again.");
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
 
   const triggerShake = (msg: string) => {
     setErrorMsg(msg);
@@ -295,16 +351,74 @@ export default function PosLoginPage() {
           )}
         </div>
 
-        {/* No cookie: device not yet configured */}
+        {/* No cookie: phone-number lookup so any device can be used */}
         {!businessId ? (
-          <div className="text-center max-w-sm">
-            <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-4">
-              <LogIn className="w-8 h-8 text-slate-400" />
-            </div>
-            <h2 className="text-white font-semibold mb-2">Device not configured</h2>
-            <p className="text-slate-400 text-sm leading-relaxed">
-              Please ask the business owner to log in once from this device. This sets up the POS for cashier access.
-            </p>
+          <div className="w-full max-w-sm">
+            {bizMatches.length > 0 ? (
+              /* Multiple businesses matched — let the user pick */
+              <div className="space-y-3">
+                <p className="text-slate-300 text-sm text-center mb-4">Select your business:</p>
+                {bizMatches.map((m) => (
+                  <button
+                    key={m.businessId}
+                    onClick={() => loadBusiness(m.businessId, m.businessName)}
+                    className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-blue-500/40 hover:bg-slate-700/80 transition-all text-left"
+                  >
+                    <span className="text-white font-medium text-sm">{m.businessName}</span>
+                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                  </button>
+                ))}
+                <button
+                  onClick={() => { setBizMatches([]); setPhoneInput(""); setPhoneError(""); setTimeout(() => phoneRef.current?.focus(), 50); }}
+                  className="w-full text-slate-500 hover:text-slate-300 text-xs py-2 transition-colors"
+                >
+                  ← Try a different number
+                </button>
+              </div>
+            ) : (
+              /* Phone entry form */
+              <div className="space-y-4">
+                <div className="text-center mb-2">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-3">
+                    <Phone className="w-7 h-7 text-slate-400" />
+                  </div>
+                  <h2 className="text-white font-semibold">Enter your phone number</h2>
+                  <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+                    Use the phone number registered with your account
+                  </p>
+                </div>
+
+                <div>
+                  <input
+                    ref={phoneRef}
+                    type="tel"
+                    value={phoneInput}
+                    onChange={(e) => { setPhoneInput(e.target.value); setPhoneError(""); }}
+                    onKeyDown={(e) => e.key === "Enter" && handlePhoneLookup()}
+                    placeholder="e.g. 0785 995 840"
+                    autoFocus
+                    className={cn(
+                      "w-full h-13 px-4 py-3.5 rounded-xl bg-slate-800 border text-white text-center text-lg font-mono tracking-wide placeholder-slate-600",
+                      "focus:outline-none focus:ring-2 focus:border-transparent transition-all",
+                      phoneError ? "border-red-500/60 focus:ring-red-500/40" : "border-slate-700 focus:ring-blue-500/40"
+                    )}
+                  />
+                  {phoneError && (
+                    <p className="text-red-400 text-xs mt-2 text-center">{phoneError}</p>
+                  )}
+                </div>
+
+                <button
+                  onClick={handlePhoneLookup}
+                  disabled={!phoneInput.trim() || phoneLoading}
+                  className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/40 disabled:cursor-not-allowed text-white font-bold flex items-center justify-center gap-2 transition-colors"
+                >
+                  {phoneLoading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Looking up…</>
+                    : "Continue"}
+                </button>
+              </div>
+            )}
           </div>
 
         ) : !selected ? (
