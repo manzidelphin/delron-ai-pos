@@ -66,7 +66,7 @@ export default function PosLoginPage() {
       try {
         // 1. Prefer active Supabase session — owner logged in via email/password.
         const sessionRes = await fetch("/api/auth/session-business");
-        if (sessionRes.ok) {
+        if (sessionRes.ok && sessionRes.headers.get("content-type")?.includes("application/json")) {
           const session = await sessionRes.json() as { businessId: string | null; businessName: string | null };
           if (session.businessId) {
             setBusinessId(session.businessId);
