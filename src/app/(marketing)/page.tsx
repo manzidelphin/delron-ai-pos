@@ -56,7 +56,7 @@ const jsonLd = {
     url: "https://delron-ai-pos.vercel.app",
     contactPoint: {
       "@type": "ContactPoint",
-      email: "info@delronpos.rw",
+      email: "info@delronpos.com",
       contactType: "customer support",
       areaServed: "RW",
     },
@@ -748,7 +748,7 @@ export default async function MarketingPage() {
               {name:"Enterprise", price:"Custom", period:"tailored",
                desc:"For chains, franchises, and businesses with advanced compliance needs.",
                features:["Unlimited modules & staff","Custom integrations","Dedicated account manager","On-site training in Kigali","Custom reports & branding","SLA guarantee"],
-               cta:"Contact Us", href:"mailto:info@delronpos.rw", highlight:false},
+               cta:"Contact Us", href:"mailto:info@delronpos.com", highlight:false},
             ].map(plan => (
               <div key={plan.name}
                 className={`relative rounded-2xl border p-7 flex flex-col hover:-translate-y-1 transition-transform ${
@@ -869,7 +869,7 @@ export default async function MarketingPage() {
               Sign In
             </Link>
           </div>
-          <p className="text-slate-600 text-sm mt-8">🇷🇼 Built in Rwanda for Rwandan businesses · info@delronpos.rw</p>
+          <p className="text-slate-600 text-sm mt-8">🇷🇼 Built in Rwanda for Rwandan businesses · info@delronpos.com</p>
         </div>
       </section>
 
