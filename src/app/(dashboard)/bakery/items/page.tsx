@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { formatRWF } from "@/lib/utils";
 import { toast } from "sonner";
-import { Plus, Pencil, X, Loader2, Package, Info } from "lucide-react";
+import { Plus, Pencil, X, Loader2, Package, Info, Printer, Download } from "lucide-react";
 
 interface FinishedGood {
   id: string;
@@ -185,11 +185,92 @@ function ItemModal({ item, onClose, onSave }: { item: FinishedGood | null; onClo
   );
 }
 
+function PrintBarcodesModal({ item, onClose }: { item: FinishedGood; onClose: () => void }) {
+  const [count, setCount] = useState(20);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handlePrint = async () => {
+    if (!item.barcode) return;
+    setIsPrinting(true);
+    try {
+      const { printBarcodeStickers } = await import("@/lib/barcode-pdf");
+      printBarcodeStickers(item.name, item.barcode, count);
+    } catch {
+      toast.error("Print failed. Please try again.");
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!item.barcode) return;
+    setIsDownloading(true);
+    try {
+      const { generateBarcodeSheetPdf } = await import("@/lib/barcode-pdf");
+      const doc = generateBarcodeSheetPdf(item.name, item.barcode, count);
+      doc.save(`${item.name.toLowerCase().replace(/\s+/g, "-")}-barcodes.pdf`);
+    } catch {
+      toast.error("PDF generation failed. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm">
+        <div className="flex items-center justify-between p-5 border-b border-slate-700">
+          <div>
+            <h2 className="text-lg font-bold text-white">Print Barcodes</h2>
+            <p className="text-xs text-slate-400 mt-0.5 font-mono">{item.barcode}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-400">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-sm font-medium text-slate-300 block mb-1.5">How many stickers?</label>
+            <input
+              type="number"
+              min={1}
+              max={500}
+              value={count}
+              onChange={(e) => setCount(Math.max(1, Math.min(500, parseInt(e.target.value) || 1)))}
+              className="w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-slate-500 mt-1">3cm × 2cm stickers on A4 — 84 per page</p>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={handlePrint}
+              disabled={isPrinting || isDownloading}
+              className="flex-1 h-11 rounded-xl border border-slate-600 text-slate-300 font-medium hover:border-slate-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isPrinting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+              Print
+            </button>
+            <button
+              onClick={handleDownload}
+              disabled={isPrinting || isDownloading}
+              className="flex-1 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+            >
+              {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Download PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BakedItemsPage() {
   const { isLoaded } = useAuthStore();
   const [items, setItems] = useState<FinishedGood[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [modal, setModal] = useState<"add" | "edit" | null>(null);
+  const [modal, setModal] = useState<"add" | "edit" | "print" | null>(null);
   const [target, setTarget] = useState<FinishedGood | null>(null);
   const [showInactive, setShowInactive] = useState(false);
 
@@ -250,6 +331,14 @@ export default function BakedItemsPage() {
                   {CATEGORY_ICONS[item.category] ?? "🍪"}
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => { setTarget(item); setModal("print"); }}
+                    disabled={!item.barcode}
+                    title="Print barcodes"
+                    className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                  </button>
                   <button onClick={() => { setTarget(item); setModal("edit"); }}
                     className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-400 hover:text-white">
                     <Pencil className="w-3.5 h-3.5" />
@@ -292,6 +381,9 @@ export default function BakedItemsPage() {
 
       {(modal === "add" || modal === "edit") && (
         <ItemModal item={modal === "edit" ? target : null} onClose={() => setModal(null)} onSave={() => { setModal(null); load(); }} />
+      )}
+      {modal === "print" && target && (
+        <PrintBarcodesModal item={target} onClose={() => setModal(null)} />
       )}
     </div>
   );
