@@ -111,8 +111,15 @@ export default function OnboardingPage() {
       });
 
       if (!res.ok) {
-        const { error } = await res.json();
-        toast.error(error ?? "Failed to create business. Please try again.");
+        const { error, duplicate } = await res.json();
+        if (duplicate) {
+          toast.error("An account with this email already exists.", {
+            description: "Please sign in instead.",
+            action: { label: "Sign in", onClick: () => router.push("/login") },
+          });
+        } else {
+          toast.error(error ?? "Failed to create business. Please try again.");
+        }
         return;
       }
 
