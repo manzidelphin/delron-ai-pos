@@ -43,11 +43,15 @@ export async function POST(request: NextRequest) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { name, barcode_type, selling_price, cost_price, unit, category, is_active, branch_id: bodyBranchId } = body;
+  const { name, barcode_type, unit, category, is_active, branch_id: bodyBranchId } = body;
 
   if (!name?.trim() || !barcode_type) {
     return NextResponse.json({ error: "Name and barcode type are required" }, { status: 400 });
   }
+
+  const canEditPrice = auth.role === "owner" || auth.role === "manager";
+  const selling_price = canEditPrice ? (parseFloat(body.selling_price) || 0) : 0;
+  const cost_price    = canEditPrice ? (parseFloat(body.cost_price)    || 0) : 0;
 
   const supabase = createAdminClient();
 
@@ -78,8 +82,8 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       barcode,
       barcode_type,
-      selling_price: parseFloat(selling_price) || 0,
-      cost_price: parseFloat(cost_price) || 0,
+      selling_price,
+      cost_price,
       quantity: 0,
       unit: unit || "piece",
       category: category || "bread",
@@ -97,19 +101,38 @@ export async function PUT(request: NextRequest) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { id, name, barcode_type, selling_price, cost_price, unit, category, is_active } = body;
+  const { id, name, barcode_type, unit, category, is_active } = body;
 
   if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
   const supabase = createAdminClient();
+
+  const canEditPrice = auth.role === "owner" || auth.role === "manager";
+  let selling_price: number;
+  let cost_price: number;
+
+  if (canEditPrice) {
+    selling_price = parseFloat(body.selling_price);
+    cost_price    = parseFloat(body.cost_price);
+  } else {
+    // Baker or other non-pricing role — preserve existing prices from DB.
+    const { data: existing } = await supabase
+      .from("finished_goods")
+      .select("selling_price, cost_price")
+      .eq("id", id)
+      .eq("business_id", auth.businessId)
+      .single();
+    selling_price = existing?.selling_price ?? 0;
+    cost_price    = existing?.cost_price    ?? 0;
+  }
 
   const { data, error } = await supabase
     .from("finished_goods")
     .update({
       name: name?.trim(),
       barcode_type,
-      selling_price: parseFloat(selling_price),
-      cost_price: parseFloat(cost_price),
+      selling_price,
+      cost_price,
       unit,
       category,
       is_active,
