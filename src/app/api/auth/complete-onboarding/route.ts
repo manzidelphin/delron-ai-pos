@@ -6,38 +6,39 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
-      user_id,
       full_name,
       business_name,
       phone,
       email,
+      password,
       location,
       modules,
       language,
     } = body;
 
-    if (!user_id || !full_name || !business_name) {
+    if (!email || !password || !full_name || !business_name) {
       return NextResponse.json(
-        { error: "user_id, full_name and business_name are required" },
+        { error: "email, password, full_name and business_name are required" },
         { status: 400 }
       );
     }
 
     const supabase = createAdminClient();
 
-    // 0. Confirm auth.users row exists — with email confirmation enabled, there
-    //    can be a brief propagation delay between signUp() and the FK being ready.
-    const { data: authUser, error: authUserError } = await supabase.auth.admin.getUserById(user_id);
-    if (authUserError || !authUser.user) {
-      await new Promise((r) => setTimeout(r, 3000));
-      const retry = await supabase.auth.admin.getUserById(user_id);
-      if (!retry.data.user) {
-        return NextResponse.json(
-          { error: "Account not ready yet. Please try again in a few seconds." },
-          { status: 409 }
-        );
-      }
+    // 0. Create the auth user server-side — synchronous, no FK propagation race.
+    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: false,
+      user_metadata: { full_name },
+    });
+    if (createError || !newUser.user) {
+      return NextResponse.json(
+        { error: createError?.message ?? "Failed to create account" },
+        { status: 400 }
+      );
     }
+    const user_id = newUser.user.id;
 
     // 1. Create business
     const { data: business, error: bizError } = await supabase
