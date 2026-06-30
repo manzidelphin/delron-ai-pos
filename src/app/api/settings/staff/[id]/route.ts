@@ -5,7 +5,7 @@ import { getAuthContext } from "@/lib/auth";
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
-  const { businessId, staffId: requesterId } = auth;
+  const { businessId, ownerStaffId: requesterId } = auth;
 
   const supabase = createAdminClient();
   const { data: requester } = await supabase.from("staff").select("role").eq("id", requesterId).single();
@@ -35,7 +35,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
-  const { businessId, staffId: requesterId } = auth;
+  const { businessId, ownerStaffId: requesterId } = auth;
 
   const supabase = createAdminClient();
   const { data: requester } = await supabase.from("staff").select("role").eq("id", requesterId).single();
