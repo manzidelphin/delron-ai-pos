@@ -7,6 +7,7 @@ import { X, Loader2, AlertTriangle } from "lucide-react";
 interface CreditModalProps {
   total: number;
   itemsDescription: string;
+  editable?: boolean; // when true: amount + description become inputs instead of static display
   onConfirm: (details: CreditDetails) => Promise<void>;
   onClose: () => void;
 }
@@ -16,9 +17,11 @@ export interface CreditDetails {
   customer_phone: string;
   due_date: string;
   notes?: string;
+  total_amount?: number;       // only present when editable
+  items_description?: string;  // only present when editable
 }
 
-export function CreditModal({ total, itemsDescription, onConfirm, onClose }: CreditModalProps) {
+export function CreditModal({ total, itemsDescription, editable = false, onConfirm, onClose }: CreditModalProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [dueDate, setDueDate] = useState(() => {
@@ -27,11 +30,21 @@ export function CreditModal({ total, itemsDescription, onConfirm, onClose }: Cre
     return d.toISOString().split("T")[0];
   });
   const [notes, setNotes] = useState("");
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const clearError = (key: string) =>
+    setErrors((prev) => { const n = { ...prev }; delete n[key]; return n; });
+
   const validate = () => {
     const e: Record<string, string> = {};
+    if (editable) {
+      const amt = parseFloat(amount);
+      if (!amount || isNaN(amt) || amt <= 0) e.amount = "Enter a valid amount";
+      if (!description.trim()) e.description = "Describe what this credit is for";
+    }
     if (!customerName.trim()) e.name = "Customer name is required";
     if (!customerPhone.trim()) e.phone = "Phone number is required";
     if (!dueDate) e.date = "Due date is required";
@@ -43,7 +56,17 @@ export function CreditModal({ total, itemsDescription, onConfirm, onClose }: Cre
     if (!validate()) return;
     setIsLoading(true);
     try {
-      await onConfirm({ customer_name: customerName.trim(), customer_phone: customerPhone.trim(), due_date: dueDate, notes: notes.trim() || undefined });
+      const details: CreditDetails = {
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        due_date: dueDate,
+        notes: notes.trim() || undefined,
+      };
+      if (editable) {
+        details.total_amount = parseFloat(amount);
+        details.items_description = description.trim();
+      }
+      await onConfirm(details);
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +81,7 @@ export function CreditModal({ total, itemsDescription, onConfirm, onClose }: Cre
             <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
             </div>
-            <h2 className="text-lg font-bold text-white">Credit Sale</h2>
+            <h2 className="text-lg font-bold text-white">{editable ? "Add Credit" : "Credit Sale"}</h2>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-400 hover:text-white transition-all">
             <X className="w-4 h-4" />
@@ -66,16 +89,45 @@ export function CreditModal({ total, itemsDescription, onConfirm, onClose }: Cre
         </div>
 
         <div className="p-5 space-y-4">
-          {/* Warning + amount */}
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-            <p className="text-amber-400 font-bold text-lg">{formatRWF(total)}</p>
-            <p className="text-slate-400 text-xs mt-1 line-clamp-2">{itemsDescription}</p>
-            <p className="text-amber-400/70 text-xs mt-2">
-              ⚠ Stock will be deducted now. Customer pays later.
-            </p>
-          </div>
+          {/* Editable: amount + description inputs. Non-editable: static cart summary (POS flow). */}
+          {editable ? (
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-slate-300 block mb-1.5">Amount (RWF) *</label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); clearError("amount"); }}
+                  placeholder="e.g. 5000"
+                  autoFocus
+                  min={1}
+                  className="w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {errors.amount && <p className="text-red-400 text-xs mt-1">{errors.amount}</p>}
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 block mb-1.5">What&apos;s this for? *</label>
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => { setDescription(e.target.value); clearError("description"); }}
+                  placeholder="e.g. 5kg rice, 2L cooking oil"
+                  className="w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {errors.description && <p className="text-red-400 text-xs mt-1">{errors.description}</p>}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+              <p className="text-amber-400 font-bold text-lg">{formatRWF(total)}</p>
+              <p className="text-slate-400 text-xs mt-1 line-clamp-2">{itemsDescription}</p>
+              <p className="text-amber-400/70 text-xs mt-2">
+                ⚠ Stock will be deducted now. Customer pays later.
+              </p>
+            </div>
+          )}
 
-          {/* Fields */}
+          {/* Customer fields */}
           <div className="space-y-3">
             <div>
               <label className="text-sm font-medium text-slate-300 block mb-1.5">Customer Name *</label>
@@ -84,7 +136,7 @@ export function CreditModal({ total, itemsDescription, onConfirm, onClose }: Cre
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="Uwimana Jean"
-                autoFocus
+                autoFocus={!editable}
                 className="w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
@@ -154,6 +206,8 @@ export function CreditModal({ total, itemsDescription, onConfirm, onClose }: Cre
           >
             {isLoading ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> Saving Credit...</>
+            ) : editable ? (
+              <>📋 Record Credit</>
             ) : (
               <>📋 Confirm Credit Sale</>
             )}
