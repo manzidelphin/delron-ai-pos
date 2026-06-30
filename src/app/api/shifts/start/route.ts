@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
+import { closeShift } from "@/lib/shift";
 
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext();
@@ -27,12 +28,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Staff not found" }, { status: 404 });
   }
 
-  // Auto-close any dangling active shift for this staff member
-  await supabase
-    .from("shifts")
-    .update({ status: "ended", ended_at: new Date().toISOString(), notes: "Auto-closed on new login" })
-    .eq("staff_id", staffId)
-    .eq("status", "active");
+  // Auto-close any dangling active shift — uses the same path as explicit End Shift
+  // so sales/orders/notifications are computed and stored, not silently discarded.
+  await closeShift({ businessId, branchId, staffId, closingCash: null, notes: "Auto-closed on new login" });
 
   const { data: shift, error } = await supabase
     .from("shifts")
