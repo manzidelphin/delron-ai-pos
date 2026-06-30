@@ -87,6 +87,14 @@ export const SMS_TEMPLATES = {
   ) =>
     `DELRON STOCK ALERT: ${itemName} igeze ${quantity} ${unit} gusa kuri ${businessName}. Ongera stock vuba!`,
 
+  expiringStockAlert: (
+    itemName: string,
+    quantity: number,
+    expiryDate: string,
+    businessName: string
+  ) =>
+    `DELRON ALERT: ${itemName} (${quantity} ibice) irangira tariki ya ${expiryDate} kuri ${businessName}. Uzigurishe vuba!`,
+
   staffWelcome: (name: string, business: string, pin: string) =>
     `Murakaza neza ${name}! Winjijwe muri ${business} kuri DELRON AI POS. PIN yawe ni: ${pin}. Umuhuza: support@delron.rw`,
 
