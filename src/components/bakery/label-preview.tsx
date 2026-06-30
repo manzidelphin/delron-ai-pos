@@ -1,6 +1,7 @@
 "use client";
 
 import { Printer } from "lucide-react";
+import { BarcodeRender } from "@/components/bakery/barcode-render";
 
 interface LabelItem {
   item_name: string;
@@ -34,26 +35,18 @@ function FullLabel({ item, businessName, date }: { item: LabelItem; businessName
         </div>
       </div>
       <div className="mt-1 text-center">
-        <div className="flex justify-center gap-px my-0.5">
-          {Array.from({ length: 30 }).map((_, i) => (
-            <div key={i} className="bg-black" style={{ width: i % 3 === 0 ? 2 : 1, height: 12 }} />
-          ))}
-        </div>
+        <BarcodeRender value={item.barcode} width={1.5} height={28} />
         <p className="text-[7px] font-mono">{item.barcode}</p>
       </div>
     </div>
   );
 }
 
-function StickerLabel({ item }: { item: LabelItem }) {
+export function StickerLabel({ item }: { item: Pick<LabelItem, "item_name" | "barcode"> }) {
   return (
     <div className="label-sticker border border-gray-800 bg-white text-black font-mono p-0.5" style={{ width: "3cm", height: "2cm", display: "inline-block", margin: "1px", fontSize: "7px", verticalAlign: "top" }}>
       <p className="font-black text-xs text-center leading-tight">{item.item_name.toUpperCase()}</p>
-      <div className="flex justify-center gap-px my-0.5">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div key={i} className="bg-black" style={{ width: i % 3 === 0 ? 2 : 1, height: 8 }} />
-        ))}
-      </div>
+      <BarcodeRender value={item.barcode} width={1} height={16} />
       <p className="text-[6px] font-mono text-center">{item.barcode}</p>
     </div>
   );
@@ -61,7 +54,6 @@ function StickerLabel({ item }: { item: LabelItem }) {
 
 export function LabelPreview({ items, businessName, batchDate }: LabelPreviewProps) {
   const fullLabels = items.filter((i) => i.barcode_type === "pre-packaged");
-  const stickerLabels = items.filter((i) => i.barcode_type === "generic");
 
   const handlePrint = () => {
     window.print();
@@ -74,8 +66,7 @@ export function LabelPreview({ items, businessName, batchDate }: LabelPreviewPro
         <div>
           <h3 className="font-bold text-white">Label Preview</h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            {fullLabels.reduce((s, i) => s + i.quantity_produced, 0)} full labels +{" "}
-            {stickerLabels.reduce((s, i) => s + Math.ceil(i.quantity_produced / 10), 0)} stickers
+            {fullLabels.reduce((s, i) => s + i.quantity_produced, 0)} full labels ready to print
           </p>
         </div>
         <button
@@ -101,27 +92,6 @@ export function LabelPreview({ items, businessName, batchDate }: LabelPreviewPro
               ))
             )}
           </div>
-        </div>
-      )}
-
-      {/* Generic sticker section */}
-      {stickerLabels.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-lg">GENERIC</span>
-            <span className="text-sm text-slate-400">Item-name stickers — 1 per 10 pieces</span>
-          </div>
-          <div className="print-labels bg-white rounded-xl p-4 border border-slate-600">
-            {stickerLabels.flatMap((item) => {
-              const stickerCount = Math.ceil(item.quantity_produced / 10);
-              return Array.from({ length: stickerCount }, (_, i) => (
-                <StickerLabel key={`${item.barcode}-sticker-${i}`} item={item} />
-              ));
-            })}
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
-            Sticker quantity = {"{"}qty ÷ 10{"}"} rounded up. Customer brings stickered bag to cashier who scans and enters exact count.
-          </p>
         </div>
       )}
     </div>
