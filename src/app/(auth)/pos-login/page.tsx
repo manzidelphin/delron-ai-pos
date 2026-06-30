@@ -192,8 +192,11 @@ export default function PosLoginPage() {
         branch_id: staffData.branch_id ?? null,
       });
 
-      // Hydrate business context so hasModule() works for PIN-only sessions
-      if (data.staffRecord) setStaff(data.staffRecord as import("@/types").Staff);
+      // Hydrate business context so hasModule() works for PIN-only sessions.
+      // Skip setStaff when an owner session is already loaded — overwriting staff
+      // with the operator's record causes use-business to see a uid mismatch on
+      // reload and incorrectly reset the activeOperator back to the owner.
+      if (data.staffRecord && !useAuthStore.getState().staff) setStaff(data.staffRecord as import("@/types").Staff);
       if (data.business)    setBusiness(data.business as import("@/types").Business);
       if (data.branches && (data.branches as unknown[]).length > 0) {
         const branchList = data.branches as import("@/types").Branch[];
