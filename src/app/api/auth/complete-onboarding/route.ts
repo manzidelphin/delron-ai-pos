@@ -33,9 +33,18 @@ export async function POST(req: NextRequest) {
       user_metadata: { full_name },
     });
     if (createError || !newUser.user) {
+      const isDuplicate =
+        createError?.message?.toLowerCase().includes("already been registered") ||
+        createError?.message?.toLowerCase().includes("already registered") ||
+        createError?.code === "email_exists";
       return NextResponse.json(
-        { error: createError?.message ?? "Failed to create account" },
-        { status: 400 }
+        {
+          error: isDuplicate
+            ? "An account with this email already exists."
+            : (createError?.message ?? "Failed to create account"),
+          duplicate: isDuplicate,
+        },
+        { status: isDuplicate ? 409 : 400 }
       );
     }
     const user_id = newUser.user.id;
