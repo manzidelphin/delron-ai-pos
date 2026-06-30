@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
   const { data: businesses } = await supabase
     .from("businesses")
-    .select("id, name, phone");
+    .select("id, name, phone, owner_id");
 
   if (!businesses?.length) {
     return NextResponse.json({ message: "No businesses found" });
@@ -36,6 +36,7 @@ export async function POST(req: Request) {
       due_today_reminders: 0,
       overdue_alerts: 0,
       low_stock_alerts: 0,
+      expiring_alerts: 0,
     };
 
     // 1. Credits due today
@@ -131,6 +132,51 @@ export async function POST(req: Request) {
           SMS_TEMPLATES.lowStockAlert(item.name, item.quantity, item.unit, business.name)
         );
         result.low_stock_alerts++;
+      }
+
+      // 5. Near-expiry baked goods
+      const fortyEightHoursFromNow = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+      const { data: nearExpiryLogs } = await supabase
+        .from("production_logs")
+        .select("finished_good_id, expiry_time, finished_goods(name, quantity)")
+        .eq("business_id", business.id)
+        .not("expiry_time", "is", null)
+        .lte("expiry_time", fortyEightHoursFromNow);
+
+      // Dedupe by finished_good_id — keep the nearest expiry per item; skip qty=0
+      const byId = new Map<string, { name: string; quantity: number; expiry_time: string }>();
+      for (const log of nearExpiryLogs ?? []) {
+        if (!log.finished_good_id || !log.expiry_time) continue;
+        const fg = (Array.isArray(log.finished_goods) ? log.finished_goods[0] : log.finished_goods) as
+          | { name: string; quantity: number }
+          | null;
+        if (!fg || fg.quantity <= 0) continue;
+        const existing = byId.get(log.finished_good_id);
+        if (!existing || log.expiry_time < existing.expiry_time) {
+          byId.set(log.finished_good_id, { name: fg.name, quantity: fg.quantity, expiry_time: log.expiry_time });
+        }
+      }
+
+      const expiringItems = Array.from(byId.values());
+      for (const item of expiringItems) {
+        const d = new Date(item.expiry_time);
+        const expiryDate = `${d.getDate()}/${d.getMonth() + 1}`;
+        void sendSMS(
+          business.phone,
+          SMS_TEMPLATES.expiringStockAlert(item.name, item.quantity, expiryDate, business.name)
+        );
+        result.expiring_alerts++;
+      }
+
+      if (expiringItems.length > 0) {
+        void supabase.from("notifications").insert({
+          business_id: business.id,
+          user_id: business.owner_id ?? null,
+          title: "Ibicuruzwa birangira vuba",
+          message: `Ibicuruzwa ${expiringItems.length} birangira mu masaha 48. Uzigurishe vuba!`,
+          category: "production",
+          type: "warning",
+        });
       }
 
       // 4. Daily summary SMS
