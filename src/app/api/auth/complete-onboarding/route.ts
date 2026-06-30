@@ -25,6 +25,20 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient();
 
+    // 0. Confirm auth.users row exists — with email confirmation enabled, there
+    //    can be a brief propagation delay between signUp() and the FK being ready.
+    const { data: authUser, error: authUserError } = await supabase.auth.admin.getUserById(user_id);
+    if (authUserError || !authUser.user) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const retry = await supabase.auth.admin.getUserById(user_id);
+      if (!retry.data.user) {
+        return NextResponse.json(
+          { error: "Account not ready yet. Please try again in a few seconds." },
+          { status: 409 }
+        );
+      }
+    }
+
     // 1. Create business
     const { data: business, error: bizError } = await supabase
       .from("businesses")
