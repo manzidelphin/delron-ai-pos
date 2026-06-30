@@ -193,8 +193,8 @@ export default function CreditsPage() {
         customer_phone: details.customer_phone,
         due_date: details.due_date,
         notes: details.notes,
-        total_amount: 0,
-        items_description: "Manual credit",
+        total_amount: details.total_amount,
+        items_description: details.items_description,
       }),
     });
     if (!res.ok) throw new Error("Failed to create credit");
@@ -489,7 +489,8 @@ export default function CreditsPage() {
       {showAddCredit && (
         <CreditModal
           total={0}
-          itemsDescription="Manual credit entry"
+          itemsDescription=""
+          editable
           onConfirm={handleAddCredit}
           onClose={() => setShowAddCredit(false)}
         />
