@@ -22,6 +22,15 @@ export function BarcodeRender({ value, width = 1.5, height = 30 }: BarcodeRender
         height,
         margin: 0,
       });
+      // JsBarcode stamps fixed width/height px attributes on the element, causing
+      // overflow when the encoded value produces more bars than the container allows.
+      // Remove them and rely on CSS + the viewBox JsBarcode also sets, so the SVG
+      // scales to 100% of its container while preserving aspect ratio.
+      svgRef.current.removeAttribute("width");
+      svgRef.current.removeAttribute("height");
+      svgRef.current.style.width = "100%";
+      svgRef.current.style.height = "auto";
+      svgRef.current.style.display = "block";
     } catch {
       // Invalid barcode value — leave SVG empty
     }
