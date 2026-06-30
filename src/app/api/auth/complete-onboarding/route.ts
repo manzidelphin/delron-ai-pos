@@ -49,6 +49,17 @@ export async function POST(req: NextRequest) {
     }
     const user_id = newUser.user.id;
 
+    // Trigger Supabase's confirmation email — admin.createUser() does not auto-send it.
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email,
+      });
+      if (resendError) {
+        console.error("[onboarding] confirmation email resend failed:", resendError);
+      }
+    } catch (e) { console.error("[onboarding] confirmation email resend threw:", e); }
+
     // 1. Create business
     const { data: business, error: bizError } = await supabase
       .from("businesses")
