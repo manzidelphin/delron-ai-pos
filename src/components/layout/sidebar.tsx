@@ -76,9 +76,9 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Closing Count", href: "/bar/stock/closing", icon: <ClipboardList className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
   { label: "KDS Display", href: "/bar/display", icon: <LayoutDashboard className="w-4 h-4" />, module: "bar", roles: ["owner", "manager", "bartender"] },
   { label: "Bar Reports", href: "/bar/reports", icon: <BarChart3 className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
-  { label: "Restaurant",      href: "/restaurant",      icon: <UtensilsCrossed className="w-4 h-4" />, module: "restaurant", roles: ["owner", "manager", "waiter"] },
+  { label: "Restaurant",      href: "/restaurant",      icon: <UtensilsCrossed className="w-4 h-4" />, module: "restaurant", roles: ["owner", "manager", "waiter", "chef"] },
   { label: "Menu",            href: "/restaurant/menu", icon: <ChefHat className="w-4 h-4" />,         module: "restaurant", roles: ["owner", "manager"] },
-  { label: "Kitchen Display", href: "/restaurant/kds",  icon: <Monitor className="w-4 h-4" />,         module: "restaurant", roles: ["owner", "manager", "waiter"] },
+  { label: "Kitchen Display", href: "/restaurant/kds",  icon: <Monitor className="w-4 h-4" />,         module: "restaurant", roles: ["owner", "manager", "waiter", "chef"] },
   // POS + Tables for restaurant-only businesses (hidden when bar module is also active — bar section covers them)
   { label: "POS",    href: "/bar/pos",    icon: <ShoppingCart className="w-4 h-4" />, module: "restaurant", hideIfModule: "bar", roles: ["owner", "manager", "waiter", "cashier"] },
   { label: "Tables", href: "/bar/tables", icon: <Layers className="w-4 h-4" />,       module: "restaurant", hideIfModule: "bar", roles: ["owner", "manager", "waiter"] },
