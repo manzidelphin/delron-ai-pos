@@ -148,7 +148,12 @@ export function useBusiness() {
             // different auth user (account switch without explicit logout),
             // clear stale data and reload.  Without this check, the store
             // keeps User A's business while the Supabase cookie is User B.
-            if (!state.staff || state.staff.user_id !== uid) {
+            if (state.activeOperator) {
+              // A PIN operator is layered on top of the owner's still-valid Supabase
+              // session. Don't reset or reload — the overlay is intentional; treating
+              // it as a uid mismatch would wipe the operator and revert to owner view.
+              setLoaded(true);
+            } else if (!state.staff || state.staff.user_id !== uid) {
               if (state.staff?.user_id && state.staff.user_id !== uid) {
                 console.log("[use-business] uid mismatch — clearing stale session");
                 reset();
