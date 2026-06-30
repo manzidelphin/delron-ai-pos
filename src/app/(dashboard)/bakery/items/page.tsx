@@ -34,6 +34,10 @@ const CATEGORIES = ["bread", "pastry", "cake", "snack", "other"];
 const EMPTY_FORM: ItemForm = { name: "", barcode_type: "generic", selling_price: "", cost_price: "", unit: "piece", category: "bread", is_active: true };
 
 function ItemModal({ item, onClose, onSave }: { item: FinishedGood | null; onClose: () => void; onSave: () => void }) {
+  const { effectiveRole } = useAuthStore();
+  const role = effectiveRole();
+  const canEditPrice = role === "owner" || role === "manager";
+
   const isEdit = !!item;
   const [form, setForm] = useState<ItemForm>(
     item
@@ -51,7 +55,9 @@ function ItemModal({ item, onClose, onSave }: { item: FinishedGood | null; onClo
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "Name required";
-    if (!form.selling_price || isNaN(parseFloat(form.selling_price))) e.selling_price = "Price required";
+    if (canEditPrice && (!form.selling_price || isNaN(parseFloat(form.selling_price)))) {
+      e.selling_price = "Price required";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -123,15 +129,21 @@ function ItemModal({ item, onClose, onSave }: { item: FinishedGood | null; onClo
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-slate-300 block mb-1.5">Selling Price (RWF) *</label>
+              <label className="text-sm font-medium text-slate-300 block mb-1.5">
+                Selling Price (RWF){canEditPrice ? " *" : ""}
+              </label>
               <input type="number" value={form.selling_price} onChange={(e) => set("selling_price", e.target.value)} placeholder="0"
-                className="w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                disabled={!canEditPrice}
+                className={`w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${!canEditPrice ? "opacity-50 cursor-not-allowed" : ""}`} />
+              {!canEditPrice && <p className="text-slate-500 text-xs mt-1">Set by owner</p>}
               {errors.selling_price && <p className="text-red-400 text-xs mt-1">{errors.selling_price}</p>}
             </div>
             <div>
               <label className="text-sm font-medium text-slate-300 block mb-1.5">Cost Price (RWF)</label>
               <input type="number" value={form.cost_price} onChange={(e) => set("cost_price", e.target.value)} placeholder="0"
-                className="w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                disabled={!canEditPrice}
+                className={`w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${!canEditPrice ? "opacity-50 cursor-not-allowed" : ""}`} />
+              {!canEditPrice && <p className="text-slate-500 text-xs mt-1">Set by owner</p>}
             </div>
           </div>
 
