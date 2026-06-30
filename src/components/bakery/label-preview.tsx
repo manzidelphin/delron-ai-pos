@@ -35,7 +35,9 @@ function FullLabel({ item, businessName, date }: { item: LabelItem; businessName
         </div>
       </div>
       <div className="mt-1 text-center">
-        <BarcodeRender value={item.barcode} width={1.5} height={28} />
+        <div style={{ width: "100%", overflow: "hidden" }}>
+          <BarcodeRender value={item.barcode} width={1.5} height={28} />
+        </div>
         <p className="text-[7px] font-mono">{item.barcode}</p>
       </div>
     </div>
@@ -46,7 +48,9 @@ export function StickerLabel({ item }: { item: Pick<LabelItem, "item_name" | "ba
   return (
     <div className="label-sticker border border-gray-800 bg-white text-black font-mono p-0.5" style={{ width: "3cm", height: "2cm", display: "inline-block", margin: "1px", fontSize: "7px", verticalAlign: "top" }}>
       <p className="font-black text-xs text-center leading-tight">{item.item_name.toUpperCase()}</p>
-      <BarcodeRender value={item.barcode} width={1} height={16} />
+      <div style={{ width: "100%", overflow: "hidden" }}>
+        <BarcodeRender value={item.barcode} width={1} height={16} />
+      </div>
       <p className="text-[6px] font-mono text-center">{item.barcode}</p>
     </div>
   );

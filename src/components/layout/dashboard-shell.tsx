@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useBusiness } from "@/hooks/use-business";
+import { useAuthStore } from "@/store/auth-store";
+import { NAV_ITEMS } from "@/config/nav-items";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import AIChatWidget from "@/components/ai/ai-chat-widget";
@@ -42,8 +44,34 @@ function ImpersonationBanner({ businessName }: { businessName: string }) {
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { isLoaded, impersonation } = useBusiness();
+  const { canAccess, hasModule } = useAuthStore();
+  const pathname = usePathname();
+  const router = useRouter();
 
-  if (!isLoaded) {
+  // Find all nav entries whose href is a prefix of the current path, then check
+  // if at least one is accessible (module + role). If none are, redirect.
+  // Uses "any match accessible" so dual-entry routes (e.g. /bar/pos under both
+  // bar and restaurant modules) are handled correctly.
+  const matchingItems = isLoaded
+    ? NAV_ITEMS.filter(
+        (item) => item.href.length > 1 && (pathname === item.href || pathname.startsWith(item.href + "/"))
+      )
+    : [];
+
+  const isBlocked =
+    matchingItems.length > 0 &&
+    !matchingItems.some((item) => {
+      if (item.module && !hasModule(item.module)) return false;
+      if (item.anyModule && !item.anyModule.some((m) => hasModule(m))) return false;
+      if (item.roles && !canAccess(item.roles)) return false;
+      return true;
+    });
+
+  useEffect(() => {
+    if (isBlocked) router.replace("/dashboard");
+  }, [isBlocked, router]);
+
+  if (!isLoaded || isBlocked) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
