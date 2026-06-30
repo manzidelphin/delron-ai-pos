@@ -17,6 +17,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading]       = useState(false);
 
+  // Forgot password
+  const [resetLoading, setResetLoading] = useState(false);
+
   // OTP step
   const [step, setStep]               = useState<Step>("credentials");
   const [otpDigits, setOtpDigits]     = useState(["", "", "", "", "", ""]);
@@ -130,6 +133,26 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast.error("Enter your email address first");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const { error } = await createClient().auth.resetPasswordForEmail(email.trim());
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success("Check your email for a password reset link");
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const goBack = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -196,8 +219,8 @@ export default function LoginPage() {
                 </div>
 
                 <div className="flex justify-end">
-                  <button type="button" className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
-                    Forgot password?
+                  <button type="button" onClick={handleForgotPassword} disabled={resetLoading} className="text-sm text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50">
+                    {resetLoading ? "Sending..." : "Forgot password?"}
                   </button>
                 </div>
 
