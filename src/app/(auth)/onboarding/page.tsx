@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import {
   Zap,
@@ -96,31 +95,15 @@ export default function OnboardingPage() {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: { full_name: data.full_name },
-          emailRedirectTo: `${window.location.origin}/auth/confirm`,
-        },
-      });
-
-      if (authError || !authData.user) {
-        toast.error(authError?.message ?? "Failed to create account");
-        return;
-      }
-
       const res = await fetch("/api/auth/complete-onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: authData.user.id,
           full_name: data.full_name,
           business_name: data.business_name,
           phone: data.phone,
           email: data.email,
+          password: data.password,
           location: data.location,
           modules: data.modules,
           language: data.language,
