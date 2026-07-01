@@ -64,7 +64,7 @@ export async function updateSession(request: NextRequest) {
   const publicRoutes = [
     "/login", "/onboarding", "/", "/pos-login",
     "/api/auth/pos-staff", "/api/auth/pin-login", "/api/auth/complete-onboarding",
-    "/api/auth/session-business", "/api/auth/staff-by-phone",
+    "/api/auth/session-business", "/api/auth/staff-by-phone", "/api/auth/staff-login",
     "/api/cron",
     "/api/webhooks",
     "/supermarket", "/supermarket/pos",
