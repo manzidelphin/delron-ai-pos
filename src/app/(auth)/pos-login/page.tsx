@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Zap, Delete, LogIn, Loader2, ArrowLeft, Phone, ChevronRight } from "lucide-react";
+import { Zap, Delete, LogIn, Loader2, ArrowLeft, Phone } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,16 @@ const ROLE_COLORS: Record<string, string> = {
 const ROLE_LABELS: Record<string, string> = {
   owner: "Owner", manager: "Manager", cashier: "Cashier",
   baker: "Baker", waiter: "Waiter", bartender: "Bartender",
+};
+
+const ROLE_REDIRECT: Record<string, string> = {
+  cashier:   "/supermarket/pos",
+  bartender: "/bar/pos",
+  waiter:    "/bar/tables",
+  baker:     "/bakery",
+  chef:      "/restaurant/kds",
+  manager:   "/dashboard",
+  owner:     "/dashboard",
 };
 
 const NUMPAD = [
@@ -54,11 +64,10 @@ export default function PosLoginPage() {
   const [openingCashError, setOpeningCashError] = useState("");
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
-  // Phone-based business lookup (for devices without pos_business_id cookie)
+  // Phone+PIN login (for unknown devices without pos_business_id cookie)
   const [phoneInput, setPhoneInput] = useState("");
   const [phoneLoading, setPhoneLoading] = useState(false);
   const [phoneError, setPhoneError] = useState("");
-  const [bizMatches, setBizMatches] = useState<Array<{ businessId: string; businessName: string }>>([]);
   const phoneRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -89,7 +98,7 @@ export default function PosLoginPage() {
           : null;
         setBusinessId(cookieId);
 
-        if (!cookieId) return; // show "Device not configured"
+        if (!cookieId) return; // show phone+PIN screen
 
         const staffRes = await fetch(`/api/auth/pos-staff?businessId=${cookieId}`);
         if (!staffRes.ok) throw new Error("Failed");
@@ -105,50 +114,60 @@ export default function PosLoginPage() {
     load();
   }, []);
 
-  const loadBusiness = async (bId: string, bName: string) => {
-    setBusinessId(bId);
-    setBusinessName(bName);
-    setBizMatches([]);
-    setLoadingStaff(true);
-    try {
-      const staffRes = await fetch(`/api/auth/pos-staff?businessId=${bId}`);
-      if (staffRes.ok) {
-        const d = await staffRes.json();
-        setStaffList(d.staff ?? []);
-      } else {
-        toast.error("Could not load staff list");
-      }
-    } catch {
-      toast.error("Could not load staff list");
-    } finally {
-      setLoadingStaff(false);
+  const handlePhoneLogin = async (enteredPin: string) => {
+    if (!phoneInput.trim()) {
+      setPhoneError("Enter your phone number first");
+      setPin("");
+      return;
     }
-  };
-
-  const handlePhoneLookup = async () => {
-    const phone = phoneInput.trim();
-    if (!phone || phoneLoading) return;
     setPhoneLoading(true);
     setPhoneError("");
     try {
-      const res = await fetch("/api/auth/staff-by-phone", {
+      const res = await fetch("/api/auth/staff-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: phoneInput.trim(), pin: enteredPin }),
       });
-      const data = await res.json() as { matches?: Array<{ businessId: string; businessName: string }>; error?: string };
+      const data = await res.json() as {
+        staff?: { id: string; name: string; role: string; branch_id: string | null };
+        business?: import("@/types").Business | null;
+        branches?: import("@/types").Branch[];
+        requiresOpeningCash?: boolean;
+        error?: string;
+      };
       if (!res.ok) {
-        setPhoneError(data.error ?? "Phone number not found");
+        setPhoneError(data.error ?? "Incorrect phone number or PIN");
+        setPin("");
         return;
       }
-      const matches = data.matches ?? [];
-      if (matches.length === 1) {
-        await loadBusiness(matches[0].businessId, matches[0].businessName);
-      } else {
-        setBizMatches(matches);
+      const staffData = data.staff!;
+      setActiveOperator({
+        id:        staffData.id,
+        name:      staffData.name,
+        role:      staffData.role as UserRole,
+        branch_id: staffData.branch_id ?? null,
+      });
+      if (data.business)  setBusiness(data.business);
+      if (data.branches && data.branches.length > 0) {
+        setBranches(data.branches);
+        const activeBranch = data.branches.find((b) => b.id === staffData.branch_id) ?? data.branches[0];
+        setCurrentBranch(activeBranch);
       }
+      const dest = ROLE_REDIRECT[staffData.role] ?? "/dashboard";
+      if (data.requiresOpeningCash) {
+        setPendingRedirect(dest);
+        setShowOpeningCash(true);
+        return;
+      }
+      const shiftRoles = ["bartender", "baker", "waiter", "chef"];
+      if (shiftRoles.includes(staffData.role)) {
+        fetch("/api/shifts/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) })
+          .catch(() => { /* non-blocking */ });
+      }
+      window.location.href = dest;
     } catch {
       setPhoneError("Connection error. Please try again.");
+      setPin("");
     } finally {
       setPhoneLoading(false);
     }
@@ -205,16 +224,7 @@ export default function PosLoginPage() {
         setCurrentBranch(activeBranch);
       }
 
-      const roleRedirect: Record<string, string> = {
-        cashier:   "/supermarket/pos",
-        bartender: "/bar/pos",
-        waiter:    "/bar/tables",
-        baker:     "/bakery",
-        chef:      "/restaurant/kds",
-        manager:   "/dashboard",
-        owner:     "/dashboard",
-      };
-      const dest = roleRedirect[staffData.role] ?? "/dashboard";
+      const dest = ROLE_REDIRECT[staffData.role] ?? "/dashboard";
 
       // Cashiers see an opening cash prompt before we create the shift
       if (staffData.role === "cashier") {
@@ -259,6 +269,18 @@ export default function PosLoginPage() {
   };
 
   const handleDigit = (key: string) => {
+    if (!businessId) {
+      // Phone+PIN mode — numpad drives the PIN half of the login form
+      if (key === "clear") { setPin(""); setPhoneError(""); return; }
+      if (key === "back")  { setPin((p) => p.slice(0, -1)); setPhoneError(""); return; }
+      if (pin.length >= 4) return;
+      const next = pin + key;
+      setPin(next);
+      setPhoneError("");
+      if (next.length === 4) handlePhoneLogin(next);
+      return;
+    }
+    // Avatar-picker PIN mode (existing flow, unchanged)
     if (key === "clear") { setPin(""); setErrorMsg(""); return; }
     if (key === "back")  { setPin((p) => p.slice(0, -1)); setErrorMsg(""); return; }
     if (pin.length >= 4) return;
@@ -273,6 +295,11 @@ export default function PosLoginPage() {
     setPin("");
     setErrorMsg("");
     setShake(false);
+  };
+
+  const clearBusinessCookie = () => {
+    document.cookie = "pos_business_id=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+    window.location.reload();
   };
 
   if (businessId === undefined) {
@@ -354,74 +381,94 @@ export default function PosLoginPage() {
           )}
         </div>
 
-        {/* No cookie: phone-number lookup so any device can be used */}
+        {/* No cookie: phone+PIN login so any new device can sign in */}
         {!businessId ? (
-          <div className="w-full max-w-sm">
-            {bizMatches.length > 0 ? (
-              /* Multiple businesses matched — let the user pick */
-              <div className="space-y-3">
-                <p className="text-slate-300 text-sm text-center mb-4">Select your business:</p>
-                {bizMatches.map((m) => (
-                  <button
-                    key={m.businessId}
-                    onClick={() => loadBusiness(m.businessId, m.businessName)}
-                    className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-blue-500/40 hover:bg-slate-700/80 transition-all text-left"
-                  >
-                    <span className="text-white font-medium text-sm">{m.businessName}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-500" />
-                  </button>
-                ))}
-                <button
-                  onClick={() => { setBizMatches([]); setPhoneInput(""); setPhoneError(""); setTimeout(() => phoneRef.current?.focus(), 50); }}
-                  className="w-full text-slate-500 hover:text-slate-300 text-xs py-2 transition-colors"
-                >
-                  ← Try a different number
-                </button>
+          <div className="w-full max-w-xs mx-auto flex flex-col items-center gap-5">
+            <div className="text-center">
+              <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-3">
+                <Phone className="w-7 h-7 text-slate-400" />
               </div>
-            ) : (
-              /* Phone entry form */
-              <div className="space-y-4">
-                <div className="text-center mb-2">
-                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-3">
-                    <Phone className="w-7 h-7 text-slate-400" />
-                  </div>
-                  <h2 className="text-white font-semibold">Enter your phone number</h2>
-                  <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-                    Use the phone number registered with your account
-                  </p>
-                </div>
+              <h2 className="text-white font-semibold">Sign in with phone &amp; PIN</h2>
+              <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+                Enter your registered phone number, then tap your PIN
+              </p>
+            </div>
 
-                <div>
-                  <input
-                    ref={phoneRef}
-                    type="tel"
-                    value={phoneInput}
-                    onChange={(e) => { setPhoneInput(e.target.value); setPhoneError(""); }}
-                    onKeyDown={(e) => e.key === "Enter" && handlePhoneLookup()}
-                    placeholder="e.g. 0785 995 840"
-                    autoFocus
-                    className={cn(
-                      "w-full h-13 px-4 py-3.5 rounded-xl bg-slate-800 border text-white text-center text-lg font-mono tracking-wide placeholder-slate-600",
-                      "focus:outline-none focus:ring-2 focus:border-transparent transition-all",
-                      phoneError ? "border-red-500/60 focus:ring-red-500/40" : "border-slate-700 focus:ring-blue-500/40"
-                    )}
-                  />
-                  {phoneError && (
-                    <p className="text-red-400 text-xs mt-2 text-center">{phoneError}</p>
+            <input
+              ref={phoneRef}
+              type="tel"
+              value={phoneInput}
+              onChange={(e) => { setPhoneInput(e.target.value); setPhoneError(""); }}
+              placeholder="e.g. 0785 995 840"
+              autoFocus
+              className={cn(
+                "w-full h-12 px-4 rounded-xl bg-slate-800 border text-white text-center text-lg font-mono tracking-wide placeholder-slate-600",
+                "focus:outline-none focus:ring-2 focus:border-transparent transition-all",
+                phoneError ? "border-red-500/60 focus:ring-red-500/40" : "border-slate-700 focus:ring-blue-500/40"
+              )}
+            />
+
+            <div className="flex items-center justify-center gap-4">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "w-4 h-4 rounded-full border-2 transition-all duration-150",
+                    i < pin.length
+                      ? "bg-blue-400 border-blue-400 scale-110"
+                      : "bg-transparent border-slate-600"
                   )}
-                </div>
+                />
+              ))}
+            </div>
 
-                <button
-                  onClick={handlePhoneLookup}
-                  disabled={!phoneInput.trim() || phoneLoading}
-                  className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/40 disabled:cursor-not-allowed text-white font-bold flex items-center justify-center gap-2 transition-colors"
-                >
-                  {phoneLoading
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Looking up…</>
-                    : "Continue"}
-                </button>
-              </div>
-            )}
+            <div className="h-5 w-full text-center">
+              {phoneLoading ? (
+                <Loader2 className="w-4 h-4 text-blue-400 animate-spin mx-auto" />
+              ) : phoneError ? (
+                <p className="text-red-400 text-sm font-medium">{phoneError}</p>
+              ) : null}
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 w-full">
+              {NUMPAD.flat().map((key) => {
+                const isSpecial = key === "clear" || key === "back";
+                return (
+                  <button
+                    key={key}
+                    onClick={() => handleDigit(key)}
+                    disabled={phoneLoading}
+                    className={cn(
+                      "h-16 rounded-2xl text-xl font-semibold transition-all duration-100",
+                      "active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
+                      isSpecial
+                        ? "bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white text-sm"
+                        : "bg-slate-800/80 border border-slate-700/50 text-white hover:bg-slate-700 hover:border-blue-500/30 shadow-sm"
+                    )}
+                  >
+                    {phoneLoading && !isSpecial ? (
+                      <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                    ) : key === "back" ? (
+                      <Delete className="w-5 h-5 mx-auto" />
+                    ) : key === "clear" ? (
+                      <span className="text-xs font-bold tracking-wider">CLR</span>
+                    ) : (
+                      key
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => handlePhoneLogin(pin)}
+              disabled={phoneLoading || pin.length !== 4 || !phoneInput.trim()}
+              className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/40 disabled:cursor-not-allowed text-white font-bold flex items-center justify-center gap-2 transition-colors"
+            >
+              {phoneLoading
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</>
+                : "Sign in"}
+            </button>
           </div>
 
         ) : !selected ? (
@@ -436,36 +483,44 @@ export default function PosLoginPage() {
               No active staff found. Add staff in the dashboard first.
             </div>
           ) : (
-            <div className={cn(
-              "grid gap-4 w-full",
-              staffList.length <= 2 ? "grid-cols-2 max-w-sm" :
-              staffList.length <= 4 ? "grid-cols-2 sm:grid-cols-4 max-w-2xl" :
-              "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 max-w-3xl"
-            )}>
-              {staffList.map((s) => {
-                const colors = ROLE_COLORS[s.role] ?? ROLE_COLORS.cashier;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => selectStaff(s)}
-                    className={cn(
-                      "flex flex-col items-center gap-3 p-5 rounded-2xl border bg-gradient-to-b backdrop-blur-sm",
-                      "transition-all duration-200 active:scale-95 hover:scale-[1.03] hover:shadow-lg",
-                      colors
-                    )}
-                  >
-                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-base font-bold text-white shadow-inner">
-                      {s.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
-                    </div>
-                    <div className="text-center">
-                      <p className="text-white font-semibold text-sm leading-tight line-clamp-2">
-                        {s.name}
-                      </p>
-                      <p className="text-xs opacity-70 mt-0.5">{ROLE_LABELS[s.role]}</p>
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="flex flex-col items-center gap-6 w-full">
+              <div className={cn(
+                "grid gap-4 w-full",
+                staffList.length <= 2 ? "grid-cols-2 max-w-sm" :
+                staffList.length <= 4 ? "grid-cols-2 sm:grid-cols-4 max-w-2xl" :
+                "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 max-w-3xl"
+              )}>
+                {staffList.map((s) => {
+                  const colors = ROLE_COLORS[s.role] ?? ROLE_COLORS.cashier;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => selectStaff(s)}
+                      className={cn(
+                        "flex flex-col items-center gap-3 p-5 rounded-2xl border bg-gradient-to-b backdrop-blur-sm",
+                        "transition-all duration-200 active:scale-95 hover:scale-[1.03] hover:shadow-lg",
+                        colors
+                      )}
+                    >
+                      <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-base font-bold text-white shadow-inner">
+                        {s.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
+                      </div>
+                      <div className="text-center">
+                        <p className="text-white font-semibold text-sm leading-tight line-clamp-2">
+                          {s.name}
+                        </p>
+                        <p className="text-xs opacity-70 mt-0.5">{ROLE_LABELS[s.role]}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={clearBusinessCookie}
+                className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
+              >
+                Use a different device or account?
+              </button>
             </div>
           )
 
