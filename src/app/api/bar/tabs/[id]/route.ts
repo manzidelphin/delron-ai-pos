@@ -10,7 +10,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
   const { data: tab, error: tabError } = await supabase
     .from("orders")
-    .select("*, floor_tables(table_number, capacity, section)")
+    .select("*, floor_tables(table_number, capacity, section), waiter:staff!waiter_id(id, name)")
     .eq("id", params.id)
     .eq("business_id", auth.businessId)
     .single();
@@ -24,6 +24,23 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     .order("created_at");
 
   return NextResponse.json({ tab, items: items ?? [] });
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  const auth = await getAuthContext();
+  if (auth.error) return auth.error;
+
+  const { waiter_id } = await request.json();
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("orders")
+    .update({ waiter_id: waiter_id ?? null })
+    .eq("id", params.id)
+    .eq("business_id", auth.businessId);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ success: true });
 }
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {

@@ -40,6 +40,7 @@ interface Tab {
   status: string;
   created_at: string;
   floor_tables?: { table_number: number } | null;
+  waiter?: { id: string; name: string } | null;
 }
 
 interface OrderItem {
@@ -86,13 +87,15 @@ export default function BarPOSPage() {
   const [payMethod, setPayMethod] = useState<PayMethod>("cash");
   const [amountPaid, setAmountPaid] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [receipt, setReceipt] = useState<{ receiptNumber: string; change: number; amountPaid: number; splitCount: number; items: OrderItem[] } | null>(null);
+  const [receipt, setReceipt] = useState<{ receiptNumber: string; change: number; amountPaid: number; splitCount: number; items: OrderItem[]; waiterName?: string } | null>(null);
   const [openingTab, setOpeningTab] = useState(false);
   const [creditName,    setCreditName]  = useState("");
   const [creditPhone,   setCreditPhone] = useState("");
   const [creditDueDate, setCreditDue]   = useState("");
   const [foodModal,     setFoodModal]   = useState<MenuItem | null>(null);
   const [foodQty,       setFoodQty]     = useState(1);
+  const [waiters,       setWaiters]     = useState<{ id: string; name: string }[]>([]);
+  const [selectedWaiterId, setSelectedWaiterId] = useState<string | null>(null);
 
   // Keep customer display in sync whenever tab items or the active tab total change.
   useEffect(() => {
@@ -124,6 +127,16 @@ export default function BarPOSPage() {
       setTables(tablesJson.tables ?? []);
       setBarItems(itemsJson.items ?? []);
 
+      // Load waiters for assignment — use pos-staff and filter client-side (no dedicated /api/staff route)
+      try {
+        const bizId = useAuthStore.getState().business?.id;
+        if (bizId) {
+          const waitersRes  = await fetch(`/api/auth/pos-staff?businessId=${bizId}`);
+          const waitersJson = await waitersRes.json();
+          setWaiters((waitersJson.staff ?? []).filter((s: { id: string; name: string; role: string }) => s.role === "waiter"));
+        }
+      } catch { /* non-fatal */ }
+
       if (hasRestaurant) {
         try {
           const menuRes  = await fetch("/api/restaurant/menu");
@@ -147,6 +160,7 @@ export default function BarPOSPage() {
     const json = await res.json();
     setActiveTab(json.tab);
     setTabItems(json.items ?? []);
+    setSelectedWaiterId(json.tab?.waiter?.id ?? null);
   };
 
   const openTab = async (table: FloorTable) => {
@@ -249,8 +263,10 @@ export default function BarPOSPage() {
         amountPaid:    activeTab.total,
         splitCount:    1,
         items:         tabItems,
+        waiterName:    waiters.find((w) => w.id === selectedWaiterId)?.name,
       });
       setActiveTab(null);
+      setSelectedWaiterId(null);
       setTabItems([]);
       setPayModal(false);
       setCreditName("");
@@ -289,8 +305,10 @@ export default function BarPOSPage() {
         amountPaid: json.amount_paid,
         splitCount,
         items: tabItems,
+        waiterName: waiters.find((w) => w.id === selectedWaiterId)?.name,
       });
       setActiveTab(null);
+      setSelectedWaiterId(null);
       setTabItems([]);
       setPayModal(false);
       loadData();
@@ -492,11 +510,35 @@ export default function BarPOSPage() {
                     <Monitor className="w-4 h-4" />
                   </button>
                 )}
-                <button onClick={() => { setActiveTab(null); setTabItems([]); }} className="text-muted-foreground hover:text-foreground">
+                <button onClick={() => { setActiveTab(null); setTabItems([]); setSelectedWaiterId(null); }} className="text-muted-foreground hover:text-foreground">
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
+
+            {/* Waiter assignment */}
+            {waiters.length > 0 && (
+              <div className="px-4 py-2 border-b border-border">
+                <select
+                  value={selectedWaiterId ?? ""}
+                  onChange={async (e) => {
+                    const wid = e.target.value || null;
+                    setSelectedWaiterId(wid);
+                    await fetch(`/api/bar/tabs/${activeTab.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ waiter_id: wid }),
+                    });
+                  }}
+                  className="w-full h-8 px-2 bg-background border border-border rounded-lg text-sm text-foreground"
+                >
+                  <option value="">No waiter assigned</option>
+                  {waiters.map((w) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="flex-1 overflow-y-auto px-4 py-2">
               {tabItems.length === 0 ? (
@@ -758,6 +800,7 @@ export default function BarPOSPage() {
               businessName={business?.name ?? "My Business"}
               branchName={currentBranch?.name ?? ""}
               cashierName={activeOperator?.name ?? staff?.name ?? "Cashier"}
+              waiterName={receipt.waiterName}
               items={receipt.items}
               total={receipt.items.reduce((s, i) => s + i.total_price, 0)}
               paymentMethod={payMethod}
