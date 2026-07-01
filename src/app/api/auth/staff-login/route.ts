@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 60 * 60 * 12,
   });
   res.cookies.set("pos_business_id", staff.business_id, {
-    httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 60 * 60 * 24 * 365,
+    httpOnly: false, sameSite: "lax", secure: true, path: "/", maxAge: 60 * 60 * 24 * 365,
   });
 
   return res;
