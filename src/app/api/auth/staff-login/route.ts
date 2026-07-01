@@ -88,10 +88,10 @@ export async function POST(req: NextRequest) {
   });
 
   res.cookies.set("pos_operator", JSON.stringify(operatorPayload), {
-    httpOnly: true, sameSite: "lax", secure: false, path: "/", maxAge: 60 * 60 * 12,
+    httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 60 * 60 * 12,
   });
   res.cookies.set("pos_business_id", staff.business_id, {
-    httpOnly: true, sameSite: "lax", secure: false, path: "/", maxAge: 60 * 60 * 24 * 365,
+    httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 60 * 60 * 24 * 365,
   });
 
   return res;
