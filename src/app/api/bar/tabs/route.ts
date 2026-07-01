@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { table_id, customer_name, num_guests } = body;
+  const { table_id, customer_name, num_guests, waiter_id } = body;
 
   const supabase = createAdminClient();
 
@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       branch_id: auth.branchId,
       table_id: table_id ?? null,
       staff_id: auth.staffId,
+      waiter_id: waiter_id ?? null,
       status: "pending",
       total: 0,
       order_type: "bar_tab",

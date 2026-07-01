@@ -15,6 +15,7 @@ interface BarReceiptProps {
   businessName: string;
   branchName: string;
   cashierName: string;
+  waiterName?: string;
   tableNumber?: number;
   items: BarOrderItem[];
   total: number;
@@ -37,6 +38,7 @@ export function BarReceipt({
   businessName,
   branchName,
   cashierName,
+  waiterName,
   tableNumber,
   items,
   total,
@@ -73,6 +75,12 @@ export function BarReceipt({
           <span className="text-gray-500">Cashier</span>
           <span>{cashierName}</span>
         </div>
+        {waiterName && (
+          <div className="flex justify-between">
+            <span className="text-gray-500">Served by</span>
+            <span>{waiterName}</span>
+          </div>
+        )}
       </div>
 
       <div className="mb-3 border-b border-dashed border-gray-400 pb-3">
