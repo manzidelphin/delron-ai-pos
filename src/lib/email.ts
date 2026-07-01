@@ -484,6 +484,125 @@ export async function sendInvoiceEmail(opts: {
   }
 }
 
+// ── Shift Ended Email ─────────────────────────────────────────────────────────
+
+export async function sendShiftEndedEmail(opts: {
+  to:              string;
+  ownerName:       string;
+  businessName:    string;
+  staffName:       string;
+  staffRole:       string;
+  durationMinutes: number;
+  totalSales:      number;
+  totalOrders:     number;
+  cashVariance:    number | null;
+  endedAt:         string;
+  isAutoClosed:    boolean;
+  shiftsUrl:       string;
+}): Promise<void> {
+  const { to, ownerName, businessName, staffName, staffRole, durationMinutes,
+          totalSales, totalOrders, cashVariance, endedAt, isAutoClosed, shiftsUrl } = opts;
+
+  const subject    = `Shift ended — ${staffName} (${businessName})`;
+  const firstName  = ownerName.split(" ")[0];
+  const roleLabel  = staffRole.charAt(0).toUpperCase() + staffRole.slice(1);
+
+  const hrs       = Math.floor(durationMinutes / 60);
+  const mins      = durationMinutes % 60;
+  const duration  = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+
+  let varianceCell: string;
+  if (cashVariance === null) {
+    varianceCell = `<span style="color:#94a3b8;font-style:italic">— (no count taken)</span>`;
+  } else if (cashVariance >= 0) {
+    varianceCell = `<span style="color:#16a34a;font-weight:700">+RWF ${Math.round(cashVariance).toLocaleString()}</span>`;
+  } else {
+    varianceCell = `<span style="color:#dc2626;font-weight:700">-RWF ${Math.round(Math.abs(cashVariance)).toLocaleString()}</span>`;
+  }
+
+  const typeCell = isAutoClosed
+    ? `<span style="color:#94a3b8;font-style:italic">Auto-closed on new login</span>`
+    : `<span style="color:#374151">Manual end</span>`;
+
+  const rows = [
+    ["Duration",        duration],
+    ["Role",            roleLabel],
+    ["Sales",           `RWF ${Math.round(totalSales).toLocaleString()}`],
+    ["Transactions",    String(totalOrders)],
+    ["Cash variance",   varianceCell],
+    ["Ended at",        endedAt],
+    ["Type",            typeCell],
+  ].map(([label, value], i) => `
+    <tr style="border-bottom:1px solid #f1f5f9${i === 6 ? ";border-bottom:none" : ""}">
+      <td style="padding:10px 0;color:#64748b;font-size:13px;width:38%">${label}</td>
+      <td style="padding:10px 0;color:#1e293b;font-size:13px;font-weight:600">${value}</td>
+    </tr>`).join("");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+<div style="max-width:540px;margin:32px auto;padding:0 16px 32px">
+
+  <div style="background:#0f172a;border-radius:16px 16px 0 0;padding:20px 28px;display:flex;align-items:center;gap:12px">
+    <div style="background:#3b82f6;width:38px;height:38px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:white;flex-shrink:0">D</div>
+    <div>
+      <p style="color:#f8fafc;font-size:15px;font-weight:700;margin:0">DELRON AI POS</p>
+      <p style="color:#94a3b8;font-size:12px;margin:2px 0 0">${businessName}</p>
+    </div>
+  </div>
+
+  <div style="background:#ffffff;border:1px solid #e2e8f0;border-top:none;padding:28px">
+
+    <p style="color:#64748b;font-size:14px;margin:0 0 6px">Hi ${firstName},</p>
+    <h1 style="color:#0f172a;font-size:20px;font-weight:800;margin:0 0 24px">${staffName} has ended their shift</h1>
+
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+      ${rows}
+    </table>
+
+    <div style="text-align:center;margin-bottom:24px">
+      <a href="${shiftsUrl}" style="display:inline-block;background:#3b82f6;color:white;text-decoration:none;padding:13px 36px;border-radius:8px;font-weight:700;font-size:14px">View Shift Report →</a>
+    </div>
+
+    <div style="border-top:1px solid #f1f5f9;padding-top:18px">
+      <p style="color:#64748b;font-size:13px;margin:0">
+        Questions? Reach out at
+        <a href="mailto:${SUPPORT_EMAIL}" style="color:#3b82f6;text-decoration:none">${SUPPORT_EMAIL}</a>
+        or call <a href="tel:${SUPPORT_PHONE.replace(/\s/g, '')}" style="color:#3b82f6;text-decoration:none">${SUPPORT_PHONE}</a>
+      </p>
+    </div>
+  </div>
+
+  <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 16px 16px;padding:14px 28px;text-align:center">
+    <p style="color:#94a3b8;font-size:11px;margin:0">Powered by <strong style="color:#64748b">DELRON AI POS</strong> · Built for Rwanda</p>
+  </div>
+
+</div>
+</body>
+</html>`;
+
+  if (!resend) {
+    console.log("════════════════════════════════════");
+    console.log(`[Shift End Email] To:      ${to}`);
+    console.log(`[Shift End Email] Staff:   ${staffName} (${roleLabel})`);
+    console.log(`[Shift End Email] Sales:   RWF ${Math.round(totalSales).toLocaleString()} · ${totalOrders} orders · ${duration}`);
+    console.log(`[Shift End Email] Auto:    ${isAutoClosed}`);
+    console.log("════════════════════════════════════");
+    return;
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: WELCOME_FROM, replyTo: SUPPORT_EMAIL, to, subject, html,
+    });
+    if (error) console.error("[email] Shift-end FAILED — to:", to, "| error:", JSON.stringify(error));
+    else console.log("[email] Shift-end sent — id:", data?.id, "| to:", to);
+  } catch (e) {
+    console.error("[email] Shift-end exception:", e);
+  }
+}
+
 // ── Daily Report Email ────────────────────────────────────────────────────────
 
 export async function sendDailyReportEmail(opts: {

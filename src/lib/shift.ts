@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSMS } from "@/lib/sms";
+import { sendShiftEndedEmail } from "@/lib/email";
 
 export interface ShiftSummary {
   staff_name: string;
@@ -307,6 +308,39 @@ export async function closeShift({
       ].filter(Boolean).join("\n"));
     } catch {
       // SMS failure is non-fatal
+    }
+  }
+
+  // ── Email to owner ────────────────────────────────────────────────────────
+  if (ownerUserId) {
+    try {
+      const [{ data: authData }, { data: ownerStaff }] = await Promise.all([
+        supabase.auth.admin.getUserById(ownerUserId),
+        supabase.from("staff").select("name").eq("business_id", businessId).eq("role", "owner").eq("is_active", true).maybeSingle(),
+      ]);
+      const ownerEmail = authData?.user?.email;
+      if (ownerEmail) {
+        await sendShiftEndedEmail({
+          to:              ownerEmail,
+          ownerName:       ownerStaff?.name ?? "there",
+          businessName:    business?.name ?? "",
+          staffName,
+          staffRole:       role,
+          durationMinutes: Math.round(durationMs / 60000),
+          totalSales,
+          totalOrders,
+          cashVariance,
+          endedAt:         now.toLocaleString("en-RW", {
+            weekday: "short", day: "numeric", month: "short", year: "numeric",
+            hour: "2-digit", minute: "2-digit", timeZone: "Africa/Kigali",
+          }),
+          isAutoClosed:    (notes ?? "").includes("Auto-closed"),
+          shiftsUrl:       "https://www.delronpos.com/reports/shifts",
+        });
+      }
+    } catch (emailErr) {
+      // Non-fatal — shift is already closed, log but don't throw.
+      console.error("[closeShift] Failed to send shift-end email:", emailErr);
     }
   }
 
