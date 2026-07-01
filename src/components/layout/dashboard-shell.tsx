@@ -9,6 +9,7 @@ import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import AIChatWidget from "@/components/ai/ai-chat-widget";
 import { Shield, X } from "lucide-react";
+import OfflineBanner from "./offline-banner";
 
 function ImpersonationBanner({ businessName }: { businessName: string }) {
   const router = useRouter();
@@ -86,6 +87,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
+      <OfflineBanner />
       {impersonation && <ImpersonationBanner businessName={impersonation.business_name} />}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />

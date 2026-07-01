@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Zap, Delete, LogIn, Loader2, ArrowLeft, Phone } from "lucide-react";
+import OfflineBanner from "@/components/layout/offline-banner";
 import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -355,6 +356,8 @@ export default function PosLoginPage() {
   }
 
   return (
+    <>
+    <OfflineBanner />
     <div className="min-h-screen bg-[#0A0F1E] flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none">
@@ -609,5 +612,6 @@ export default function PosLoginPage() {
         </button>
       </div>
     </div>
+    </>
   );
 }

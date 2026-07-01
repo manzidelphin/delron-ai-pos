@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Search, Plus, CreditCard, SplitSquareHorizontal, Printer, X, Loader2, Monitor } from "lucide-react";
 import { useCustomerDisplay } from "@/hooks/use-customer-display";
+import OfflineBanner from "@/components/layout/offline-banner";
 import { ShotModal } from "@/components/bar/shot-modal";
 import { TabItem } from "@/components/bar/tab-item";
 import { SplitBillModal } from "@/components/bar/split-bill-modal";
@@ -332,6 +333,8 @@ export default function BarPOSPage() {
   };
 
   return (
+    <>
+    <OfflineBanner />
     <div className="h-[calc(100vh-4rem)] flex gap-0 overflow-hidden">
       {/* Left: Tables */}
       <div className="w-56 shrink-0 border-r border-border bg-card/50 flex flex-col">
@@ -780,5 +783,6 @@ export default function BarPOSPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
