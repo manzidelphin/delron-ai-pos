@@ -71,6 +71,8 @@ export async function updateSession(request: NextRequest) {
     "/customer-display",
     "/api/pwa-icon",
     "/offline.html",
+    "/sitemap.xml",
+    "/robots.txt",
     "/verify-email",  // accessible without session (user may have closed browser)
     "/auth",          // covers /auth/callback — must be reachable without session
   ];
