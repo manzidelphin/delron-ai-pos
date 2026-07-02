@@ -7,11 +7,25 @@ export async function GET() {
   if (auth.error) return auth.error;
   const supabase = createAdminClient();
 
+  // Same PostgREST bug as bar/display: .eq("orders.business_id", ...) filters only the join,
+  // not the parent rows. Pre-fetch valid order IDs and filter on order_id instead.
+  const { data: bizOrders } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("business_id", auth.businessId)
+    .in("status", ["open", "pending", "completed"]);
+
+  const orderIds = (bizOrders ?? []).map((o) => o.id);
+
+  if (orderIds.length === 0) {
+    return NextResponse.json({ pending: [], preparing: [], ready: [] });
+  }
+
   const { data: items, error } = await supabase
     .from("order_items")
     .select("*, orders!inner(id, business_id, table_id, floor_tables(table_number))")
     .eq("item_type", "menu_item")
-    .eq("orders.business_id", auth.businessId)
+    .in("order_id", orderIds)
     .in("status", ["pending", "preparing", "ready"])
     .order("created_at");
 
