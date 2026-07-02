@@ -70,7 +70,7 @@ function AIBriefingCard() {
         {briefing.top_alert && <div className="flex items-center gap-2 text-sm"><span className="text-amber-400">⚠</span><span className="text-white">{briefing.top_alert}</span></div>}
         {briefing.stock_alerts?.map((a, i) => <div key={i} className="flex items-center gap-2 text-sm text-slate-400"><span>📦</span><span>{a}</span></div>)}
         {briefing.credit_alerts?.map((a, i) => <div key={i} className="flex items-center gap-2 text-sm text-slate-400"><span>💳</span><span>{a}</span></div>)}
-        {briefing.raw_data?.open_tabs ? <div className="flex items-center gap-2 text-sm text-slate-400"><span>🍺</span><span>Bar has {briefing.raw_data.open_tabs} open tabs</span></div> : null}
+        {briefing.raw_data?.open_tabs ? <div className="flex items-center gap-2 text-sm text-slate-400"><span>🍺</span><span>Bar has {briefing.raw_data.open_tabs} open {briefing.raw_data.open_tabs === 1 ? "tab" : "tabs"}</span></div> : null}
       </div>
       {briefing.tip && <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg px-3 py-2 mb-3"><p className="text-xs text-blue-400"><span className="font-semibold">💡 Tip: </span>{briefing.tip}</p></div>}
       <button onClick={() => setOpen(true)} className="flex items-center gap-1 text-blue-400 text-xs font-medium hover:text-blue-300 transition-colors">
@@ -145,7 +145,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">
-          {greeting()}, {(activeOperator?.name ?? staff?.name)?.split(" ")[0] ?? "there"} 👋
+          {greeting()}, {(staff?.role === "owner" || staff?.role === "manager" ? staff?.name : activeOperator?.name ?? staff?.name)?.split(" ")[0] ?? "there"} 👋
         </h1>
         <p className="text-slate-400 text-sm mt-0.5">
           {business?.name ?? "Your business"} · {new Date().toLocaleDateString("en-RW", { weekday: "long", month: "long", day: "numeric" })}

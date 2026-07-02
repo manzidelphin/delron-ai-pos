@@ -87,12 +87,18 @@ export const useAuthStore = create<AuthState>()(
 
       effectiveRole: () => {
         const { staff, activeOperator } = get();
+        // Owner/manager always keeps their own role. activeOperator is a POS-layer
+        // identity (who's at the till) and must never downgrade a session owner's access.
+        if (staff?.role === "owner" || staff?.role === "manager") return staff.role;
         return (activeOperator?.role ?? staff?.role) ?? null;
       },
 
       canAccess: (roles) => {
         const { staff, activeOperator } = get();
-        const role = activeOperator?.role ?? staff?.role;
+        const role =
+          staff?.role === "owner" || staff?.role === "manager"
+            ? staff.role
+            : activeOperator?.role ?? staff?.role;
         if (!role) return false;
         if (role === "owner") return true;
         return roles.includes(role);
