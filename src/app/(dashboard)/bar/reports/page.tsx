@@ -35,7 +35,9 @@ export default function BarReportsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/bar/reports?from=${from}T00:00:00+02:00&to=${to}T23:59:59+02:00`);
+      const fromISO = new Date(`${from}T00:00:00+02:00`).toISOString();
+      const toISO   = new Date(`${to}T23:59:59+02:00`).toISOString();
+      const res = await fetch(`/api/bar/reports?from=${fromISO}&to=${toISO}`);
       const json = await res.json();
       setData(json);
     } catch {
