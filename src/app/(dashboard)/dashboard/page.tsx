@@ -145,7 +145,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">
-          {greeting()}, {(staff?.role === "owner" || staff?.role === "manager" ? staff?.name : activeOperator?.name ?? staff?.name)?.split(" ")[0] ?? "there"} 👋
+          {greeting()}, {(activeOperator?.name ?? staff?.name)?.split(" ")[0] ?? "there"} 👋
         </h1>
         <p className="text-slate-400 text-sm mt-0.5">
           {business?.name ?? "Your business"} · {new Date().toLocaleDateString("en-RW", { weekday: "long", month: "long", day: "numeric" })}
