@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
   const orderIds = orders.map((o) => o.id);
 
   // Order items for bar (drinks sold)
-  let drinkItems: {item_name: string; item_id: string; quantity: number; total_price: number}[] = [];
+  let drinkItems: {item_name: string; item_id: string; quantity: number; total_price: number; notes?: string | null}[] = [];
   if (orderIds.length > 0) {
     const { data } = await supabase
       .from("order_items")
