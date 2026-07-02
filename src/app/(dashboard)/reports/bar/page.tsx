@@ -15,9 +15,11 @@ import { toast } from "sonner";
 const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#a855f7", "#f97316"];
 
 const defaultFrom = () => {
-  const d = new Date(); d.setDate(1); return d.toISOString().split("T")[0];
+  const kigaliToday = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" });
+  const [y, m] = kigaliToday.split("-");
+  return `${y}-${m}-01`;
 };
-const defaultTo = () => new Date().toISOString().split("T")[0];
+const defaultTo = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" });
 
 interface BarData {
   kpis: {

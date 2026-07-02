@@ -7,18 +7,16 @@ export async function GET(req: NextRequest) {
   if (auth.error) return auth.error;
 
   const { searchParams } = new URL(req.url);
-  const today = new Date().toISOString().split("T")[0];
-  const startOfMonth = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1
-  )
-    .toISOString()
-    .split("T")[0];
+  // Use Kigali local date (UTC+2); toISOString() is UTC and can be off by one calendar day.
+  const kigaliToday = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" });
+  const [kY, kM] = kigaliToday.split("-");
+  const startOfMonth = `${kY}-${kM}-01`;
 
   const from = searchParams.get("from") ?? startOfMonth;
-  const to = searchParams.get("to") ?? today;
-  const toEnd = to + "T23:59:59.999Z";
+  const to   = searchParams.get("to")   ?? kigaliToday;
+  // Anchor to Kigali midnight so UTC-stored timestamptz comparisons cover the full local day.
+  const fromISO = new Date(`${from}T00:00:00+02:00`).toISOString();
+  const toISO   = new Date(`${to}T23:59:59+02:00`).toISOString();
 
   const supabase = createAdminClient();
 
@@ -28,27 +26,24 @@ export async function GET(req: NextRequest) {
       .select("id, total, created_at, payment_method")
       .eq("business_id", auth.businessId)
       .eq("module_source", "bar")
-      .gte("created_at", from)
-      .lte("created_at", toEnd),
+      .gte("created_at", fromISO)
+      .lte("created_at", toISO),
     supabase
       .from("floor_tables")
       .select("id, table_number, status")
       .eq("business_id", auth.businessId),
     supabase
       .from("bar_items")
-      .select(
-        "id, name, category, shots_per_bottle, price_per_bottle, price_per_shot, quantity_bottles, shots_remaining, is_shot_item"
-      )
+      .select("id, name, category, shots_per_bottle, price_per_bottle, price_per_shot, quantity_bottles, shots_remaining")
       .eq("business_id", auth.businessId)
       .eq("is_active", true),
     supabase
       .from("orders")
       .select("id, table_id, total, created_at, status")
       .eq("business_id", auth.businessId)
-      .in("order_type", ["bar_tab", "table"])
-      .eq("status", "completed")
-      .gte("created_at", from)
-      .lte("created_at", toEnd),
+      .eq("order_type", "bar_tab")
+      .gte("created_at", fromISO)
+      .lte("created_at", toISO),
   ]);
 
   const transactions = txRes.data ?? [];
@@ -62,8 +57,9 @@ export async function GET(req: NextRequest) {
   if (orderIds.length > 0) {
     const { data } = await supabase
       .from("order_items")
-      .select("item_name, item_id, item_type, quantity, unit_price, total_price")
-      .in("order_id", orderIds.slice(0, 200));
+      .select("item_name, item_id, item_type, quantity, unit_price, total_price, notes")
+      .in("order_id", orderIds.slice(0, 200))
+      .eq("item_type", "bar_item");
     drinkItems = data ?? [];
   }
 
@@ -130,7 +126,7 @@ export async function GET(req: NextRequest) {
   }
 
   const varianceTable = barItems
-    .filter((i) => i.is_shot_item && i.shots_per_bottle)
+    .filter((i) => (i.shots_per_bottle ?? 0) > 0)
     .map((item) => {
       const shotsSold = shotItemsMap[item.id]?.qty ?? 0;
       const bottlesEquiv = item.shots_per_bottle
@@ -173,18 +169,13 @@ export async function GET(req: NextRequest) {
   }));
 
   // KPIs
+  // serve_as is stored in notes as "serve_as:shot" or "serve_as:bottle" (is_shot_item doesn't exist)
   const bottlesSold = drinkItems
-    .filter((d) => {
-      const item = barItems.find((i) => i.id === d.item_id);
-      return item && !item.is_shot_item;
-    })
+    .filter((d) => !d.notes?.includes("serve_as:shot"))
     .reduce((s, d) => s + (d.quantity ?? 0), 0);
 
   const shotsSold = drinkItems
-    .filter((d) => {
-      const item = barItems.find((i) => i.id === d.item_id);
-      return item?.is_shot_item;
-    })
+    .filter((d) => d.notes?.includes("serve_as:shot"))
     .reduce((s, d) => s + (d.quantity ?? 0), 0);
 
   const tablesServed = new Set(orders.filter((o) => o.table_id).map((o) => o.table_id)).size;
