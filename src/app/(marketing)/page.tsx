@@ -20,7 +20,7 @@ const jsonLd = {
   name: "DELRON AI POS",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web, Android, iOS",
-  url: "https://delron-ai-pos.vercel.app",
+  url: "https://www.delronpos.com",
   description:
     "AI-powered point-of-sale and business management platform for Rwandan supermarkets, bakeries, bars, and restaurants. MTN MoMo integration, real-time reporting, and Kinyarwanda support.",
   inLanguage: ["en", "rw"],
@@ -53,7 +53,7 @@ const jsonLd = {
   creator: {
     "@type": "Organization",
     name: "DELRON",
-    url: "https://delron-ai-pos.vercel.app",
+    url: "https://www.delronpos.com",
     contactPoint: {
       "@type": "ContactPoint",
       email: "info@delronpos.com",
@@ -180,7 +180,7 @@ export default async function MarketingPage() {
 
           {/* Hero stats pill */}
           <div className="inline-flex items-center gap-8 sm:gap-12 border border-slate-700/60 bg-slate-800/30 backdrop-blur-sm rounded-2xl px-8 py-4">
-            {[{v:"10+",l:"Modules"},{v:"73",l:"Pages"},{v:"AI",l:"Powered"},{v:"🇷🇼",l:"Rwanda"}].map((s,i) => (
+            {[{v:"10+",l:"Modules"},{v:"MTN",l:"MoMo Ready"},{v:"AI",l:"Powered"},{v:"🇷🇼",l:"Rwanda"}].map((s,i) => (
               <div key={i} className="text-center">
                 <div className="text-2xl font-black text-white">{s.v}</div>
                 <div className="text-slate-500 text-xs mt-0.5">{s.l}</div>
@@ -655,7 +655,7 @@ export default async function MarketingPage() {
                     ["Staff Performance Tracking",         true,       "Partial", false],
                     ["RRA/EBM Receipt Support",            true,       true,      false],
                     ["Multi-Branch Support",               true,       true,      false],
-                    ["14-Day Free Trial",                  true,       false,     false],
+                    ["3-Month Free Trial",                 true,       false,     false],
                   ] as [string,boolean|string,boolean|string,boolean|string][]
                 ).map(([feat,d,k,s],ri) => (
                   <tr key={feat} className={`transition-colors hover:bg-slate-800/20 ${ri%2===0?"bg-slate-900/20":""}`}>
@@ -791,7 +791,7 @@ export default async function MarketingPage() {
             ))}
           </div>
           <p className="text-center text-sm mt-10 max-w-2xl mx-auto">
-            <span className="text-emerald-400 font-bold">14-day free trial on all plans. No credit card required.</span>
+            <span className="text-emerald-400 font-bold">3-month free trial on all plans. No credit card required.</span>
             <span className="text-slate-400"> All plans include </span>
             <span className="text-white font-semibold">AI assistant, PDF reports, and SMS notifications</span>
             <span className="text-slate-400"> — features competitors charge extra for or don&apos;t offer at all.</span>
@@ -819,7 +819,7 @@ export default async function MarketingPage() {
               {q:"Can the AI speak Kinyarwanda?",
                a:"Yes. The DELRON AI assistant (powered by Google Gemini) understands and responds in Kinyarwanda. Ask about your sales, inventory, or staff performance in Kinyarwanda and get a clear, accurate answer."},
               {q:"How is DELRON different from other POS systems?",
-               a:"Most POS systems are built for simple retail — they record a sale and print a receipt. DELRON goes further: AI daily briefings that analyse your data every morning, bakery production tracking with ingredient costing, shot variance detection that flags bartender theft before it compounds, and Kinyarwanda SMS alerts your staff actually read. Generic POS software treats a supermarket, bakery, and bar the same way — DELRON has dedicated modules with workflows specific to each business type. You also get a 14-day free trial with no credit card, and features most competitors charge extra for or don't offer at all."},
+               a:"Most POS systems are built for simple retail — they record a sale and print a receipt. DELRON goes further: AI daily briefings that analyse your data every morning, bakery production tracking with ingredient costing, shot variance detection that flags bartender theft before it compounds, and Kinyarwanda SMS alerts your staff actually read. Generic POS software treats a supermarket, bakery, and bar the same way — DELRON has dedicated modules with workflows specific to each business type. You also get a 3-month free trial with no credit card, and features most competitors charge extra for or don't offer at all."},
               {q:"Can I install DELRON as an app on my computer or phone?",
                a:"Yes. DELRON is a Progressive Web App (PWA) — install it directly from your browser with no app store required. On Windows or Mac, click 'Install' in your browser's address bar. On Android, tap 'Add to Home Screen'. On iPhone, use Safari's Share menu → 'Add to Home Screen'. Once installed, it launches like a native app, works offline for core POS functions, and updates automatically — no manual downloads ever needed."},
             ].map(({q,a}) => (
@@ -848,7 +848,7 @@ export default async function MarketingPage() {
         <div className="relative z-10 max-w-3xl mx-auto text-center reveal">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-500/25 bg-blue-500/8 text-blue-300 text-xs font-bold mb-8 tracking-wider">
             <Zap className="w-3 h-3" />
-            14 DAYS FREE · NO CREDIT CARD · CANCEL ANYTIME
+            3 MONTHS FREE · NO CREDIT CARD · CANCEL ANYTIME
           </div>
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-5 leading-tight">
             Ready to Leave Your<br />
