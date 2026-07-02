@@ -112,7 +112,12 @@ export async function GET(request: NextRequest) {
     .slice(0, 10);
 
   return NextResponse.json({
-    stats: { total_revenue: totalRevenue, total_orders: totalOrders },
+    stats: {
+      total_revenue: totalRevenue,
+      total_orders: totalOrders,
+      items_tracked: Object.keys(itemMap).length,
+      avg_order: totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0,
+    },
     daily_chart: dailyChart,
     top_items: topItems,
     variance,

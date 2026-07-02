@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface ReportData {
-  stats: { total_revenue: number; total_orders: number };
+  stats: { total_revenue: number; total_orders: number; items_tracked: number; avg_order: number };
   daily_chart: Array<{ date: string; revenue: number }>;
   top_items: Array<{ id: string; name: string; bottles_sold: number; shots_sold: number; revenue: number }>;
   variance: Array<{
@@ -35,7 +35,7 @@ export default function BarReportsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/bar/reports?from=${from}T00:00:00Z&to=${to}T23:59:59Z`);
+      const res = await fetch(`/api/bar/reports?from=${from}T00:00:00+02:00&to=${to}T23:59:59+02:00`);
       const json = await res.json();
       setData(json);
     } catch {
@@ -67,8 +67,8 @@ export default function BarReportsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Revenue" value={loading ? "..." : formatRWF(data?.stats.total_revenue ?? 0)} icon={<TrendingUp className="w-5 h-5" />} loading={loading} color="green" />
         <StatCard label="Total Orders" value={data?.stats.total_orders ?? 0} icon={<ShoppingBag className="w-5 h-5" />} loading={loading} />
-        <StatCard label="Avg. Order" value={loading || !data?.stats.total_orders ? "..." : formatRWF((data.stats.total_revenue) / data.stats.total_orders)} icon={<TrendingUp className="w-5 h-5" />} loading={loading} color="blue" />
-        <StatCard label="Items Tracked" value={data?.variance.length ?? 0} icon={<AlertTriangle className="w-5 h-5" />} loading={loading} color="amber" />
+        <StatCard label="Avg. Order" value={loading ? "..." : formatRWF(data?.stats.avg_order ?? 0)} icon={<TrendingUp className="w-5 h-5" />} loading={loading} color="blue" />
+        <StatCard label="Items Tracked" value={data?.stats.items_tracked ?? 0} icon={<AlertTriangle className="w-5 h-5" />} loading={loading} color="amber" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
