@@ -173,7 +173,7 @@ export default function BarStockPage() {
                       </td>
                       <td className="px-4 py-3">
                         {item.sold_today > 0 ? (
-                          <span className="text-red-400">-{item.sold_today % 1 === 0 ? item.sold_today : item.sold_today.toFixed(1)}</span>
+                          <span className="text-red-400">-{item.sold_today % 1 === 0 ? item.sold_today : item.sold_today.toFixed(1)} btl</span>
                         ) : (
                           <span className="text-slate-600">—</span>
                         )}
