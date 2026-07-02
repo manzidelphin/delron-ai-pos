@@ -9,9 +9,47 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "DELRON AI POS | AI-Powered POS & Business Management Software for Rwanda",
+  title: "DELRON AI POS | Rwanda's First AI-Powered POS System",
   description:
-    "AI-powered point-of-sale and business management platform for Rwandan supermarkets, bakeries, bars, and restaurants. MTN MoMo integration, real-time reporting, and Kinyarwanda support.",
+    "AI-powered point-of-sale built for Rwandan supermarkets, bakeries, bars, and restaurants. Founded by Manzi Delphin. MTN MoMo, Kinyarwanda SMS, real-time analytics.",
+  keywords: [
+    "DELRON", "DelronPOS", "delronpos.com",
+    "Rwanda POS", "Rwanda point of sale",
+    "Manzi Delphin", "AUCA Rwanda",
+    "MTN MoMo POS", "Kigali business software",
+    "AI POS Rwanda", "bakery software Rwanda",
+    "bar management Rwanda", "supermarket software Rwanda",
+  ],
+  authors: [{ name: "Manzi Delphin", url: "https://www.delronpos.com" }],
+  creator: "Manzi Delphin",
+  publisher: "DELRON AI POS",
+  openGraph: {
+    type: "website",
+    url: "https://www.delronpos.com",
+    title: "DELRON AI POS — Rwanda's First AI-Powered POS",
+    description: "One system for your supermarket, bakery, bar, and restaurant. Built in Kigali by Manzi Delphin.",
+    siteName: "DELRON AI POS",
+    locale: "en_RW",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DELRON AI POS — Rwanda's First AI-Powered POS",
+    description: "AI-powered POS for Rwandan businesses. MTN MoMo, Kinyarwanda SMS, theft detection.",
+    creator: "@delronpos",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+    },
+  },
+  alternates: {
+    canonical: "https://www.delronpos.com",
+  },
 };
 
 const jsonLd = {
@@ -52,8 +90,12 @@ const jsonLd = {
   ],
   creator: {
     "@type": "Organization",
-    name: "DELRON",
+    name: "DELRON AI POS",
     url: "https://www.delronpos.com",
+    founder: {
+      "@type": "Person",
+      name: "Manzi Delphin",
+    },
     contactPoint: {
       "@type": "ContactPoint",
       email: "info@delronpos.com",
@@ -68,6 +110,75 @@ const jsonLd = {
     bestRating: "5",
     worstRating: "1",
   },
+};
+
+const orgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "DELRON AI POS",
+  alternateName: ["DELRON", "Delron POS", "DelronPOS"],
+  url: "https://www.delronpos.com",
+  logo: "https://www.delronpos.com/icon.png",
+  description: "Rwanda's first AI-powered point-of-sale and business management platform. Built for supermarkets, bakeries, bars, and restaurants across Rwanda.",
+  foundingDate: "2026",
+  foundingLocation: {
+    "@type": "Place",
+    name: "Kigali, Rwanda",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Kigali",
+      addressCountry: "RW",
+    },
+  },
+  founder: {
+    "@type": "Person",
+    name: "Manzi Delphin",
+    jobTitle: "Founder & CEO",
+    nationality: "Rwandan",
+    alumniOf: {
+      "@type": "CollegeOrUniversity",
+      name: "Adventist University of Central Africa",
+      alternateName: "AUCA",
+    },
+    url: "https://www.delronpos.com",
+    worksFor: {
+      "@type": "Organization",
+      name: "DELRON AI POS",
+    },
+  },
+  contactPoint: [
+    {
+      "@type": "ContactPoint",
+      telephone: "+250785995840",
+      contactType: "customer support",
+      email: "support@delronpos.com",
+      areaServed: "RW",
+      availableLanguage: ["English", "Kinyarwanda"],
+    },
+    {
+      "@type": "ContactPoint",
+      telephone: "+250785995840",
+      contactType: "sales",
+      email: "info@delronpos.com",
+      areaServed: "RW",
+    },
+  ],
+  areaServed: {
+    "@type": "Country",
+    name: "Rwanda",
+  },
+  sameAs: [
+    "https://github.com/manzidelphin",
+    "https://www.delronpos.com",
+  ],
+  knowsAbout: [
+    "Point of Sale Software",
+    "Business Management Software",
+    "MTN MoMo Integration",
+    "Kinyarwanda Language Support",
+    "AI Business Intelligence",
+    "Rwanda Technology",
+  ],
 };
 
 export default async function MarketingPage() {
@@ -874,6 +985,10 @@ export default async function MarketingPage() {
       </section>
 
       {/* JSON-LD structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
