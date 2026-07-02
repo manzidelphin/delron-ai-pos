@@ -184,7 +184,13 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <p className="font-semibold text-sm mb-4 text-slate-200">Contact</p>
               <ul className="space-y-2.5 text-slate-400 text-xs">
                 <li>info@delronpos.com</li>
-                <li>+250 788 000 000</li>
+                <li>support@delronpos.com</li>
+                <li>+250 785 995 840</li>
+                <li>
+                  <a href="https://wa.me/250785995840" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                    WhatsApp: +250 785 995 840
+                  </a>
+                </li>
                 <li>Kigali, Rwanda</li>
               </ul>
             </div>
@@ -192,7 +198,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
 
           <div className="border-t border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-slate-500 text-xs">© 2026 DELRON AI POS. All rights reserved.</p>
-            <p className="text-slate-600 text-xs">Powered by Claude AI · Supabase · Next.js 14</p>
+            <p className="text-slate-600 text-xs">Powered by DELRON AI POS</p>
           </div>
         </div>
       </footer>
