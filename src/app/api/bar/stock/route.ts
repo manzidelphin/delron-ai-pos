@@ -7,13 +7,13 @@ export async function GET() {
   if (auth.error) return auth.error;
 
   const supabase = createAdminClient();
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split("T")[0];
-  const fromStr = `${todayStr}T00:00:00`;
-  const toStr   = `${todayStr}T23:59:59`;
+  const now = new Date();
+  // Use Kigali local date (UTC+2). toISOString() is UTC and can be off by one calendar day.
+  const todayStr     = now.toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" });
+  const yesterdayStr = new Date(now.getTime() - 86400000).toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" });
+  // Anchor timestamps to Kigali midnight so the comparison against UTC-stored timestamptz is correct.
+  const fromStr = new Date(`${todayStr}T00:00:00+02:00`).toISOString();
+  const toStr   = new Date(`${todayStr}T23:59:59+02:00`).toISOString();
 
   // All active bar items
   const { data: items, error: itemsErr } = await supabase
@@ -35,6 +35,7 @@ export async function GET() {
     .lte("created_at", toStr);
 
   const orderIds = (todayOrders ?? []).map((o) => o.id);
+  console.log(`[bar/stock] Found ${orderIds.length} bar_tab orders today (${todayStr}) for business ${auth.businessId}`);
   const soldMap: Record<string, number> = {};
   if (orderIds.length > 0) {
     const { data: ois } = await supabase
