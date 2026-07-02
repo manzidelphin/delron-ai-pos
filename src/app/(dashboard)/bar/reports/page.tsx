@@ -28,9 +28,9 @@ export default function BarReportsPage() {
   const [from, setFrom] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 7);
-    return d.toISOString().slice(0, 10);
+    return d.toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" });
   });
-  const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [to, setTo] = useState(() => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" }));
 
   const load = useCallback(async () => {
     setLoading(true);
