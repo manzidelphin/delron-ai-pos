@@ -49,24 +49,29 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const router = useRouter();
 
-  // Find all nav entries whose href is a prefix of the current path, then check
-  // if at least one is accessible (module + role). If none are, redirect.
-  // Uses "any match accessible" so dual-entry routes (e.g. /bar/pos under both
-  // bar and restaurant modules) are handled correctly.
+  // Collect all nav entries whose href is a prefix of the current path.
   const matchingItems = isLoaded
     ? NAV_ITEMS.filter(
         (item) => item.href.length > 1 && (pathname === item.href || pathname.startsWith(item.href + "/"))
       )
     : [];
 
-  const isBlocked =
-    matchingItems.length > 0 &&
-    !matchingItems.some((item) => {
-      if (item.module && !hasModule(item.module)) return false;
-      if (item.anyModule && !item.anyModule.some((m) => hasModule(m))) return false;
-      if (item.roles && !canAccess(item.roles)) return false;
-      return true;
-    });
+  // Use the most specific match (longest href). Section headers like /bar are only
+  // a fallback when no more specific nav item covers the path. This prevents /bar
+  // (bartender-accessible) from granting access to /bar/items (owner/manager only).
+  const mostSpecific = matchingItems.reduce<(typeof NAV_ITEMS)[0] | null>(
+    (best, item) => (!best || item.href.length > best.href.length ? item : best),
+    null
+  );
+
+  const isBlocked = mostSpecific
+    ? (() => {
+        if (mostSpecific.module && !hasModule(mostSpecific.module)) return true;
+        if (mostSpecific.anyModule && !mostSpecific.anyModule.some((m) => hasModule(m))) return true;
+        if (mostSpecific.roles && !canAccess(mostSpecific.roles)) return true;
+        return false;
+      })()
+    : false;
 
   useEffect(() => {
     if (isBlocked) router.replace("/dashboard");
