@@ -266,7 +266,7 @@ export async function closeShift({
   const staffName = staffRecord?.name ?? "Staff";
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
 
-  if (ownerUserId) {
+  if (shift && ownerUserId) {
     try {
       const cashNote  = cashVariance !== null
         ? ` Cash: ${cashVariance >= 0 ? "+" : ""}${Math.round(cashVariance).toLocaleString()} RWF variance.`
@@ -291,7 +291,7 @@ export async function closeShift({
   }
 
   // ── SMS to owner ──────────────────────────────────────────────────────────
-  if (ownerPhone) {
+  if (shift && ownerPhone) {
     try {
       const cashLine = cashVariance !== null
         ? `\nCash: ${cashVariance >= 0 ? "+" : ""}${Math.round(cashVariance).toLocaleString()} RWF`
@@ -312,7 +312,7 @@ export async function closeShift({
   }
 
   // ── Email to owner ────────────────────────────────────────────────────────
-  if (ownerUserId) {
+  if (shift && ownerUserId) {
     try {
       const [{ data: authData }, { data: ownerStaff }] = await Promise.all([
         supabase.auth.admin.getUserById(ownerUserId),
