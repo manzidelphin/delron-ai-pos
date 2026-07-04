@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   Zap,
@@ -65,6 +66,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [data, setData] = useState<OnboardingData>({
     full_name: "",
@@ -400,7 +402,36 @@ export default function OnboardingPage() {
                   </button>
                 ))}
               </div>
-              <NavButtons onNext={handleSubmit} onBack={() => setStep(3)} nextLabel="Create my account" isLoading={isLoading} />
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded accent-blue-500 flex-shrink-0"
+                />
+                <span className="text-slate-400 text-xs leading-relaxed">
+                  I agree to the{" "}
+                  <Link href="/terms" target="_blank" className="text-blue-400 hover:text-blue-300 underline">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy" target="_blank" className="text-blue-400 hover:text-blue-300 underline">
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
+              <NavButtons
+                onNext={() => {
+                  if (!termsAccepted) {
+                    toast.error("Please accept the Terms of Service and Privacy Policy to continue");
+                    return;
+                  }
+                  handleSubmit();
+                }}
+                onBack={() => setStep(3)}
+                nextLabel="Create my account"
+                isLoading={isLoading}
+              />
             </div>
           )}
 

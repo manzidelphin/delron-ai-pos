@@ -73,6 +73,8 @@ export async function updateSession(request: NextRequest) {
     "/offline.html",
     "/sitemap.xml",
     "/robots.txt",
+    "/terms",
+    "/privacy",
     "/verify-email",  // accessible without session (user may have closed browser)
     "/auth",          // covers /auth/callback — must be reachable without session
   ];

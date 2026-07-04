@@ -156,6 +156,16 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                     Pricing
                   </a>
                 </li>
+                <li>
+                  <Link href="/terms" className="hover:text-white transition-colors">
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="hover:text-white transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
               </ul>
             </div>
 
