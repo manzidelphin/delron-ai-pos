@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           <div className="mt-6 p-5 bg-blue-500/5 border border-blue-500/20 rounded-xl">
             <p className="text-slate-300 text-sm leading-relaxed">
               This Privacy Policy explains how{" "}
-              <strong className="text-white">DELLON</strong> (TIN 143715478), operating
+              <strong className="text-white">DELLON</strong>, operating
               DELRON AI POS, collects, uses, and protects your information.
             </p>
           </div>
@@ -167,7 +167,7 @@ export default function PrivacyPage() {
         </div>
 
         <div className="mt-14 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="text-slate-600 text-xs">© 2026 DELLON · TIN 143715478 · Kigali, Rwanda</p>
+          <p className="text-slate-600 text-xs">© 2026 DELLON · Kigali, Rwanda</p>
           <Link href="/terms" className="text-blue-400 hover:text-blue-300 text-xs underline">
             Terms of Service →
           </Link>

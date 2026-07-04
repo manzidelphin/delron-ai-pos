@@ -21,8 +21,8 @@ export default function TermsPage() {
             <p className="text-slate-300 text-sm leading-relaxed">
               These Terms of Service (&ldquo;Terms&rdquo;) govern your use of DELRON AI POS
               (&ldquo;Service&rdquo;), operated by{" "}
-              <strong className="text-white">DELLON</strong>, a company registered in Rwanda
-              under TIN 143715478, with offices at kg 270, Kanserege, Kamutwa, Kacyiru,
+              <strong className="text-white">DELLON</strong>, a company registered in Rwanda,
+              with offices at kg 270, Kanserege, Kamutwa, Kacyiru,
               Gasabo, Kigali, Rwanda (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;DELLON&rdquo;).
             </p>
             <p className="text-slate-300 text-sm mt-3 leading-relaxed font-medium">
@@ -170,7 +170,7 @@ export default function TermsPage() {
         </div>
 
         <div className="mt-14 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="text-slate-600 text-xs">© 2026 DELLON · TIN 143715478 · Kigali, Rwanda</p>
+          <p className="text-slate-600 text-xs">© 2026 DELLON · Kigali, Rwanda</p>
           <Link href="/privacy" className="text-blue-400 hover:text-blue-300 text-xs underline">
             Privacy Policy →
           </Link>
