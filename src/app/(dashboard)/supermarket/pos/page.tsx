@@ -6,11 +6,10 @@ import { usePOSStore } from "@/store/pos-store";
 import { BarcodeScanner } from "@/components/supermarket/barcode-scanner";
 import OfflineBanner from "@/components/layout/offline-banner";
 import { CartItemRow } from "@/components/supermarket/cart-item";
-import { PaymentModal } from "@/components/supermarket/payment-modal";
 import { CreditModal } from "@/components/supermarket/credit-modal";
 import { Receipt } from "@/components/supermarket/receipt";
 import { GenericBarcodeModal } from "@/components/bakery/generic-barcode-modal";
-import type { PaymentDetails } from "@/components/supermarket/payment-modal";
+import { PaymentStep, type SimplePaymentMethod } from "@/components/pos/payment-step";
 import type { CreditDetails } from "@/components/supermarket/credit-modal";
 import type { PaymentMethod, CartItem } from "@/types";
 import {
@@ -55,13 +54,6 @@ const CATEGORIES = [
   "Other",
 ];
 
-const PAYMENT_METHODS: { key: PaymentMethod; label: string; icon: string; color: string }[] = [
-  { key: "cash", label: "Cash", icon: "💵", color: "bg-green-600 hover:bg-green-700" },
-  { key: "mtn_momo", label: "MTN MoMo", icon: "📱", color: "bg-yellow-500 hover:bg-yellow-600" },
-  { key: "airtel_money", label: "Airtel", icon: "📱", color: "bg-red-600 hover:bg-red-700" },
-  { key: "bank_transfer", label: "Bank", icon: "🏦", color: "bg-blue-600 hover:bg-blue-700" },
-];
-
 interface ReceiptData {
   receiptNumber: string;
   businessName: string;
@@ -71,7 +63,7 @@ interface ReceiptData {
   subtotal: number;
   discount: number;
   total: number;
-  paymentMethod: string;
+  paymentMethod?: string;
   amountPaid?: number;
   change?: number;
   timestamp: string;
@@ -79,7 +71,7 @@ interface ReceiptData {
 
 export default function POSPage() {
   const { cart, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, discount, total, setDiscount } = usePOSStore();
-  const { business } = useAuthStore();
+  const { business, staff, currentBranch, activeOperator } = useAuthStore();
   const { broadcast, openDisplay } = useCustomerDisplay(business?.id);
 
   const [posItems, setPosItems] = useState<PosItem[]>([]);
@@ -92,9 +84,11 @@ export default function POSPage() {
   const [showDiscountInput, setShowDiscountInput] = useState(false);
 
   const [genericModal, setGenericModal] = useState<{ name: string; price: number; itemId: string; unit: string } | null>(null);
-  const [activeModal, setActiveModal] = useState<PaymentMethod | "credit" | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [creditModalOpen, setCreditModalOpen] = useState(false);
+  const [saleComplete, setSaleComplete] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
-  const [showReceipt, setShowReceipt] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -249,11 +243,29 @@ export default function POSPage() {
     setDiscountInput("");
   };
 
+  const handleCheckout = () => {
+    if (cartItems.length === 0) return;
+    setReceiptData({
+      receiptNumber: generateReceiptNumber(),
+      businessName: business?.name || "My Business",
+      branchName: currentBranch?.name || "Main Branch",
+      cashierName: activeOperator?.name || staff?.name || "Cashier",
+      items: cartItems,
+      subtotal: subtotal(),
+      discount,
+      total: total(),
+      timestamp: new Date().toISOString(),
+    });
+    setSaleComplete(false);
+    setCheckoutOpen(true);
+  };
+
   const processOrder = async (
     paymentMethod: PaymentMethod,
-    paymentDetails: PaymentDetails | null,
+    paymentDetails: { amount_paid?: number; change?: number } | null,
     creditDetails: CreditDetails | null
   ) => {
+    setProcessing(true);
     try {
       const payload: Record<string, unknown> = {
         items: cartItems,
@@ -264,7 +276,6 @@ export default function POSPage() {
         ...(paymentDetails && {
           amount_paid: paymentDetails.amount_paid,
           change_given: paymentDetails.change,
-          customer_phone: paymentDetails.phone,
         }),
         ...(creditDetails && {
           customer_name: creditDetails.customer_name,
@@ -287,34 +298,37 @@ export default function POSPage() {
 
       const json = await res.json();
 
-      const rData: ReceiptData = {
-        receiptNumber: json.receipt_number || generateReceiptNumber(),
-        businessName: json.business_name || "My Business",
-        branchName: json.branch_name || "Main Branch",
-        cashierName: json.cashier_name || "Cashier",
-        items: cartItems,
-        subtotal: subtotal(),
-        discount: discount,
-        total: total(),
-        paymentMethod: creditDetails ? "credit" : paymentMethod,
-        amountPaid: paymentDetails?.amount_paid,
-        change: paymentDetails?.change,
-        timestamp: new Date().toISOString(),
-      };
-
-      setReceiptData(rData);
+      setReceiptData((prev) =>
+        prev && {
+          ...prev,
+          receiptNumber: json.receipt_number || prev.receiptNumber,
+          businessName: json.business_name || prev.businessName,
+          branchName: json.branch_name || prev.branchName,
+          cashierName: json.cashier_name || prev.cashierName,
+          paymentMethod: creditDetails ? "credit" : paymentMethod,
+          amountPaid: paymentDetails?.amount_paid,
+          change: paymentDetails?.change,
+        }
+      );
       clearCart();
-      setActiveModal(null);
-      setShowReceipt(true);
+      setCreditModalOpen(false);
+      setSaleComplete(true);
       loadProducts();
     } catch (err) {
       alert((err as Error).message || "Error processing order");
     } finally {
+      setProcessing(false);
     }
   };
 
   const handlePrintReceipt = () => {
     window.print();
+  };
+
+  const handleNewSale = () => {
+    setCheckoutOpen(false);
+    setSaleComplete(false);
+    setReceiptData(null);
   };
 
   const itemsDescription = cartItems.map((i) => `${i.quantity}x ${i.item_name}`).join(", ");
@@ -544,26 +558,12 @@ export default function POSPage() {
                 </div>
               </div>
 
-              {/* Payment buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                {PAYMENT_METHODS.map((pm) => (
-                  <button
-                    key={pm.key}
-                    onClick={() => setActiveModal(pm.key)}
-                    className={`h-14 rounded-xl font-bold text-white text-sm transition-all active:scale-95 flex flex-col items-center justify-center ${pm.color}`}
-                  >
-                    <span className="text-lg">{pm.icon}</span>
-                    <span>{pm.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Credit button */}
+              {/* Checkout — opens the receipt, payment method is chosen after */}
               <button
-                onClick={() => setActiveModal("credit")}
-                className="w-full h-12 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 text-amber-400 font-bold text-sm hover:bg-amber-500/20 transition-all active:scale-[0.98]"
+                onClick={handleCheckout}
+                className="w-full h-14 rounded-xl font-bold text-white text-base bg-blue-600 hover:bg-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
-                📋 Credit (Pay Later)
+                Checkout →
               </button>
             </div>
           )}
@@ -592,42 +592,21 @@ export default function POSPage() {
         />
       )}
 
-      {/* Payment Modal */}
-      {activeModal && activeModal !== "credit" && (
-        <PaymentModal
-          total={total()}
-          paymentMethod={activeModal as PaymentMethod}
-          onClose={() => setActiveModal(null)}
-          onConfirm={async (details: PaymentDetails) => {
-            await processOrder(activeModal as PaymentMethod, details, null);
-          }}
-        />
-      )}
-
-      {/* Credit Modal */}
-      {activeModal === "credit" && (
-        <CreditModal
-          total={total()}
-          itemsDescription={itemsDescription}
-          onClose={() => setActiveModal(null)}
-          onConfirm={async (details: CreditDetails) => {
-            await processOrder("cash", null, details);
-          }}
-        />
-      )}
-
-      {/* Receipt Modal */}
-      {showReceipt && receiptData && (
+      {/* Checkout Modal — receipt shown first, payment method chosen after */}
+      {checkoutOpen && receiptData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between p-4 border-b border-slate-700">
-              <h2 className="font-bold text-white">Sale Complete!</h2>
-              <button onClick={() => setShowReceipt(false)} className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-400">
+              <h2 className="font-bold text-white">{saleComplete ? "Payment Complete" : "Receipt"}</h2>
+              <button
+                onClick={saleComplete ? handleNewSale : () => setCheckoutOpen(false)}
+                className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-400"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-4 max-h-[55vh] overflow-y-auto">
               <Receipt
                 receiptNumber={receiptData.receiptNumber}
                 businessName={receiptData.businessName}
@@ -644,24 +623,51 @@ export default function POSPage() {
               />
             </div>
 
-            <div className="p-4 border-t border-slate-700 flex gap-3">
-              <button
-                onClick={handlePrintReceipt}
-                className="flex-1 h-12 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold flex items-center justify-center gap-2 transition-all"
-              >
-                <Printer className="w-4 h-4" />
-                Print
-              </button>
-              <button
-                onClick={() => setShowReceipt(false)}
-                className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 transition-all"
-              >
-                <RotateCcw className="w-4 h-4" />
-                New Sale
-              </button>
+            <div className="p-4 border-t border-slate-700">
+              {saleComplete ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center gap-2 text-green-400 font-bold">✅ Payment Complete</div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handlePrintReceipt}
+                      className="flex-1 h-12 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold flex items-center justify-center gap-2 transition-all"
+                    >
+                      <Printer className="w-4 h-4" />
+                      Print
+                    </button>
+                    <button
+                      onClick={handleNewSale}
+                      className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 transition-all"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      New Sale
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <PaymentStep
+                  total={receiptData.total}
+                  momoNumber={business?.momo_number}
+                  processing={processing}
+                  onConfirm={(method: SimplePaymentMethod, details) => processOrder(method, details, null)}
+                  onCredit={() => setCreditModalOpen(true)}
+                />
+              )}
             </div>
           </div>
         </div>
+      )}
+
+      {/* Credit Modal — kept as-is, just triggered from the payment step after the receipt is shown */}
+      {creditModalOpen && receiptData && (
+        <CreditModal
+          total={receiptData.total}
+          itemsDescription={itemsDescription}
+          onClose={() => setCreditModalOpen(false)}
+          onConfirm={async (details: CreditDetails) => {
+            await processOrder("cash", null, details);
+          }}
+        />
       )}
 
       {/* Print styles */}

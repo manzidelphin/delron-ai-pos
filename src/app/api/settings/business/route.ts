@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json();
-  const allowed = ["name", "phone", "email", "location", "language", "modules", "daily_report_email"];
+  const allowed = ["name", "phone", "email", "location", "language", "modules", "daily_report_email", "momo_number"];
   const update: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) update[key] = body[key];

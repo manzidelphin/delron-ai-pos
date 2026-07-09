@@ -12,7 +12,7 @@ interface ReceiptProps {
   subtotal: number;
   discount: number;
   total: number;
-  paymentMethod: string;
+  paymentMethod?: string;
   amountPaid?: number;
   change?: number;
   timestamp?: string;
@@ -116,27 +116,29 @@ export function Receipt({
         </div>
       </div>
 
-      {/* Payment */}
-      <div className="text-xs space-y-0.5 mb-3 border-b border-dashed border-gray-400 pb-3">
-        <div className="flex justify-between">
-          <span className="text-gray-500">Payment</span>
-          <span>{paymentLabel[paymentMethod] ?? paymentMethod}</span>
-        </div>
-        {amountPaid !== undefined && amountPaid > 0 && (
-          <>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Paid</span>
-              <span>{formatRWF(amountPaid)}</span>
-            </div>
-            {change !== undefined && change > 0 && (
-              <div className="flex justify-between font-bold">
-                <span>Change</span>
-                <span>{formatRWF(change)}</span>
+      {/* Payment — only known once the customer has selected & confirmed a method */}
+      {paymentMethod && (
+        <div className="text-xs space-y-0.5 mb-3 border-b border-dashed border-gray-400 pb-3">
+          <div className="flex justify-between">
+            <span className="text-gray-500">Payment</span>
+            <span>{paymentLabel[paymentMethod] ?? paymentMethod}</span>
+          </div>
+          {amountPaid !== undefined && amountPaid > 0 && (
+            <>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Paid</span>
+                <span>{formatRWF(amountPaid)}</span>
               </div>
-            )}
-          </>
-        )}
-      </div>
+              {change !== undefined && change > 0 && (
+                <div className="flex justify-between font-bold">
+                  <span>Change</span>
+                  <span>{formatRWF(change)}</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* EBM */}
       <div className="text-xs text-gray-500 mb-3 space-y-0.5">
