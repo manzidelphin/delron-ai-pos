@@ -19,7 +19,7 @@ interface BarReceiptProps {
   tableNumber?: number;
   items: BarOrderItem[];
   total: number;
-  paymentMethod: string;
+  paymentMethod?: string;
   amountPaid?: number;
   change?: number;
   splitCount?: number;
@@ -112,24 +112,26 @@ export function BarReceipt({
         )}
       </div>
 
-      <div className="text-xs space-y-0.5 mb-3">
-        <div className="flex justify-between">
-          <span className="text-gray-500">Payment</span>
-          <span>{PAYMENT_LABELS[paymentMethod] ?? paymentMethod}</span>
-        </div>
-        {amountPaid !== undefined && amountPaid > 0 && (
+      {paymentMethod && (
+        <div className="text-xs space-y-0.5 mb-3">
           <div className="flex justify-between">
-            <span className="text-gray-500">Paid</span>
-            <span>{formatRWF(amountPaid)}</span>
+            <span className="text-gray-500">Payment</span>
+            <span>{PAYMENT_LABELS[paymentMethod] ?? paymentMethod}</span>
           </div>
-        )}
-        {change !== undefined && change > 0 && (
-          <div className="flex justify-between font-bold">
-            <span>Change</span>
-            <span>{formatRWF(change)}</span>
-          </div>
-        )}
-      </div>
+          {amountPaid !== undefined && amountPaid > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">Paid</span>
+              <span>{formatRWF(amountPaid)}</span>
+            </div>
+          )}
+          {change !== undefined && change > 0 && (
+            <div className="flex justify-between font-bold">
+              <span>Change</span>
+              <span>{formatRWF(change)}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="text-center text-xs text-gray-500 border-t border-dashed border-gray-400 pt-3">
         <p className="font-medium">Thank you! Enjoy your evening!</p>

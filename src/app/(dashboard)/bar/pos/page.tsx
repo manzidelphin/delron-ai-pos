@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, Plus, CreditCard, SplitSquareHorizontal, Printer, X, Loader2, Monitor } from "lucide-react";
+import { Search, Plus, CreditCard, SplitSquareHorizontal, Printer, X, Loader2, Monitor, ChevronLeft } from "lucide-react";
 import { useCustomerDisplay } from "@/hooks/use-customer-display";
 import OfflineBanner from "@/components/layout/offline-banner";
 import { ShotModal } from "@/components/bar/shot-modal";
@@ -9,7 +9,8 @@ import { TabItem } from "@/components/bar/tab-item";
 import { SplitBillModal } from "@/components/bar/split-bill-modal";
 import { TableCard } from "@/components/bar/table-card";
 import { BarReceipt } from "@/components/bar/bar-receipt";
-import { formatRWF } from "@/lib/utils";
+import { PaymentStep, type SimplePaymentMethod } from "@/components/pos/payment-step";
+import { formatRWF, generateReceiptNumber } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
@@ -55,17 +56,18 @@ interface OrderItem {
   status: string;
 }
 
-const PAYMENT_METHODS = ["cash", "mtn_momo", "airtel_money", "bank_transfer"] as const;
-type PayMethod = typeof PAYMENT_METHODS[number] | "credit";
-const PAYMENT_LABELS: Record<string, string> = {
-  cash: "Cash",
-  mtn_momo: "MTN MoMo",
-  airtel_money: "Airtel Money",
-  bank_transfer: "Bank Transfer",
-  credit: "Credit Sale",
-};
-
 const BAR_CATEGORIES = ["All", "spirits", "wine", "beer", "cocktail", "soft_drink", "juice", "other"];
+
+interface CheckoutData {
+  receiptNumber: string;
+  items: OrderItem[];
+  total: number;
+  waiterName?: string;
+  paymentMethod?: string;
+  amountPaid?: number;
+  change?: number;
+  splitCount?: number;
+}
 
 export default function BarPOSPage() {
   const { staff, business, currentBranch, hasModule, activeOperator } = useAuthStore();
@@ -83,11 +85,11 @@ export default function BarPOSPage() {
   const [loading, setLoading] = useState(true);
   const [shotModal, setShotModal] = useState<BarItem | null>(null);
   const [splitModal, setSplitModal] = useState(false);
-  const [payModal, setPayModal] = useState(false);
-  const [payMethod, setPayMethod] = useState<PayMethod>("cash");
-  const [amountPaid, setAmountPaid] = useState("");
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [saleComplete, setSaleComplete] = useState(false);
+  const [creditStep, setCreditStep] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [receipt, setReceipt] = useState<{ receiptNumber: string; change: number; amountPaid: number; splitCount: number; items: OrderItem[]; waiterName?: string } | null>(null);
+  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
   const [openingTab, setOpeningTab] = useState(false);
   const [creditName,    setCreditName]  = useState("");
   const [creditPhone,   setCreditPhone] = useState("");
@@ -220,6 +222,19 @@ export default function BarPOSPage() {
     toast.success("Item removed from display");
   };
 
+  const handleCheckout = () => {
+    if (!activeTab || tabItems.length === 0) return;
+    setCheckoutData({
+      receiptNumber: generateReceiptNumber(),
+      items: tabItems,
+      total: activeTab.total,
+      waiterName: waiters.find((w) => w.id === selectedWaiterId)?.name,
+    });
+    setSaleComplete(false);
+    setCreditStep(false);
+    setCheckoutOpen(true);
+  };
+
   const processCreditSale = async () => {
     if (!activeTab) return;
     if (!creditName.trim() || !creditPhone.trim() || !creditDueDate) {
@@ -257,18 +272,21 @@ export default function BarPOSPage() {
       if (!payRes.ok) throw new Error(payJson.error ?? "Failed to close tab");
 
       toast.success(`Credit recorded for ${creditName.trim()}`);
-      setReceipt({
-        receiptNumber: payJson.receipt_number,
-        change:        0,
+      setCheckoutData((prev) => ({
+        receiptNumber: payJson.receipt_number || prev?.receiptNumber || generateReceiptNumber(),
+        items:         prev?.items ?? tabItems,
+        total:         prev?.total ?? activeTab.total,
+        waiterName:    prev?.waiterName ?? waiters.find((w) => w.id === selectedWaiterId)?.name,
+        paymentMethod: "credit",
         amountPaid:    activeTab.total,
+        change:        0,
         splitCount:    1,
-        items:         tabItems,
-        waiterName:    waiters.find((w) => w.id === selectedWaiterId)?.name,
-      });
+      }));
       setActiveTab(null);
       setSelectedWaiterId(null);
       setTabItems([]);
-      setPayModal(false);
+      setCreditStep(false);
+      setSaleComplete(true);
       setCreditName("");
       setCreditPhone("");
       setCreditDue("");
@@ -280,43 +298,50 @@ export default function BarPOSPage() {
     }
   };
 
-  const processPayment = async (splitCount = 1) => {
+  const processPayment = async (method: SimplePaymentMethod, details: { amount_paid: number; change: number }, splitCount = 1) => {
     if (!activeTab) return;
-    if (payMethod === "credit") return processCreditSale();
     setProcessing(true);
     setSplitModal(false);
     try {
-      const paid = amountPaid ? parseFloat(amountPaid) : activeTab.total;
       const res = await fetch(`/api/bar/tabs/${activeTab.id}/pay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          payment_method: payMethod,
-          amount_paid: paid,
+          payment_method: method,
+          amount_paid: details.amount_paid,
           split_count: splitCount,
         }),
       });
       const json = await res.json();
       if (!res.ok) return toast.error(json.error);
       toast.success("Payment processed!");
-      setReceipt({
-        receiptNumber: json.receipt_number,
-        change: json.change,
-        amountPaid: json.amount_paid,
+      setCheckoutData((prev) => ({
+        receiptNumber: json.receipt_number || prev?.receiptNumber || generateReceiptNumber(),
+        items:         prev?.items ?? tabItems,
+        total:         prev?.total ?? activeTab.total,
+        waiterName:    prev?.waiterName ?? waiters.find((w) => w.id === selectedWaiterId)?.name,
+        paymentMethod: method,
+        amountPaid:    json.amount_paid,
+        change:        json.change,
         splitCount,
-        items: tabItems,
-        waiterName: waiters.find((w) => w.id === selectedWaiterId)?.name,
-      });
+      }));
       setActiveTab(null);
       setSelectedWaiterId(null);
       setTabItems([]);
-      setPayModal(false);
+      setCheckoutOpen(true);
+      setSaleComplete(true);
       loadData();
     } catch {
       toast.error("Payment failed");
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleSplitConfirm = (count: number) => {
+    if (!activeTab) return;
+    setSplitModal(false);
+    processPayment("cash", { amount_paid: activeTab.total, change: 0 }, count);
   };
 
   // restaurant-only businesses always see food; bar businesses switch via catFilter
@@ -569,7 +594,7 @@ export default function BarPOSPage() {
                   Split
                 </button>
                 <button
-                  onClick={() => setPayModal(true)}
+                  onClick={handleCheckout}
                   disabled={tabItems.length === 0}
                   className="h-11 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40"
                 >
@@ -659,168 +684,129 @@ export default function BarPOSPage() {
       {splitModal && activeTab && (
         <SplitBillModal
           total={activeTab.total}
-          onConfirm={(count) => processPayment(count)}
+          onConfirm={handleSplitConfirm}
           onClose={() => setSplitModal(false)}
         />
       )}
 
-      {/* Payment modal */}
-      {payModal && activeTab && (
+      {/* Checkout modal — receipt shown first, payment method chosen after */}
+      {checkoutOpen && checkoutData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="flex items-center justify-between p-5 border-b border-slate-700">
-              <h2 className="text-lg font-bold text-white">Process Payment</h2>
-              <button onClick={() => setPayModal(false)} className="text-slate-400 hover:text-white"><X className="w-4 h-4" /></button>
-            </div>
-            <div className="p-5 space-y-5">
-              <div className="bg-slate-900/50 rounded-xl p-4 text-center">
-                <p className="text-slate-400 text-sm">Total Due</p>
-                <p className="text-4xl font-black text-white">{formatRWF(activeTab.total)}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                {PAYMENT_METHODS.map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setPayMethod(m)}
-                    className={cn(
-                      "h-11 rounded-xl text-sm font-semibold border transition-all",
-                      payMethod === m
-                        ? "bg-blue-600 border-blue-500 text-white"
-                        : "bg-slate-700 border-slate-600 text-slate-300"
-                    )}
-                  >
-                    {PAYMENT_LABELS[m]}
-                  </button>
-                ))}
-                {/* Credit Sale — spans full width */}
+          <div className="flex flex-col items-center gap-0 max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm">
+              <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                <h2 className="font-bold text-white">{saleComplete ? "Payment Complete" : "Receipt"}</h2>
                 <button
                   onClick={() => {
-                    setPayMethod("credit");
-                    if (!creditDueDate) {
-                      const d = new Date();
-                      d.setDate(d.getDate() + 7);
-                      setCreditDue(d.toISOString().split("T")[0]);
-                    }
+                    setCheckoutOpen(false);
+                    setCreditStep(false);
+                    if (saleComplete) { setSaleComplete(false); setCheckoutData(null); }
                   }}
-                  className={cn(
-                    "col-span-2 h-11 rounded-xl text-sm font-semibold border transition-all",
-                    payMethod === "credit"
-                      ? "bg-amber-600 border-amber-500 text-white"
-                      : "bg-slate-700 border-slate-600 text-slate-300"
-                  )}
+                  className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-400"
                 >
-                  💳 Credit Sale (Pay Later)
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {payMethod === "cash" && (
-                <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-1.5">Amount Received (RWF)</label>
-                  <input
-                    type="number"
-                    value={amountPaid}
-                    onChange={(e) => setAmountPaid(e.target.value)}
-                    placeholder="Enter amount..."
-                    className="w-full h-14 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white text-xl font-bold placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {parseFloat(amountPaid) >= activeTab.total && (
-                    <div className="mt-2 flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-2">
-                      <span className="text-sm text-green-400">Change</span>
-                      <span className="font-bold text-green-400">{formatRWF(parseFloat(amountPaid) - activeTab.total)}</span>
+              <div className="p-4">
+                <BarReceipt
+                  receiptNumber={checkoutData.receiptNumber}
+                  businessName={business?.name ?? "My Business"}
+                  branchName={currentBranch?.name ?? ""}
+                  cashierName={activeOperator?.name ?? staff?.name ?? "Cashier"}
+                  waiterName={checkoutData.waiterName}
+                  items={checkoutData.items}
+                  total={checkoutData.total}
+                  paymentMethod={checkoutData.paymentMethod}
+                  amountPaid={checkoutData.amountPaid}
+                  change={checkoutData.change}
+                  splitCount={checkoutData.splitCount}
+                />
+              </div>
+
+              <div className="p-4 border-t border-slate-700">
+                {saleComplete ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-center gap-2 text-green-400 font-bold">✅ Payment Complete</div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => window.print()}
+                        className="flex-1 h-12 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold flex items-center justify-center gap-2 transition-all"
+                      >
+                        <Printer className="w-4 h-4" /> Print
+                      </button>
+                      <button
+                        onClick={() => { setCheckoutOpen(false); setSaleComplete(false); setCheckoutData(null); }}
+                        className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all"
+                      >
+                        New Sale
+                      </button>
                     </div>
-                  )}
-                </div>
-              )}
-
-              {payMethod === "credit" && (
-                <div className="space-y-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                  <p className="text-xs text-amber-400 font-semibold uppercase tracking-wide">Customer Details</p>
-                  <div>
-                    <label className="text-xs font-medium text-slate-400 block mb-1">Customer Name *</label>
-                    <input
-                      type="text"
-                      value={creditName}
-                      onChange={(e) => setCreditName(e.target.value)}
-                      placeholder="Full name..."
-                      autoFocus
-                      className="w-full h-10 px-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                    />
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-400 block mb-1">Phone Number *</label>
-                    <input
-                      type="tel"
-                      value={creditPhone}
-                      onChange={(e) => setCreditPhone(e.target.value)}
-                      placeholder="07XXXXXXXX"
-                      className="w-full h-10 px-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm font-mono"
-                    />
+                ) : creditStep ? (
+                  <div className="space-y-3">
+                    <button onClick={() => setCreditStep(false)} className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors">
+                      <ChevronLeft className="w-3.5 h-3.5" /> Back
+                    </button>
+                    <div className="space-y-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                      <p className="text-xs text-amber-400 font-semibold uppercase tracking-wide">Customer Details</p>
+                      <div>
+                        <label className="text-xs font-medium text-slate-400 block mb-1">Customer Name *</label>
+                        <input
+                          type="text"
+                          value={creditName}
+                          onChange={(e) => setCreditName(e.target.value)}
+                          placeholder="Full name..."
+                          autoFocus
+                          className="w-full h-10 px-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-400 block mb-1">Phone Number *</label>
+                        <input
+                          type="tel"
+                          value={creditPhone}
+                          onChange={(e) => setCreditPhone(e.target.value)}
+                          placeholder="07XXXXXXXX"
+                          className="w-full h-10 px-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-400 block mb-1">Due Date *</label>
+                        <input
+                          type="date"
+                          value={creditDueDate}
+                          onChange={(e) => setCreditDue(e.target.value)}
+                          className="w-full h-10 px-3 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={processCreditSale}
+                      disabled={processing || !creditName.trim() || !creditPhone.trim() || !creditDueDate}
+                      className="w-full h-14 rounded-xl text-white font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 bg-amber-600 hover:bg-amber-700"
+                    >
+                      {processing ? <Loader2 className="w-5 h-5 animate-spin" /> : "💳"}
+                      Record Credit Sale
+                    </button>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-400 block mb-1">Due Date *</label>
-                    <input
-                      type="date"
-                      value={creditDueDate}
-                      onChange={(e) => setCreditDue(e.target.value)}
-                      className="w-full h-10 px-3 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <button
-                onClick={() => processPayment(1)}
-                disabled={
-                  processing ||
-                  (payMethod === "cash" && parseFloat(amountPaid || "0") < activeTab.total) ||
-                  (payMethod === "credit" && (!creditName.trim() || !creditPhone.trim() || !creditDueDate))
-                }
-                className={cn(
-                  "w-full h-14 rounded-xl text-white font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50",
-                  payMethod === "credit"
-                    ? "bg-amber-600 hover:bg-amber-700"
-                    : "bg-green-600 hover:bg-green-700"
+                ) : (
+                  <PaymentStep
+                    total={checkoutData.total}
+                    momoNumber={business?.momo_number}
+                    processing={processing}
+                    onConfirm={(method: SimplePaymentMethod, details) => processPayment(method, details, 1)}
+                    onCredit={() => {
+                      if (!creditDueDate) {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 7);
+                        setCreditDue(d.toISOString().split("T")[0]);
+                      }
+                      setCreditStep(true);
+                    }}
+                  />
                 )}
-              >
-                {processing ? <Loader2 className="w-5 h-5 animate-spin" /> : payMethod === "credit" ? "💳" : "✓"}
-                {payMethod === "credit" ? "Record Credit Sale" : "Confirm Payment"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Receipt */}
-      {receipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4 max-h-[90vh] overflow-y-auto">
-            <BarReceipt
-              receiptNumber={receipt.receiptNumber}
-              businessName={business?.name ?? "My Business"}
-              branchName={currentBranch?.name ?? ""}
-              cashierName={activeOperator?.name ?? staff?.name ?? "Cashier"}
-              waiterName={receipt.waiterName}
-              items={receipt.items}
-              total={receipt.items.reduce((s, i) => s + i.total_price, 0)}
-              paymentMethod={payMethod}
-              amountPaid={receipt.amountPaid}
-              change={receipt.change}
-              splitCount={receipt.splitCount}
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-semibold text-sm"
-              >
-                <Printer className="w-4 h-4" /> Print
-              </button>
-              <button
-                onClick={() => setReceipt(null)}
-                className="px-5 py-2.5 bg-slate-700 text-white rounded-xl font-semibold text-sm"
-              >
-                Close
-              </button>
+              </div>
             </div>
           </div>
         </div>

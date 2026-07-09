@@ -62,6 +62,7 @@ export interface Business {
   location: string | null;
   phone: string | null;
   email: string | null;
+  momo_number: string | null;
   modules: BusinessModule[];
   plan: "free" | "starter" | "professional" | "enterprise";
   language: "en" | "rw";
