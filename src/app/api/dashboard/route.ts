@@ -49,6 +49,7 @@ export async function GET() {
     last7DaysTx,
     topSellerOrders,
     allStaff,
+    activeShiftsRes,
   ] = await Promise.all([
     supabase.from("transactions").select("total,module_source,cashier_id,created_at").eq("business_id", businessId).gte("created_at", `${todayStr}T00:00:00`).lte("created_at", `${todayStr}T23:59:59`),
     supabase.from("transactions").select("total").eq("business_id", businessId).gte("created_at", `${yesterdayStr}T00:00:00`).lte("created_at", `${yesterdayStr}T23:59:59`),
@@ -64,6 +65,7 @@ export async function GET() {
     supabase.from("transactions").select("total,module_source,created_at").eq("business_id", businessId).gte("created_at", `${sevenDaysStr}T00:00:00`),
     supabase.from("orders").select("id").eq("business_id", businessId).eq("status", "completed").gte("created_at", `${todayStr}T00:00:00`).lte("created_at", `${todayStr}T23:59:59`).limit(100),
     supabase.from("staff").select("id,name,role").eq("business_id", businessId).eq("is_active", true),
+    supabase.from("shifts").select("id, staff_name, role, started_at").eq("business_id", businessId).eq("status", "active").order("started_at", { ascending: true }),
   ]);
 
   // Compute revenues
@@ -150,13 +152,7 @@ export async function GET() {
     .map((s) => ({ ...s, transactions: staffMap[s.id].transactions, revenue: staffMap[s.id].revenue }));
 
   // Active shifts — who is currently clocked in
-  const { data: activeShifts } = await supabase
-    .from("shifts")
-    .select("id, staff_name, role, started_at")
-    .eq("business_id", businessId)
-    .eq("status", "active")
-    .order("started_at", { ascending: true });
-  const staff_on_shift = (activeShifts ?? []).map((s) => ({
+  const staff_on_shift = (activeShiftsRes.data ?? []).map((s) => ({
     id: s.id,
     name: s.staff_name,
     role: s.role,
