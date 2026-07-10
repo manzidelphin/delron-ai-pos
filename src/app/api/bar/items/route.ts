@@ -34,7 +34,10 @@ export async function GET(request: NextRequest) {
     total_value: items.reduce((s, i) => s + i.quantity_bottles * i.price_per_bottle, 0),
   };
 
-  return NextResponse.json({ items, stats });
+  return NextResponse.json(
+    { items, stats },
+    { headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" } }
+  );
 }
 
 export async function POST(request: NextRequest) {

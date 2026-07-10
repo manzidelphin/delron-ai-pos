@@ -22,20 +22,22 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // All credits for aging and current state
-  const { data: allCredits } = await supabase
-    .from("credits")
-    .select("*")
-    .eq("business_id", auth.businessId)
-    .order("created_at", { ascending: false });
+  const [{ data: allCredits }, { data: periodCredits }] = await Promise.all([
+    // All credits for aging and current state
+    supabase
+      .from("credits")
+      .select("*")
+      .eq("business_id", auth.businessId)
+      .order("created_at", { ascending: false }),
 
-  // Credits created in period
-  const { data: periodCredits } = await supabase
-    .from("credits")
-    .select("*")
-    .eq("business_id", auth.businessId)
-    .gte("created_at", from)
-    .lte("created_at", toEnd);
+    // Credits created in period
+    supabase
+      .from("credits")
+      .select("*")
+      .eq("business_id", auth.businessId)
+      .gte("created_at", from)
+      .lte("created_at", toEnd),
+  ]);
 
   const credits = allCredits ?? [];
   const period = periodCredits ?? [];

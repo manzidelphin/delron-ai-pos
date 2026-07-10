@@ -1,4 +1,10 @@
 {
+  "regions": ["fra1"],
+  "functions": {
+    "src/app/api/**": {
+      "maxDuration": 30
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/daily",

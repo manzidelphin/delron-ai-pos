@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
   const supabase = createAdminClient();
 
-  const [txRes, barItemsRes] = await Promise.all([
+  const [txRes, barItemsRes, ordersRes] = await Promise.all([
     supabase
       .from("transactions")
       .select("id, total, payment_method, module_source, cashier_id, created_at")
@@ -26,20 +26,19 @@ export async function GET(request: NextRequest) {
       .select("id, name, shots_per_bottle, price_per_bottle, price_per_shot")
       .eq("business_id", auth.businessId)
       .gt("shots_per_bottle", 0),   // was: is_shot_item (column doesn't exist)
+
+    // Orders in range for item-level breakdown — independent of the two queries above.
+    supabase
+      .from("orders")
+      .select("id")
+      .eq("business_id", auth.businessId)
+      .eq("order_type", "bar_tab")    // orders table uses order_type, not module_source
+      .gte("created_at", from)
+      .lte("created_at", to),
   ]);
 
   if (txRes.error) console.error("[bar/reports] transactions query error:", txRes.error.message);
   if (barItemsRes.error) console.error("[bar/reports] bar_items query error:", barItemsRes.error.message);
-
-  // Get orders in range for item-level breakdown
-  const ordersRes = await supabase
-    .from("orders")
-    .select("id")
-    .eq("business_id", auth.businessId)
-    .eq("order_type", "bar_tab")    // orders table uses order_type, not module_source
-    .gte("created_at", from)
-    .lte("created_at", to);
-
   if (ordersRes.error) console.error("[bar/reports] orders query error:", ordersRes.error.message);
 
   const orderIds = (ordersRes.data ?? []).map((o) => o.id);
