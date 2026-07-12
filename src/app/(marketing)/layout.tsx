@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Zap } from "lucide-react";
+import { Menu, X, Zap, Instagram } from "lucide-react";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -202,8 +202,14 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                   </a>
                 </li>
                 <li>
-                  <a href="https://www.instagram.com/delron_ai_pos" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                    Instagram: @delron_ai_pos
+                  <a
+                    href="https://www.instagram.com/delron_ai_pos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors"
+                  >
+                    <Instagram className="w-4 h-4" />
+                    @delron_ai_pos
                   </a>
                 </li>
                 <li>Kigali, Rwanda</li>
