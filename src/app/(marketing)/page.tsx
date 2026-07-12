@@ -169,6 +169,7 @@ const orgJsonLd = {
   },
   sameAs: [
     "https://github.com/manzidelphin",
+    "https://www.instagram.com/delron_ai_pos",
     "https://www.delronpos.com",
   ],
   knowsAbout: [

@@ -201,6 +201,11 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                     WhatsApp: +250 785 995 840
                   </a>
                 </li>
+                <li>
+                  <a href="https://www.instagram.com/delron_ai_pos" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                    Instagram: @delron_ai_pos
+                  </a>
+                </li>
                 <li>Kigali, Rwanda</li>
               </ul>
             </div>
