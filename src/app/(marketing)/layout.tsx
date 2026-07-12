@@ -219,6 +219,17 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                 </li>
                 <li>
                   <a
+                    href="tel:+250785995840"
+                    className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 4.9 2 2 0 0 1 3.6 2.69h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.1a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 17.5z"/>
+                    </svg>
+                    +250 785 995 840
+                  </a>
+                </li>
+                <li>
+                  <a
                     href="https://wa.me/250785995840"
                     target="_blank"
                     rel="noopener noreferrer"
