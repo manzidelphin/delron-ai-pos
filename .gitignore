@@ -29,3 +29,6 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Local AI assistant permissions and machine-specific settings
+.claude/settings.local.json
