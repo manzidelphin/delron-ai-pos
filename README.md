@@ -1,134 +1,128 @@
 # DELRON AI POS
 
-**Rwanda's first AI-powered Point of Sale and Business Management System**
+**Multi-module point-of-sale and business management software for Rwandan SMEs.**
 
-Built for supermarkets, bakeries, bars, and restaurants — with an intelligent AI assistant that understands your business.
+DELRON AI POS brings sales, inventory, production, customer credit, reporting, and AI-assisted business insights into one web application. It is designed for businesses that operate supermarkets, bakeries, bars, or a combination of these activities.
 
----
+**Live application:** [delronpos.com](https://delronpos.com) · **Repository:** [manzidelphin/delron-ai-pos](https://github.com/manzidelphin/delron-ai-pos)
 
-## Features
+> **Project status:** Actively developed and tested. The live deployment is not a guarantee of production readiness for every business workflow.
 
-- **Supermarket Module** — Barcode scanning, product management, inventory tracking, supplier management
-- **Bakery Module** — Production logging, recipe management, ingredient tracking, waste logging, label printing
-- **Bar Module** — Table/tab management, shot tracking (theft detection), KDS display, real-time floor view
-- **Credits & Debt Management** — Customer credit tracking, partial payments, SMS reminders in Kinyarwanda
-- **DELRON AI Assistant** — AI chat powered by Claude that reads your actual business data and answers questions like "Who owes us money?" or "What sold most today?"
-- **Daily AI Briefing** — Automated morning briefing with revenue summary, stock alerts, and a business tip
-- **SMS Notifications** — Africa's Talking integration with Kinyarwanda templates for credits, stock alerts, and daily summaries
-- **Comprehensive Reports** — Sales, stock, bakery, bar, credits, and staff reports with PDF/Excel export
-- **Multi-Branch Support** — Manage multiple locations with branch-aware data
-- **Mobile Responsive** — Works on tablets and phones for staff on the floor
+## What it does
 
----
+| Area | Capabilities |
+| --- | --- |
+| **Point of sale** | Sales workflows, barcode-based product handling, and transaction records |
+| **Inventory** | Products, stock movements, restocking, and supplier management |
+| **Bakery** | Recipes, ingredients, production batches, baked goods, and waste tracking |
+| **Bar** | Table-oriented workflows, stock tracking, and operational views |
+| **Customer credit** | Outstanding balances, partial payments, and customer follow-up |
+| **Reporting** | Sales and operational summaries, charts, and export utilities |
+| **AI assistance** | Business-data questions and dashboard briefings, subject to configured integrations |
+| **Business operations** | Staff roles, multiple branches, and responsive dashboard interfaces |
 
-## Tech Stack
+Feature availability depends on business configuration and the deployed application version.
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 14 (App Router) + TypeScript |
-| Database | Supabase (PostgreSQL) |
-| Auth | Supabase Auth |
-| AI | Anthropic Claude API (Sonnet 4.6 for chat, Haiku for briefing) |
-| SMS | Africa's Talking |
-| Charts | Recharts |
-| UI | Tailwind CSS + Radix UI |
-| State | Zustand |
+## Technology
+
+| Layer | Stack |
+| --- | --- |
+| Frontend | Next.js 14 App Router, React 18, TypeScript |
+| Styling and components | Tailwind CSS, Radix UI, Lucide icons |
+| Data and authentication | Supabase (PostgreSQL and Supabase Auth) |
+| State management | Zustand |
+| AI integrations | Google Generative AI and Anthropic SDK dependencies |
+| Charts and exports | Recharts, jsPDF, SheetJS |
+| Notifications | Africa's Talking, Resend |
 | Deployment | Vercel |
 
----
+## Getting started
 
-## Quick Start
+**Prerequisites:** Node.js and npm, a Supabase project, and credentials for any optional integrations you plan to use.
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-username/delron-ai-pos.git
+git clone https://github.com/manzidelphin/delron-ai-pos.git
 cd delron-ai-pos
-
-# 2. Install dependencies
 npm install
+```
 
-# 3. Set up environment variables
+Create a local environment file:
+
+```powershell
+# PowerShell (Windows)
+Copy-Item ENV_SETUP.md .env.local
+```
+
+Or on macOS/Linux:
+
+```bash
 cp ENV_SETUP.md .env.local
-# Edit .env.local with your actual keys
+```
 
-# 4. Run development server
+**Important:** `ENV_SETUP.md` is a reference document, not a ready-to-run environment file. Edit `.env.local` so it contains only valid `KEY=value` entries with your own credentials. Never commit it.
+
+At minimum, configure the Supabase URL, the appropriate browser-safe publishable/anon key, and the server-only Supabase secret key required by the application's current configuration. See [ENV_SETUP.md](ENV_SETUP.md) for the variable names used by the codebase. Other integrations require their own credentials.
+
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open **http://localhost:3000**.
 
----
+### Database setup
 
-## Environment Variables
+The repository includes [supabase/schema.sql](supabase/schema.sql) as a schema reference. Review it before applying it to a **new development project**. Do not run the schema blindly against an existing production database. Depending on the current code and migration state, additional setup may be necessary.
 
-See `ENV_SETUP.md` for all required environment variables and where to find them.
+## Available commands
 
-Required:
-- `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase project
-- `ANTHROPIC_API_KEY` — For DELRON AI chat and briefing
-- `AFRICAS_TALKING_API_KEY` + `AFRICAS_TALKING_USERNAME` — For SMS notifications
-
----
-
-## Deployment
-
-### Deploy to Vercel
-
-1. Push your code to GitHub
-2. Go to [vercel.com](https://vercel.com) and import the repository
-3. Add all environment variables in Vercel Dashboard → Settings → Environment Variables
-4. Deploy
-
-The `vercel.json` file already configures the daily cron job (6AM UTC) for automated SMS reminders.
-
-### Supabase Setup
-
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Run the schema from `supabase/schema.sql`
-3. In Supabase Auth settings:
-   - Set **Site URL** to your production domain
-   - Add your domain to **Redirect URLs**
-   - Enable **Email** authentication
-
----
-
-## Architecture
-
+```bash
+npm run dev     # Start local development
+npm run build   # Create a production build
+npm run start   # Serve the production build
+npm run lint    # Run Next.js lint checks
 ```
+
+The repository does **not** currently declare an automated `npm test` script. Automated test coverage and end-to-end validation remain areas for improvement.
+
+## Project structure
+
+```text
 src/
-├── app/
-│   ├── (auth)/          # Login, onboarding
-│   ├── (dashboard)/     # All dashboard pages
-│   │   ├── dashboard/   # Owner dashboard
-│   │   ├── supermarket/ # Supermarket module
-│   │   ├── bakery/      # Bakery module
-│   │   ├── bar/         # Bar module
-│   │   ├── credits/     # Credit management
-│   │   ├── reports/     # 7 report pages
-│   │   ├── settings/    # Business settings
-│   │   └── profile/     # User profile
-│   └── api/             # All API routes
-├── components/
-│   ├── layout/          # Sidebar, Topbar, DashboardShell
-│   ├── ui/              # Reusable UI components
-│   ├── ai/              # AI chat widget
-│   └── reports/         # Report-specific components
-├── lib/
-│   ├── auth.ts          # Server auth helper
-│   ├── sms.ts           # Africa's Talking SMS service
-│   ├── export.ts        # PDF/Excel export utilities
-│   └── supabase/        # Supabase clients (client/server)
-├── store/
-│   ├── auth-store.ts    # Zustand auth state
-│   └── ai-store.ts      # Zustand AI chat state
-└── types/
-    └── index.ts         # All TypeScript types
+├── app/           # Next.js routes, dashboards, and API endpoints
+├── components/    # Shared interface components
+├── lib/           # Business logic, integrations, and Supabase clients
+├── store/         # Client-side state
+└── types/         # TypeScript definitions
+supabase/          # Database schema and related assets
+vercel.json        # Deployment and scheduled job configuration
 ```
 
----
+### Deployment
 
-## Built by
+The application is deployed using Vercel with Supabase for backend services. The [vercel.json](vercel.json) file defines scheduled routes for daily processing, reporting, and invoice generation. Configure the required environment variables in Vercel before deployment, and validate scheduled jobs in your own environment.
 
-**Delphin Manzi** — Rwanda 🇷🇼
+## Security considerations
 
-*DELRON AI POS — Empowering Rwandan businesses with AI*
+- Keep server-side credentials, database secrets, webhook secrets, and AI API keys **out of source control**.
+- Never expose a Supabase secret/service-role key in `NEXT_PUBLIC_*` variables or client-side code. Privileged clients must run on the server.
+- Apply and verify appropriate database Row Level Security (RLS) policies for browser-accessible operations.
+- Rotate and revoke credentials immediately if they are accidentally exposed. Deleting a file from the latest commit alone does not remove it from Git history.
+- Use separate credentials and data for development and production.
+- Review authentication, authorization, payments, and inventory operations before onboarding real customers.
+
+**Security note:** A previously tracked local settings file containing a credential was removed from the current repository and rewritten history; the affected credential was revoked. Additional GitHub-hosted cached-reference cleanup has been requested from GitHub Support. Do not reuse older credentials or restore old history.
+
+## Roadmap
+
+- Add automated unit, integration, and end-to-end tests
+- Improve developer setup and database migration documentation
+- Expand deployment monitoring and operational checks
+- Continue validating business workflows with representative test data
+
+## Author
+
+**Manzi Delphin** · Software Engineering · Rwanda 🇷🇼
+
+Built to make day-to-day business operations easier to manage, understand, and improve.
