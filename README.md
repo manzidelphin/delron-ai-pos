@@ -129,6 +129,6 @@ src/
 
 ## Built by
 
-**Delfin Manzi** — Rwanda 🇷🇼
+**Delphin Manzi** — Rwanda 🇷🇼
 
 *DELRON AI POS — Empowering Rwandan businesses with AI*
