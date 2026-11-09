@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
+import { forbidUnlessManagement } from "@/lib/role-guard";
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
+  const denied = forbidUnlessManagement(auth.role);
+  if (denied) return denied;
 
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from") ?? new Date(Date.now() - 7 * 86400000).toISOString();

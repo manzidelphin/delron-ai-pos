@@ -28,13 +28,12 @@ export function roleHomePath(role: UserRole | null | undefined, modules: Busines
       break;
     case "bartender":
       if (has("bar")) return "/bar/pos";
-      if (has("restaurant")) return "/restaurant/kds";
       break;
     case "waiter":
       if (hasBarOrRestaurant) return "/bar/tables";
       break;
     case "baker":
-      if (has("bakery")) return "/bakery";
+      if (has("bakery")) return "/bakery/production";
       break;
     case "chef":
       if (has("restaurant")) return "/restaurant/kds";

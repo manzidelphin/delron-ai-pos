@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
+import { forbidUnlessManagement } from "@/lib/role-guard";
 
 export async function GET() {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
+  const denied = forbidUnlessManagement(auth.role);
+  if (denied) return denied;
 
   const supabase = createAdminClient();
 

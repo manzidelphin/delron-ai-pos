@@ -33,7 +33,7 @@ const ROLE_REDIRECT: Record<string, string> = {
   cashier:   "/supermarket/pos",
   bartender: "/bar/pos",
   waiter:    "/bar/tables",
-  baker:     "/bakery",
+  baker:     "/bakery/production",
   chef:      "/restaurant/kds",
   manager:   "/dashboard",
   owner:     "/dashboard",
