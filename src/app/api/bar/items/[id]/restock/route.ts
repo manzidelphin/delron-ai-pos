@@ -7,7 +7,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { bottles_to_add, cost_paid } = body;
+  // cost_paid is accepted but not stored: bar_items has no cost column.
+  const { bottles_to_add } = body;
 
   const qty = parseFloat(bottles_to_add);
   if (isNaN(qty) || qty <= 0) {
@@ -18,19 +19,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   const { data: existing } = await supabase
     .from("bar_items")
-    .select("quantity_bottles, shots_remaining, shots_per_bottle, is_shot_item, cost_per_bottle")
+    // Only real columns (is_shot_item / cost_per_bottle don't exist and made this fail).
+    .select("quantity_bottles, shots_remaining, shots_per_bottle")
     .eq("id", params.id)
     .eq("business_id", auth.businessId)
     .single();
 
   if (!existing) return NextResponse.json({ error: "Item not found" }, { status: 404 });
 
-  const newBottles = existing.quantity_bottles + qty;
-  const newCost = cost_paid ? parseFloat(cost_paid) / qty : existing.cost_per_bottle;
+  const newBottles = Number(existing.quantity_bottles ?? 0) + qty;
 
-  let newShotsRemaining = existing.shots_remaining;
-  if (existing.is_shot_item && existing.shots_per_bottle) {
-    newShotsRemaining += qty * existing.shots_per_bottle;
+  // Same rule as /api/bar/stock/restock: items with shots per bottle gain those shots.
+  let newShotsRemaining = Number(existing.shots_remaining ?? 0);
+  if (Number(existing.shots_per_bottle ?? 0) > 0) {
+    newShotsRemaining += qty * Number(existing.shots_per_bottle);
   }
 
   const { data, error } = await supabase
@@ -38,7 +40,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .update({
       quantity_bottles: newBottles,
       shots_remaining: newShotsRemaining,
-      cost_per_bottle: newCost,
       updated_at: new Date().toISOString(),
     })
     .eq("id", params.id)

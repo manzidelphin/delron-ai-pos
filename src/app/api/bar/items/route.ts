@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
+import { isShotItem } from "@/lib/bar";
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthContext();
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const items = data ?? [];
+  // is_shot_item is derived (no such column) so the POS can offer shot vs bottle.
+  const items = (data ?? []).map((i) => ({ ...i, is_shot_item: isShotItem(i) }));
 
   const stats = {
     total_items: items.length,
@@ -34,10 +36,8 @@ export async function GET(request: NextRequest) {
     total_value: items.reduce((s, i) => s + i.quantity_bottles * i.price_per_bottle, 0),
   };
 
-  return NextResponse.json(
-    { items, stats },
-    { headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" } }
-  );
+  // Live stock: never let the browser serve a stale copy (it hid stock changes after sales).
+  return NextResponse.json({ items, stats }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: NextRequest) {

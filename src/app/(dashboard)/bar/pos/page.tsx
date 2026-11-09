@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 import type { BarItem } from "@/types";
+import { barSale } from "@/lib/bar";
 
 interface MenuItem {
   id: string;
@@ -118,44 +119,46 @@ export default function BarPOSPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabItems, activeTab?.total, business?.id]);
 
+  // Initial load: everything in parallel (it used to wait for tables+items, then
+  // waiters, then the menu, one after another).
   const loadData = useCallback(async () => {
     setLoading(true);
-    try {
-      const [tablesRes, itemsRes] = await Promise.all([
-        fetch("/api/bar/tables"),
-        fetch("/api/bar/items"),
-      ]);
-      const [tablesJson, itemsJson] = await Promise.all([tablesRes.json(), itemsRes.json()]);
+    const bizId = useAuthStore.getState().business?.id;
+    const json = (p: Promise<Response>) => p.then((r) => r.json());
+    const [core, waitersJson, menuJson] = await Promise.allSettled([
+      Promise.all([json(fetch("/api/bar/tables")), json(fetch("/api/bar/items"))]),
+      // Waiters for assignment — pos-staff filtered client-side (non-fatal)
+      bizId ? json(fetch(`/api/auth/pos-staff?businessId=${bizId}`)) : Promise.resolve(null),
+      // Restaurant menu (non-fatal — bar POS must work even if it fails)
+      hasRestaurant ? json(fetch("/api/restaurant/menu")) : Promise.resolve(null),
+    ]);
+    if (core.status === "fulfilled") {
+      const [tablesJson, itemsJson] = core.value;
       setTables(tablesJson.tables ?? []);
       setBarItems(itemsJson.items ?? []);
-
-      // Load waiters for assignment — use pos-staff and filter client-side (no dedicated /api/staff route)
-      try {
-        const bizId = useAuthStore.getState().business?.id;
-        if (bizId) {
-          const waitersRes  = await fetch(`/api/auth/pos-staff?businessId=${bizId}`);
-          const waitersJson = await waitersRes.json();
-          setWaiters((waitersJson.staff ?? []).filter((s: { id: string; name: string; role: string }) => s.role === "waiter"));
-        }
-      } catch { /* non-fatal */ }
-
-      if (hasRestaurant) {
-        try {
-          const menuRes  = await fetch("/api/restaurant/menu");
-          const menuJson = await menuRes.json();
-          setMenuItems((menuJson.items ?? []).filter((i: MenuItem) => i.is_active));
-        } catch {
-          // Non-fatal — bar POS must work even if restaurant menu fails
-        }
-      }
-    } catch {
+    } else {
       toast.error("Failed to load POS data");
-    } finally {
-      setLoading(false);
     }
-  }, [hasBar, hasRestaurant]);
+    if (waitersJson.status === "fulfilled" && waitersJson.value) {
+      setWaiters((waitersJson.value.staff ?? []).filter((s: { id: string; name: string; role: string }) => s.role === "waiter"));
+    }
+    if (menuJson.status === "fulfilled" && menuJson.value) {
+      setMenuItems((menuJson.value.items ?? []).filter((i: MenuItem) => i.is_active));
+    }
+    setLoading(false);
+  }, [hasRestaurant]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // After a sale/tab change: quietly refresh tables + stock in the background.
+  // No loading screen, and waiters/menu (which don't change) aren't refetched.
+  const refreshStock = useCallback(async () => {
+    try {
+      const [tablesRes, itemsRes] = await Promise.all([fetch("/api/bar/tables"), fetch("/api/bar/items")]);
+      if (tablesRes.ok) setTables((await tablesRes.json()).tables ?? []);
+      if (itemsRes.ok) setBarItems((await itemsRes.json()).items ?? []);
+    } catch { /* keep showing current data */ }
+  }, []);
 
   const loadTab = async (tabId: string) => {
     const res = await fetch(`/api/bar/tabs/${tabId}`);
@@ -185,7 +188,7 @@ export default function BarPOSPage() {
       });
       const json = await res.json();
       await loadTab(json.tab.id);
-      loadData();
+      refreshStock();
     } catch {
       toast.error("Failed to open tab");
     } finally {
@@ -206,7 +209,10 @@ export default function BarPOSPage() {
       if (!res.ok) return toast.error(json.error);
       setActiveTab((prev) => prev ? { ...prev, total: json.tab_total } : prev);
       setTabItems((prev) => [...prev, json.order_item]);
-      loadData(); // refresh stock
+      // Show the new stock immediately (same arithmetic as the server), then confirm
+      // with a quiet background refresh instead of reloading the whole POS.
+      setBarItems((prev) => prev.map((b) => (b.id === item.id ? { ...b, ...barSale(b, qty, serveAs).update } : b)));
+      refreshStock();
     } catch {
       toast.error("Failed to add item");
     }
@@ -290,7 +296,7 @@ export default function BarPOSPage() {
       setCreditName("");
       setCreditPhone("");
       setCreditDue("");
-      loadData();
+      refreshStock();
     } catch (err) {
       toast.error((err as Error).message ?? "Credit sale failed");
     } finally {
@@ -330,7 +336,7 @@ export default function BarPOSPage() {
       setTabItems([]);
       setCheckoutOpen(true);
       setSaleComplete(true);
-      loadData();
+      refreshStock();
     } catch {
       toast.error("Payment failed");
     } finally {
