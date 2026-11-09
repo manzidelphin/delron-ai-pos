@@ -1,6 +1,7 @@
 "use client";
 
 import { formatRWF } from "@/lib/utils";
+import { PrintPortal } from "@/components/print-portal";
 
 interface BarOrderItem {
   item_name: string;
@@ -33,7 +34,19 @@ const PAYMENT_LABELS: Record<string, string> = {
   bank_transfer: "Bank Transfer",
 };
 
-export function BarReceipt({
+// On-screen receipt plus a print-only copy (window.print() only shows #print-root).
+export function BarReceipt(props: BarReceiptProps) {
+  return (
+    <>
+      <BarReceiptContent {...props} id="bar-receipt" />
+      <PrintPortal>
+        <BarReceiptContent {...props} />
+      </PrintPortal>
+    </>
+  );
+}
+
+function BarReceiptContent({
   receiptNumber,
   businessName,
   branchName,
@@ -47,12 +60,13 @@ export function BarReceipt({
   change,
   splitCount,
   timestamp,
-}: BarReceiptProps) {
+  id,
+}: BarReceiptProps & { id?: string }) {
   const date = timestamp ? new Date(timestamp) : new Date();
 
   return (
     <div
-      id="bar-receipt"
+      id={id}
       className="receipt-print bg-white text-black p-6 rounded-lg max-w-[300px] mx-auto text-sm font-mono"
     >
       <div className="text-center border-b border-dashed border-gray-400 pb-3 mb-3">

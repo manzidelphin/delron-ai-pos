@@ -2,6 +2,7 @@
 
 import { Printer } from "lucide-react";
 import { BarcodeRender } from "@/components/bakery/barcode-render";
+import { PrintPortal } from "@/components/print-portal";
 
 interface LabelItem {
   item_name: string;
@@ -58,6 +59,11 @@ export function StickerLabel({ item }: { item: Pick<LabelItem, "item_name" | "ba
 
 export function LabelPreview({ items, businessName, batchDate }: LabelPreviewProps) {
   const fullLabels = items.filter((i) => i.barcode_type === "pre-packaged");
+  const labelElements = fullLabels.flatMap((item) =>
+    Array.from({ length: item.quantity_produced }, (_, i) => (
+      <FullLabel key={`${item.barcode}-${i}`} item={item} businessName={businessName} date={batchDate} />
+    ))
+  );
 
   const handlePrint = () => {
     window.print();
@@ -89,14 +95,17 @@ export function LabelPreview({ items, businessName, batchDate }: LabelPreviewPro
             <span className="text-xs font-semibold text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-1 rounded-lg">PRE-PACKAGED</span>
             <span className="text-sm text-slate-400">Full price labels — one per item</span>
           </div>
-          <div className="print-labels bg-white rounded-xl p-4 border border-slate-600">
-            {fullLabels.flatMap((item) =>
-              Array.from({ length: item.quantity_produced }, (_, i) => (
-                <FullLabel key={`${item.barcode}-${i}`} item={item} businessName={businessName} date={batchDate} />
-              ))
-            )}
+          <div className="bg-white rounded-xl p-4 border border-slate-600">
+            {labelElements}
           </div>
         </div>
+      )}
+
+      {/* Print-only copy (window.print() only shows #print-root) */}
+      {labelElements.length > 0 && (
+        <PrintPortal>
+          <div className="print-labels">{labelElements}</div>
+        </PrintPortal>
       )}
     </div>
   );

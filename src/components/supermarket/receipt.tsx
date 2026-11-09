@@ -2,6 +2,7 @@
 
 import { formatRWF } from "@/lib/utils";
 import type { CartItem } from "@/types";
+import { PrintPortal } from "@/components/print-portal";
 
 interface ReceiptProps {
   receiptNumber: string;
@@ -18,7 +19,19 @@ interface ReceiptProps {
   timestamp?: string;
 }
 
-export function Receipt({
+// On-screen receipt plus a print-only copy (window.print() only shows #print-root).
+export function Receipt(props: ReceiptProps) {
+  return (
+    <>
+      <ReceiptContent {...props} id="delron-receipt" />
+      <PrintPortal>
+        <ReceiptContent {...props} />
+      </PrintPortal>
+    </>
+  );
+}
+
+function ReceiptContent({
   receiptNumber,
   businessName,
   branchName,
@@ -31,7 +44,8 @@ export function Receipt({
   amountPaid,
   change,
   timestamp,
-}: ReceiptProps) {
+  id,
+}: ReceiptProps & { id?: string }) {
   const date = timestamp ? new Date(timestamp) : new Date();
 
   const WEIGHT_UNITS = new Set(["kg", "g", "litre", "l", "ml", "gram", "grams", "liter", "liters"]);
@@ -52,7 +66,7 @@ export function Receipt({
 
   return (
     <div
-      id="delron-receipt"
+      id={id}
       className="receipt-print bg-white text-black p-6 rounded-lg max-w-[300px] mx-auto text-sm font-mono"
     >
       {/* Header */}

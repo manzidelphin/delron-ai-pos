@@ -143,9 +143,13 @@
 /* ═══════════════════════════════════════════
    BAKERY LABEL PRINT STYLES
    ═══════════════════════════════════════════ */
+/* Print-only copy of receipts/labels, rendered by <PrintPortal> */
+#print-root { display: none; }
+
 @media print {
-  /* Hide everything except label containers */
+  /* Hide everything except the print portal */
   body > *:not(#print-root) { display: none !important; }
+  #print-root { display: block !important; }
   .print-labels { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
   .print-labels * { visibility: visible !important; }
 
@@ -182,9 +186,10 @@
   }
 
   /* Receipt print */
-  #delron-receipt {
+  #print-root .receipt-print {
     display: block !important;
     margin: 0 auto;
     max-width: 80mm;
+    border-radius: 0;
   }
 }
