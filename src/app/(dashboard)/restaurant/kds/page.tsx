@@ -104,7 +104,7 @@ export default function RestaurantKDSPage() {
   const total = data.pending.length + data.preparing.length + data.ready.length;
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-slate-900">
+    <div className="h-full flex flex-col bg-slate-900">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700 shrink-0">
         <div className="flex items-center gap-3">

@@ -55,7 +55,8 @@ function TypingIndicator() {
   );
 }
 
-export default function AIChatWidget() {
+/** hideLauncher: hide the floating round button (the panel can still be opened, e.g. from the sidebar). */
+export default function AIChatWidget({ hideLauncher = false }: { hideLauncher?: boolean }) {
   const { isOpen, messages, isLoading, input, setOpen, addMessage, setLoading, setInput, clearMessages } =
     useAIStore();
   const { business } = useAuthStore();
@@ -113,7 +114,7 @@ export default function AIChatWidget() {
   return (
     <>
       {/* Floating Button */}
-      {!isOpen && (
+      {!isOpen && !hideLauncher && (
         <button
           onClick={() => setOpen(true)}
           className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-2xl shadow-blue-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"

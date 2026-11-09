@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Search, Plus, CreditCard, SplitSquareHorizontal, Printer, X, Loader2, Monitor, ChevronLeft } from "lucide-react";
 import { useCustomerDisplay } from "@/hooks/use-customer-display";
-import OfflineBanner from "@/components/layout/offline-banner";
 import { ShotModal } from "@/components/bar/shot-modal";
 import { TabItem } from "@/components/bar/tab-item";
 import { SplitBillModal } from "@/components/bar/split-bill-modal";
@@ -72,8 +71,13 @@ interface CheckoutData {
 
 export default function BarPOSPage() {
   const { staff, business, currentBranch, hasModule, activeOperator } = useAuthStore();
-  const hasBar        = hasModule("bar");
-  const hasRestaurant = hasModule("restaurant");
+  // The store is persisted in localStorage, which the server doesn't have. Read
+  // modules only after mount so server HTML and first client render match (a
+  // mismatch made React throw away the server HTML and redraw the whole POS).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const hasBar        = mounted && hasModule("bar");
+  const hasRestaurant = mounted && hasModule("restaurant");
   const { broadcast, openDisplay } = useCustomerDisplay(business?.id);
 
   const [tables,     setTables]    = useState<FloorTable[]>([]);
@@ -81,6 +85,18 @@ export default function BarPOSPage() {
   const [menuItems,  setMenuItems] = useState<MenuItem[]>([]);
   const [activeTab,  setActiveTab] = useState<Tab | null>(null);
   const [tabItems, setTabItems] = useState<OrderItem[]>([]);
+  // Which open tab belongs to which table (so a tap needs one request, not two),
+  // and the last-seen contents of each tab (so a re-opened cart shows instantly).
+  const [tabByTable, setTabByTable] = useState<Record<string, string>>({});
+  const tabCache = useRef(new Map<string, { tab: Tab; items: OrderItem[] }>());
+  const requestedTab = useRef<string | null>(null); // last tab the user tapped
+  const localEdits = useRef(0);                     // bumps on every local add/remove
+
+  const applyPendingTabs = (json: { tabs?: Array<{ id: string; table_id: string | null }> }) => {
+    const map: Record<string, string> = {};
+    for (const t of json.tabs ?? []) if (t.table_id) map[t.table_id] = t.id;
+    setTabByTable(map);
+  };
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("All");
   const [loading, setLoading] = useState(true);
@@ -125,13 +141,16 @@ export default function BarPOSPage() {
     setLoading(true);
     const bizId = useAuthStore.getState().business?.id;
     const json = (p: Promise<Response>) => p.then((r) => r.json());
-    const [core, waitersJson, menuJson] = await Promise.allSettled([
+    const [core, waitersJson, menuJson, pendingJson] = await Promise.allSettled([
       Promise.all([json(fetch("/api/bar/tables")), json(fetch("/api/bar/items"))]),
       // Waiters for assignment — pos-staff filtered client-side (non-fatal)
       bizId ? json(fetch(`/api/auth/pos-staff?businessId=${bizId}`)) : Promise.resolve(null),
       // Restaurant menu (non-fatal — bar POS must work even if it fails)
       hasRestaurant ? json(fetch("/api/restaurant/menu")) : Promise.resolve(null),
+      // Open tabs, to map table -> tab (non-fatal: tapping falls back to a lookup)
+      json(fetch("/api/bar/tabs?status=pending")),
     ]);
+    if (pendingJson.status === "fulfilled") applyPendingTabs(pendingJson.value);
     if (core.status === "fulfilled") {
       const [tablesJson, itemsJson] = core.value;
       setTables(tablesJson.tables ?? []);
@@ -148,31 +167,71 @@ export default function BarPOSPage() {
     setLoading(false);
   }, [hasRestaurant]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  // Wait for mount so the first load already knows the business modules (one load, not two).
+  useEffect(() => { if (mounted) loadData(); }, [mounted, loadData]);
 
   // After a sale/tab change: quietly refresh tables + stock in the background.
   // No loading screen, and waiters/menu (which don't change) aren't refetched.
   const refreshStock = useCallback(async () => {
     try {
-      const [tablesRes, itemsRes] = await Promise.all([fetch("/api/bar/tables"), fetch("/api/bar/items")]);
+      const [tablesRes, itemsRes, pendingRes] = await Promise.all([
+        fetch("/api/bar/tables"), fetch("/api/bar/items"), fetch("/api/bar/tabs?status=pending"),
+      ]);
       if (tablesRes.ok) setTables((await tablesRes.json()).tables ?? []);
       if (itemsRes.ok) setBarItems((await itemsRes.json()).items ?? []);
+      if (pendingRes.ok) applyPendingTabs(await pendingRes.json());
     } catch { /* keep showing current data */ }
   }, []);
 
-  const loadTab = async (tabId: string) => {
+  // Keep the cached copy of the open tab current as items are added/removed.
+  useEffect(() => {
+    if (activeTab) tabCache.current.set(activeTab.id, { tab: activeTab, items: tabItems });
+  }, [activeTab, tabItems]);
+
+  const fetchTab = async (tabId: string) => {
     const res = await fetch(`/api/bar/tabs/${tabId}`);
-    const json = await res.json();
-    setActiveTab(json.tab);
-    setTabItems(json.items ?? []);
-    setSelectedWaiterId(json.tab?.waiter?.id ?? null);
+    if (!res.ok) throw new Error("Tab not found");
+    const json = await res.json() as { tab: Tab; items?: OrderItem[] };
+    const entry = { tab: json.tab, items: json.items ?? [] };
+    tabCache.current.set(tabId, entry);
+    return entry;
+  };
+
+  const showTab = (entry: { tab: Tab; items: OrderItem[] }) => {
+    setActiveTab(entry.tab);
+    setTabItems(entry.items);
+    setSelectedWaiterId((entry.tab as Tab & { waiter?: { id: string } | null }).waiter?.id ?? null);
+  };
+
+  // Show the cart instantly from cache (if seen before), then replace it with fresh data.
+  // The fresh copy is only applied if this is still the tab the user asked for and
+  // nothing was added/removed locally in the meantime (so it can't undo a new item).
+  const loadTab = async (tabId: string) => {
+    requestedTab.current = tabId;
+    const editsBefore = localEdits.current;
+    const cached = tabCache.current.get(tabId);
+    if (cached) showTab(cached);
+    const fresh = await fetchTab(tabId);
+    if (requestedTab.current === tabId && localEdits.current === editsBefore) showTab(fresh);
+  };
+
+  // Start loading an occupied table's cart as soon as it's hovered/touched.
+  const prefetchTable = (table: FloorTable) => {
+    const tabId = tabByTable[table.id];
+    if (tabId && !tabCache.current.has(tabId)) fetchTab(tabId).catch(() => {});
   };
 
   const openTab = async (table: FloorTable) => {
     if (table.status === "occupied") {
-      // Find existing open tab for this table
+      // Known open tab for this table: load it directly (one request).
+      const knownTabId = tabByTable[table.id];
+      if (knownTabId) {
+        try { await loadTab(knownTabId); return; } catch { /* tab may have closed — fall through */ }
+      }
+      // Fallback: look it up
       const res = await fetch(`/api/bar/tabs?status=pending`);
       const json = await res.json();
+      applyPendingTabs(json);
       const existing = (json.tabs ?? []).find((t: Tab) => t.table_id === table.id);
       if (existing) {
         await loadTab(existing.id);
@@ -208,6 +267,7 @@ export default function BarPOSPage() {
       const json = await res.json();
       if (!res.ok) return toast.error(json.error);
       setActiveTab((prev) => prev ? { ...prev, total: json.tab_total } : prev);
+      localEdits.current++;
       setTabItems((prev) => [...prev, json.order_item]);
       // Show the new stock immediately (same arithmetic as the server), then confirm
       // with a quiet background refresh instead of reloading the whole POS.
@@ -222,6 +282,7 @@ export default function BarPOSPage() {
     // Optimistic removal
     const item = tabItems.find((i) => i.id === id);
     if (!item) return;
+    localEdits.current++;
     setTabItems((prev) => prev.filter((i) => i.id !== id));
     setActiveTab((prev) => prev ? { ...prev, total: prev.total - item.total_price } : prev);
     // Note: full delete API could be added; for now removal is UI-only before payment
@@ -375,6 +436,7 @@ export default function BarPOSPage() {
       const json = await res.json();
       if (!res.ok) return toast.error(json.error);
       setActiveTab((prev) => prev ? { ...prev, total: json.tab_total } : prev);
+      localEdits.current++;
       setTabItems((prev) => [...prev, json.order_item]);
     } catch {
       toast.error("Failed to add food item");
@@ -383,8 +445,7 @@ export default function BarPOSPage() {
 
   return (
     <>
-    <OfflineBanner />
-    <div className="h-[calc(100vh-4rem)] flex gap-0 overflow-hidden">
+    <div className="h-full flex gap-0 overflow-hidden">
       {/* Left: Tables */}
       <div className="w-56 shrink-0 border-r border-border bg-card/50 flex flex-col">
         <div className="p-3 border-b border-border">
@@ -395,11 +456,10 @@ export default function BarPOSPage() {
             [...Array(6)].map((_, i) => <div key={i} className="h-20 bg-accent/30 rounded-xl animate-pulse" />)
           ) : (
             tables.map((table) => (
-              <TableCard
-                key={table.id}
-                table={table}
-                onClick={() => openTab(table)}
-              />
+              // Wrapper starts loading the table's cart on hover/touch, before the tap.
+              <div key={table.id} onMouseEnter={() => prefetchTable(table)} onTouchStart={() => prefetchTable(table)}>
+                <TableCard table={table} onClick={() => openTab(table)} />
+              </div>
             ))
           )}
           {openingTab && (

@@ -8,20 +8,26 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
   const supabase = createAdminClient();
 
-  const { data: tab, error: tabError } = await supabase
-    .from("orders")
-    .select("*, floor_tables(table_number, capacity, section), waiter:staff!waiter_id(id, name)")
-    .eq("id", params.id)
-    .eq("business_id", auth.businessId)
-    .single();
+  // Both queries in parallel (was sequential). Items are only returned after the
+  // tab is confirmed to belong to this business.
+  const [tabRes, itemsRes] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("*, floor_tables(table_number, capacity, section), waiter:staff!waiter_id(id, name)")
+      .eq("id", params.id)
+      .eq("business_id", auth.businessId)
+      .single(),
+    supabase
+      .from("order_items")
+      .select("*")
+      .eq("order_id", params.id)
+      .order("created_at"),
+  ]);
+  const { data: tab, error: tabError } = tabRes;
 
   if (tabError || !tab) return NextResponse.json({ error: "Tab not found" }, { status: 404 });
 
-  const { data: items } = await supabase
-    .from("order_items")
-    .select("*")
-    .eq("order_id", params.id)
-    .order("created_at");
+  const items = itemsRes.data;
 
   return NextResponse.json({ tab, items: items ?? [] });
 }

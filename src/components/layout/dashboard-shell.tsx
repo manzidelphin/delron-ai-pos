@@ -12,6 +12,7 @@ import AIChatWidget from "@/components/ai/ai-chat-widget";
 import { Shield, X } from "lucide-react";
 import OfflineBanner from "./offline-banner";
 import TiltLayer from "./tilt-layer";
+import { isFullScreenRoute } from "@/lib/full-screen";
 
 function ImpersonationBanner({ businessName }: { businessName: string }) {
   const router = useRouter();
@@ -50,6 +51,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const { canAccess, hasModule, effectiveRole, business } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
+  const fullScreen = isFullScreenRoute(pathname);
 
   // Collect all nav entries whose href is a prefix of the current path.
   const matchingItems = isLoaded
@@ -105,11 +107,15 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         )}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <TopBar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+          {/* Working screens (POS, kitchen) fill the space exactly: no padding, no
+              page scroll — they size themselves with h-full and scroll inside. */}
+          <main className={fullScreen ? "flex-1 min-h-0 overflow-hidden" : "flex-1 overflow-y-auto p-4 md:p-6"}>{children}</main>
           <TiltLayer />
         </div>
       </div>
-      <AIChatWidget />
+      {/* On working screens the floating button would cover Pay/totals; the sidebar's
+          "Ask DELRON AI" still opens the assistant. */}
+      <AIChatWidget hideLauncher={fullScreen} />
     </div>
   );
 }

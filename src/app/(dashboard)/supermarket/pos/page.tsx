@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { formatRWF, generateReceiptNumber } from "@/lib/utils";
 import { usePOSStore } from "@/store/pos-store";
 import { BarcodeScanner } from "@/components/supermarket/barcode-scanner";
-import OfflineBanner from "@/components/layout/offline-banner";
 import { CartItemRow } from "@/components/supermarket/cart-item";
 import { CreditModal } from "@/components/supermarket/credit-modal";
 import { Receipt } from "@/components/supermarket/receipt";
@@ -335,10 +334,9 @@ export default function POSPage() {
 
   return (
     <>
-      <OfflineBanner />
       <BarcodeScanner onScan={handleBarcodeScan} />
 
-      <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+      <div className="flex h-full overflow-hidden">
         {/* LEFT: Product Selection (60%) */}
         <div className="flex-[3] flex flex-col overflow-hidden border-r border-slate-700">
           {/* Search & Category bar */}
