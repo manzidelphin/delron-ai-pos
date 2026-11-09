@@ -117,6 +117,5 @@ console.log("");
 console.log("Also set these if not already done:");
 console.log("  MOMO_TARGET_ENVIRONMENT=sandbox");
 console.log("  MOMO_CALLBACK_URL=https://delron-ai-pos.vercel.app/api/webhooks/momo-callback");
-console.log("  MOMO_WEBHOOK_SECRET=<any random secret you choose>");
 console.log("");
 console.log("Done. You can now test Request to Pay in sandbox mode.");

@@ -144,14 +144,27 @@ export async function momoRequestToPay(opts: RequestToPayOptions): Promise<Reque
 
 export type MoMoPaymentStatus = "PENDING" | "SUCCESSFUL" | "FAILED" | "TIMEOUT";
 
-export async function getMoMoPaymentStatus(referenceId: string): Promise<MoMoPaymentStatus> {
+/** MTN's own record of a Request to Pay (GET /requesttopay/{referenceId}). */
+export interface MoMoPaymentRecord {
+  status: MoMoPaymentStatus;
+  externalId?: string;
+  amount?: string;
+  currency?: string;
+  financialTransactionId?: string;
+}
+
+/**
+ * Ask MTN for the authoritative state of a payment. Use this instead of trusting
+ * a callback body: anyone can POST to the callback URL, only MTN can answer here.
+ */
+export async function getMoMoPayment(referenceId: string): Promise<MoMoPaymentRecord> {
   if (MOMO_IS_PLACEHOLDER) {
     console.log(`[MoMo STATUS] Placeholder — referenceId: ${referenceId} → PENDING`);
-    return "PENDING";
+    return { status: "PENDING" };
   }
 
   const token = await getAccessToken();
-  const res = await fetch(`${BASE_URL}/collection/v1_0/requesttopay/${referenceId}`, {
+  const res = await fetch(`${BASE_URL}/collection/v1_0/requesttopay/${encodeURIComponent(referenceId)}`, {
     headers: {
       Authorization:               `Bearer ${token}`,
       "X-Target-Environment":      TARGET_ENV,
@@ -160,13 +173,9 @@ export async function getMoMoPaymentStatus(referenceId: string): Promise<MoMoPay
   });
 
   if (!res.ok) throw new Error(`MoMo status ${res.status}: ${await res.text()}`);
-  const data = await res.json() as { status: MoMoPaymentStatus };
-  return data.status;
+  return await res.json() as MoMoPaymentRecord;
 }
 
-/** Verify MOMO_WEBHOOK_SECRET in callback URL query. Returns true in placeholder mode. */
-export function verifyMoMoSecret(secret: string | null): boolean {
-  const expected = process.env.MOMO_WEBHOOK_SECRET;
-  if (!expected || expected === "placeholder") return true; // dev / unconfigured
-  return secret === expected;
+export async function getMoMoPaymentStatus(referenceId: string): Promise<MoMoPaymentStatus> {
+  return (await getMoMoPayment(referenceId)).status;
 }

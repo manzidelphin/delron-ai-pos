@@ -1,14 +1,15 @@
 /**
  * POST /api/webhooks/momo-callback
  *
- * MTN MoMo calls this URL after a Request to Pay completes (success or failure).
- * The callback URL is set per-request as:
- *   {MOMO_CALLBACK_URL}?ref={referenceId}&secret={MOMO_WEBHOOK_SECRET}
+ * MTN MoMo calls this URL (X-Callback-Url = MOMO_CALLBACK_URL) after a Request to
+ * Pay completes. The URL is public, so the callback body is NOT trusted: it only
+ * tells us which invoice to re-check.
  *
  * Verification:
- *   1. Check ?secret matches MOMO_WEBHOOK_SECRET
- *   2. Look up invoice by externalId (invoice UUID) — verify it exists in our DB
- *   3. Trust the status in the body
+ *   1. Look up the invoice by externalId (the invoice UUID we sent to MTN)
+ *   2. Ask MTN for the payment using the invoice's saved momo_request_id
+ *   3. Require MTN's record to reference the same invoice
+ *   4. Act on MTN's status only (the status in the callback body is ignored)
  *
  * On SUCCESSFUL:
  *   - Mark invoice 'paid', set paid_at
@@ -22,7 +23,7 @@
 
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { verifyMoMoSecret } from "@/lib/momo";
+import { getMoMoPayment, type MoMoPaymentRecord } from "@/lib/momo";
 import { addMonths, addYears, format } from "date-fns";
 import { sendPaymentReceivedEmail } from "@/lib/email";
 
@@ -42,19 +43,10 @@ function calcNextDue(fromDate: Date, billingCycle: string): string {
   return format(billingCycle === "annual" ? addYears(fromDate, 1) : addMonths(fromDate, 1), "yyyy-MM-dd");
 }
 
+// Invoice ids are what we sent MTN as externalId; reject anything that couldn't be one.
+const ID_RE = /^[A-Za-z0-9-]{1,64}$/;
+
 export async function POST(req: Request) {
-  // MTN MoMo doesn't support query params in callback URL — verify via shared secret
-  // stored in MOMO_WEBHOOK_SECRET env var (compared against our own knowledge).
-  // We accept callbacks if: (a) no secret configured, or (b) the secret header matches.
-  const url = new URL(req.url);
-  const secretParam = url.searchParams.get("secret"); // legacy — may be absent
-  const refParam = url.searchParams.get("ref");       // legacy — may be absent
-
-  if (!verifyMoMoSecret(secretParam)) {
-    console.warn("[momo-callback] Invalid secret — rejected");
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   let body: MoMoCallbackBody;
   try {
     body = await req.json() as MoMoCallbackBody;
@@ -62,38 +54,55 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Bad JSON" }, { status: 400 });
   }
 
-  const { externalId, status, payer, amount: amountStr, financialTransactionId } = body;
+  const { externalId } = body;
+  console.log("[momo-callback] Received:", { externalId, claimedStatus: body.status, financialTransactionId: body.financialTransactionId });
 
-  console.log("[momo-callback] Received:", { externalId, status, refParam, financialTransactionId });
-
-  if (!externalId || !status) {
-    return NextResponse.json({ error: "Missing externalId or status" }, { status: 400 });
+  if (!externalId || !ID_RE.test(externalId)) {
+    return NextResponse.json({ error: "Missing or invalid externalId" }, { status: 400 });
   }
 
   const supabase = createAdminClient();
 
-  // 2. Look up invoice by externalId (= invoice UUID we passed as externalId)
-  const { data: invoice } = await supabase
+  // 1. Look up the invoice we billed (externalId = invoice UUID we sent to MTN)
+  const { data: inv } = await supabase
     .from("invoices")
-    .select("id, business_id, amount, due_date, status")
+    .select("id, business_id, amount, due_date, status, momo_request_id")
     .eq("id", externalId)
     .maybeSingle();
 
-  if (!invoice) {
-    // Try by momo_request_id in case externalId convention changed
-    const { data: byRef } = refParam
-      ? await supabase.from("invoices").select("id, business_id, amount, due_date, status").eq("momo_request_id", refParam).maybeSingle()
-      : { data: null };
-
-    if (!byRef) {
-      console.warn("[momo-callback] Invoice not found for externalId:", externalId, "ref:", refParam);
-      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
-    }
-    Object.assign(invoice ?? {}, byRef);
+  if (!inv) {
+    console.warn("[momo-callback] Invoice not found for externalId:", externalId);
+    return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
   }
 
-  // Re-assign after potential fallback lookup (TypeScript narrowing)
-  const inv = invoice!;
+  if (!inv.momo_request_id) {
+    console.warn("[momo-callback] Invoice has no MoMo reference to verify against — ignored:", inv.id);
+    return NextResponse.json({ ok: false, ignored: "no momo_request_id" });
+  }
+
+  // 2. Ask MTN for the authoritative state of this payment
+  let mtn: MoMoPaymentRecord;
+  try {
+    mtn = await getMoMoPayment(inv.momo_request_id);
+  } catch (e) {
+    console.error("[momo-callback] Could not verify with MTN:", e);
+    return NextResponse.json({ error: "Verification with MTN failed" }, { status: 502 });
+  }
+
+  // 3. MTN's record must belong to this invoice
+  if (mtn.externalId && mtn.externalId !== inv.id) {
+    console.warn("[momo-callback] MTN record externalId mismatch:", { invoice: inv.id, mtn: mtn.externalId });
+    return NextResponse.json({ error: "Payment does not match invoice" }, { status: 409 });
+  }
+
+  // 4. Act on MTN's status only
+  const status = mtn.status;
+  const financialTransactionId = mtn.financialTransactionId;
+  console.log("[momo-callback] MTN status:", { invoice: inv.id, status, claimedStatus: body.status });
+
+  if (status === "PENDING") {
+    return NextResponse.json({ ok: true, pending: true });
+  }
 
   if (status === "SUCCESSFUL") {
     // Already paid? Idempotency guard.
@@ -127,7 +136,7 @@ export async function POST(req: Request) {
       payment_date:      paymentDate,
       payment_method:    "momo",
       recorded_by_user_id: null,
-      notes:             `Auto — ${financialTransactionId ?? refParam ?? inv.id}`,
+      notes:             `Auto — ${financialTransactionId ?? inv.momo_request_id ?? inv.id}`,
     });
 
     // Update business

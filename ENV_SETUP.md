@@ -32,7 +32,6 @@ MOMO_API_USER=your_momo_api_user_uuid
 MOMO_API_KEY=your_momo_api_key
 MOMO_TARGET_ENVIRONMENT=sandbox
 MOMO_CALLBACK_URL=https://your-domain.com/api/webhooks/momo-callback
-MOMO_WEBHOOK_SECRET=your_random_secret_string_here
 
 # ─── App Config ──────────────────────────────────────────────────
 NEXT_PUBLIC_APP_URL=https://your-domain.com
@@ -56,8 +55,7 @@ CRON_SECRET=your_random_secret_string_here
 | `MOMO_COLLECTION_PRIMARY_KEY` | momodeveloper.mtn.com → Profile → Collections subscription → Primary key |
 | `MOMO_API_USER` / `MOMO_API_KEY` | Sandbox: run `node scripts/provision-momo.mjs` (prints both). Production: issued by MTN. |
 | `MOMO_TARGET_ENVIRONMENT` | `sandbox` for testing, or the production environment name MTN gives you (e.g. `mtnrwanda`). Defaults to `sandbox`. |
-| `MOMO_CALLBACK_URL` | `https://<your-domain>/api/webhooks/momo-callback` |
-| `MOMO_WEBHOOK_SECRET` | Generate with: `openssl rand -hex 32`. If unset, the MoMo callback accepts any request — always set it in production. |
+| `MOMO_CALLBACK_URL` | `https://<your-domain>/api/webhooks/momo-callback`. No secret is needed: the callback re-checks every payment with MTN (using the invoice's saved `momo_request_id`) and ignores the status in the callback body. |
 | `NEXT_PUBLIC_APP_URL` | Your public site URL, e.g. `https://www.delronpos.com` |
 | `CRON_SECRET` | Generate with: `openssl rand -hex 32`. If unset, the cron endpoints accept any request. |
 
