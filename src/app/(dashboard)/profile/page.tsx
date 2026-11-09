@@ -70,7 +70,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Avatar + info */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 flex items-center gap-5">
+      <div className="glass-card rounded-xl p-6 flex items-center gap-5">
         <div className="w-20 h-20 rounded-2xl bg-blue-500/20 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
           <span className="text-2xl font-bold text-blue-400">{getInitials(staff.name)}</span>
         </div>
@@ -87,7 +87,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Edit name */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-4">
+      <div className="glass-card rounded-xl p-5 space-y-4">
         <div className="flex items-center gap-2"><User className="w-4 h-4 text-blue-400" /><h3 className="font-semibold text-white">Personal Information</h3></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className="text-xs text-slate-400 mb-1 block">Full Name</label><input value={nameForm.name} onChange={e => setNameForm({ name: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" /></div>
@@ -101,7 +101,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Change password */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-4">
+      <div className="glass-card rounded-xl p-5 space-y-4">
         <div className="flex items-center gap-2"><KeyRound className="w-4 h-4 text-green-400" /><h3 className="font-semibold text-white">Change Password</h3></div>
         <div className="space-y-3">
           {[{ key: "next" as const, label: "New Password" }, { key: "confirm" as const, label: "Confirm Password" }].map(f => (

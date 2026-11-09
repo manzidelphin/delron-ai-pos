@@ -111,7 +111,7 @@ function NewOrderModal({ onClose, onCreated }: { onClose: () => void; onCreated:
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+      <div className="glass-card rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">New Custom Order</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
@@ -222,7 +222,7 @@ function CollectModal({ order, onClose, onCollected }: { order: CustomOrder; onC
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+      <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">Collect Order</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>

@@ -167,7 +167,7 @@ export default function CreditsReportPage() {
           <p className="text-slate-400 text-sm mt-0.5">Debt analysis, aging, and collection performance</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={handleExportPDF} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
+          <button onClick={handleExportPDF} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
             PDF
           </button>
@@ -193,7 +193,7 @@ export default function CreditsReportPage() {
         <>
           {/* Monthly chart + Status pie */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Credits Given vs Collected</h2>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={data.monthly_chart}>
@@ -208,7 +208,7 @@ export default function CreditsReportPage() {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Credit Status Distribution</h2>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
@@ -224,7 +224,7 @@ export default function CreditsReportPage() {
 
           {/* Top debtors */}
           {data.top_debtors.length > 0 && (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Top Outstanding Debtors</h2>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={data.top_debtors} layout="vertical">
@@ -239,7 +239,7 @@ export default function CreditsReportPage() {
           )}
 
           {/* Aging Table */}
-          <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+          <div className="glass-card rounded-xl overflow-hidden">
             <div className="p-5 border-b border-slate-700">
               <h2 className="font-semibold text-white">Aging Report</h2>
               <p className="text-xs text-slate-400 mt-0.5">Unpaid credits sorted by oldest first</p>

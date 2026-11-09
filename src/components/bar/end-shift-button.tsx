@@ -98,7 +98,7 @@ function ConfirmModal({ name, onConfirm, onClose }: {
   onClose: () => void;
 }) {
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+    <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
       <div className="text-center space-y-2">
         <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto">
           <LogOut className="w-7 h-7 text-red-400" />
@@ -140,7 +140,7 @@ function ConfirmModal({ name, onConfirm, onClose }: {
 
 function LoadingScreen() {
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-10 flex flex-col items-center gap-4">
+    <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm p-10 flex flex-col items-center gap-4">
       <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
       <div className="text-center">
         <p className="text-white font-bold text-lg">Closing shift...</p>
@@ -153,7 +153,7 @@ function LoadingScreen() {
 function SuccessScreen({ summary, countdown }: { summary: ShiftSummary; countdown: number }) {
   const hasVariance = summary.variance_items.length > 0;
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+    <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
       <div className="text-center space-y-2">
         <div className="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto">
           <CheckCircle2 className="w-8 h-8 text-green-400" />
@@ -202,7 +202,7 @@ function SuccessScreen({ summary, countdown }: { summary: ShiftSummary; countdow
 
 function ErrorScreen({ message, onClose }: { message: string; onClose: () => void }) {
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+    <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
       <div className="text-center">
         <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-3">
           <AlertTriangle className="w-7 h-7 text-red-400" />

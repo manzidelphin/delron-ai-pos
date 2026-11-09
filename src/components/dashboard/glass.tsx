@@ -91,11 +91,8 @@ export function GlassCard({ children, className, accent = "blue", tilt = false, 
         whileHover={reduce ? undefined : { y: -3 }}
         transition={{ type: "spring", stiffness: 300, damping: 22 }}
         className={cn(
-          "relative h-full overflow-hidden rounded-2xl",
-          // frosted glass body
-          "bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] backdrop-blur-xl",
-          // hairline border + top highlight + depth shadow
-          "border border-white/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.08)]",
+          // shared glass style (globals.css) + hover border
+          "glass-card relative h-full overflow-hidden rounded-2xl",
           "transition-colors duration-300 hover:border-white/20"
         )}
       >
@@ -166,34 +163,6 @@ export function CountUp({ value, format = (n) => Math.round(n).toLocaleString() 
   // Text is replaced by the animation right after mount, and currency formatting
   // differs between Node and browsers ("RF" vs "RWF"), so skip the hydration check.
   return <span ref={ref} className="tabular-nums" suppressHydrationWarning>{format(0)}</span>;
-}
-
-/* ── Slow-moving aurora glow behind the whole dashboard ────────────────────── */
-
-export function AuroraBackground() {
-  const reduce = useReducedMotion();
-  const blob = "absolute rounded-full blur-3xl mix-blend-screen";
-  const drift = (x: number[], y: number[], d: number) =>
-    reduce ? undefined : { x, y, transition: { duration: d, repeat: Infinity, repeatType: "mirror" as const, ease: "easeInOut" } };
-
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-      <motion.div className={cn(blob, "-left-24 -top-24 h-[420px] w-[420px] bg-blue-600/25")} animate={drift([0, 80, -20], [0, 40, 90], 18)} />
-      <motion.div className={cn(blob, "right-[-120px] top-40 h-[380px] w-[380px] bg-violet-600/20")} animate={drift([0, -70, 20], [0, 60, -30], 22)} />
-      <motion.div className={cn(blob, "bottom-[-140px] left-1/3 h-[460px] w-[460px] bg-cyan-500/15")} animate={drift([0, 60, -60], [0, -50, 10], 26)} />
-      {/* faint grid for depth */}
-      <div
-        className="absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-          maskImage: "radial-gradient(ellipse at top, black 30%, transparent 75%)",
-          WebkitMaskImage: "radial-gradient(ellipse at top, black 30%, transparent 75%)",
-        }}
-      />
-    </div>
-  );
 }
 
 /* ── Small helpers ─────────────────────────────────────────────────────────── */

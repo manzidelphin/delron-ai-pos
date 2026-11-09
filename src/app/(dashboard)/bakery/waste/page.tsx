@@ -111,7 +111,7 @@ export default function WastePage() {
             </div>
           </div>
 
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+          <div className="glass-card rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

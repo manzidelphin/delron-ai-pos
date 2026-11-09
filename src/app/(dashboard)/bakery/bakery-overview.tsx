@@ -101,7 +101,7 @@ export default function BakeryDashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Chart */}
-        <div className="xl:col-span-2 bg-slate-800 border border-slate-700 rounded-2xl p-5">
+        <div className="xl:col-span-2 glass-card rounded-2xl p-5">
           <h3 className="font-semibold text-white mb-4">Production vs Sales — Last 7 Days</h3>
           {isLoading ? (
             <div className="h-64 flex items-center justify-center">
@@ -127,7 +127,7 @@ export default function BakeryDashboard() {
         </div>
 
         {/* Low materials */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+        <div className="glass-card rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
@@ -162,7 +162,7 @@ export default function BakeryDashboard() {
       {/* Top items + Today's log */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Top items */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+        <div className="glass-card rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-700">
             <h3 className="font-semibold text-white">Today&apos;s Items</h3>
           </div>
@@ -207,7 +207,7 @@ export default function BakeryDashboard() {
         </div>
 
         {/* Today's production log timeline */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+        <div className="glass-card rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
             <h3 className="font-semibold text-white">Production Timeline</h3>
             <Link href="/bakery/production" className="text-xs text-amber-400 hover:underline">+ Log now →</Link>
@@ -243,7 +243,7 @@ export default function BakeryDashboard() {
       </div>
 
       {/* Upcoming Custom Orders */}
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+      <div className="glass-card rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-amber-400" />

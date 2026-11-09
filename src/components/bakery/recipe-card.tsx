@@ -27,7 +27,7 @@ export function RecipeCard({ recipe, onEdit, onDelete }: RecipeCardProps) {
   const isProfit = recipe.profit_per_piece > 0;
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 hover:border-slate-600 transition-all group flex flex-col">
+    <div className="glass-card rounded-2xl p-5 hover:border-slate-600 transition-all group flex flex-col">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">

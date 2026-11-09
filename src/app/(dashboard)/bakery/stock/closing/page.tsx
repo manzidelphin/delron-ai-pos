@@ -126,7 +126,7 @@ export default function BakeryClosingPage() {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-4">
+      <div className="glass-card rounded-xl p-4">
         <p className="text-sm text-foreground font-medium mb-2">How this works</p>
         <p className="text-xs text-muted-foreground leading-relaxed">
           Physically weigh or measure every ingredient and enter the actual quantity.
@@ -145,7 +145,7 @@ export default function BakeryClosingPage() {
         )}
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Ingredient Counts</h2>
           <span className="text-xs text-muted-foreground">{items.filter((i) => (entries[i.id] ?? "") !== "").length} / {items.length} filled</span>
@@ -216,7 +216,7 @@ export default function BakeryClosingPage() {
         )}
       </div>
 
-      <div className="flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3 gap-4 flex-wrap">
+      <div className="flex items-center justify-between glass-card rounded-xl px-4 py-3 gap-4 flex-wrap">
         <div className="text-sm">
           {flaggedItems.length > 0 ? (
             <span className="text-red-400 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" />{flaggedItems.length} ingredient{flaggedItems.length !== 1 ? "s" : ""} flagged — review before saving</span>

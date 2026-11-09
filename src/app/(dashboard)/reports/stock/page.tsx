@@ -304,7 +304,7 @@ export default function StockReportPage() {
           <button
             onClick={handleExportPDF}
             disabled={exporting || loading}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40"
           >
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
             PDF
@@ -367,7 +367,7 @@ export default function StockReportPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

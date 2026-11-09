@@ -183,7 +183,7 @@ export default function SalesReportPage() {
           <button
             onClick={handleExportPDF}
             disabled={exporting || skeleton}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40"
           >
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
             PDF
@@ -229,7 +229,7 @@ export default function SalesReportPage() {
       {mounted && data && (
         <>
           {/* Revenue Trend */}
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+          <div className="glass-card rounded-xl p-5">
             <h2 className="font-semibold text-white mb-4">Revenue Over Time</h2>
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={data.daily_revenue}>
@@ -248,7 +248,7 @@ export default function SalesReportPage() {
 
           {/* Module + Payment charts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Revenue by Module</h2>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
@@ -266,7 +266,7 @@ export default function SalesReportPage() {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Revenue by Payment Method</h2>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={data.by_payment} layout="vertical">
@@ -285,7 +285,7 @@ export default function SalesReportPage() {
 
           {/* Top Products + Hourly */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Top 10 Products by Revenue</h2>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={data.top_products} layout="vertical">
@@ -301,7 +301,7 @@ export default function SalesReportPage() {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Hourly Sales Distribution</h2>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={data.hourly.filter((h) => h.revenue > 0)}>
@@ -319,7 +319,7 @@ export default function SalesReportPage() {
           </div>
 
           {/* Transactions Table */}
-          <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+          <div className="glass-card rounded-xl overflow-hidden">
             <div className="p-5 border-b border-slate-700">
               <h2 className="font-semibold text-white">Recent Transactions</h2>
               <p className="text-xs text-slate-400 mt-0.5">Showing up to 100 transactions</p>
@@ -366,7 +366,7 @@ export default function SalesReportPage() {
       {skeleton && (
         <div className="grid grid-cols-1 gap-4">
           {[300, 220, 260].map((h, i) => (
-            <div key={i} className={cn("bg-slate-800 border border-slate-700 rounded-xl animate-pulse")} style={{ height: h }} />
+            <div key={i} className={cn("glass-card rounded-xl animate-pulse")} style={{ height: h }} />
           ))}
         </div>
       )}

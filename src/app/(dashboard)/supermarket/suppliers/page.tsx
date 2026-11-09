@@ -106,7 +106,7 @@ function SupplierModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="glass-card rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-5 border-b border-slate-700">
           <h2 className="text-lg font-bold text-white">
             {supplier ? "Edit Supplier" : "Add Supplier"}
@@ -174,7 +174,7 @@ function SupplierModal({
 function DeleteConfirm({ name, onConfirm, onClose, isLoading }: { name: string; onConfirm: () => void; onClose: () => void; isLoading: boolean }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-red-400" />
@@ -288,7 +288,7 @@ export default function SuppliersPage() {
           ))}
         </div>
       ) : suppliers.length === 0 ? (
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-16 text-center">
+        <div className="glass-card rounded-2xl p-16 text-center">
           <div className="w-16 h-16 rounded-2xl bg-slate-700 flex items-center justify-center mx-auto mb-4">
             <Building2 className="w-7 h-7 text-slate-500" />
           </div>
@@ -304,7 +304,7 @@ export default function SuppliersPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {suppliers.map((s) => (
-            <div key={s.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-5 hover:border-slate-600 transition-all group">
+            <div key={s.id} className="glass-card rounded-2xl p-5 hover:border-slate-600 transition-all group">
               <div className="flex items-start justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
                   <Building2 className="w-5 h-5 text-blue-400" />

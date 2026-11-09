@@ -138,7 +138,7 @@ export default function StaffReportPage() {
           <p className="text-slate-400 text-sm mt-0.5">Performance, revenue, and transaction breakdown per staff member</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={handleExportPDF} disabled={exporting || loading} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
+          <button onClick={handleExportPDF} disabled={exporting || loading} className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
             PDF
           </button>
@@ -204,7 +204,7 @@ export default function StaffReportPage() {
       )}
 
       {/* Performance Table */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="p-5 border-b border-slate-700">
           <h2 className="font-semibold text-white">Staff Performance</h2>
         </div>

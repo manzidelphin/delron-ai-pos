@@ -119,7 +119,7 @@ export default function BranchesPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-sm w-full space-y-4">
+          <div className="glass-card rounded-2xl p-6 max-w-sm w-full space-y-4">
             <h3 className="font-bold text-white text-lg">{editBranch ? "Edit Branch" : "Add New Branch"}</h3>
             <div className="space-y-3">
               <div><label className="text-xs text-slate-400 mb-1 block">Branch Name *</label><input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Main Branch" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" /></div>

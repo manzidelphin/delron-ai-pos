@@ -11,6 +11,7 @@ import TopBar from "./topbar";
 import AIChatWidget from "@/components/ai/ai-chat-widget";
 import { Shield, X } from "lucide-react";
 import OfflineBanner from "./offline-banner";
+import TiltLayer from "./tilt-layer";
 
 function ImpersonationBanner({ businessName }: { businessName: string }) {
   const router = useRouter();
@@ -105,6 +106,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <TopBar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
           <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+          <TiltLayer />
         </div>
       </div>
       <AIChatWidget />

@@ -81,7 +81,7 @@ export function WasteForm({ items, onSubmit }: WasteFormProps) {
   };
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 space-y-4">
+    <div className="glass-card rounded-2xl p-6 space-y-4">
       <h3 className="font-bold text-white flex items-center gap-2">
         <span className="text-lg">🗑️</span> Log Waste
       </h3>

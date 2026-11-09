@@ -175,7 +175,7 @@ export default function AIChatWidget() {
                   key={q}
                   onClick={() => sendMessage(q)}
                   disabled={isLoading}
-                  className="px-2.5 py-1 text-xs rounded-full bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 hover:text-blue-400 hover:bg-blue-500/10 transition-all disabled:opacity-40"
+                  className="px-2.5 py-1 text-xs rounded-full glass-card text-slate-300 hover:border-blue-500/50 hover:text-blue-400 hover:bg-blue-500/10 transition-all disabled:opacity-40"
                 >
                   {q}
                 </button>

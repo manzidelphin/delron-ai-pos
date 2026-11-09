@@ -80,7 +80,7 @@ export default function SupermarketStockPage() {
           <p className="text-muted-foreground text-sm mt-0.5">{today}</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={load} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground text-sm transition-colors">
+          <button onClick={load} className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-muted-foreground hover:text-foreground text-sm transition-colors">
             <RefreshCw className="w-4 h-4" /> Refresh
           </button>
           <button onClick={() => router.push("/supermarket/stock/restock")} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors">
@@ -99,7 +99,7 @@ export default function SupermarketStockPage() {
         <StatCard label="Restocked Today"   value={summary?.restocked_today ?? 0}  icon={<RefreshCw className="w-5 h-5" />}      color="green" loading={loading} />
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Stock Movement — Today</h2>
           <span className="text-xs text-muted-foreground">{items.length} products</span>
@@ -146,7 +146,7 @@ export default function SupermarketStockPage() {
       </div>
 
       {recentRestocks.length > 0 && (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="glass-card rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground">Recent Restocks</h2>
           </div>

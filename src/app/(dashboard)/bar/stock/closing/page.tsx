@@ -142,7 +142,7 @@ export default function ClosingCountPage() {
       </div>
 
       {/* Variance legend */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+      <div className="glass-card rounded-xl p-4">
         <p className="text-sm text-slate-300 font-medium mb-2">How this works</p>
         <p className="text-xs text-slate-400 leading-relaxed">
           Physically count every bottle on your shelf and enter the actual count.
@@ -162,7 +162,7 @@ export default function ClosingCountPage() {
       </div>
 
       {/* Count Table */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white">Item Counts</h2>
           <span className="text-xs text-slate-500">
@@ -281,7 +281,7 @@ export default function ClosingCountPage() {
       </div>
 
       {/* Submit */}
-      <div className="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 gap-4 flex-wrap">
+      <div className="flex items-center justify-between glass-card rounded-xl px-4 py-3 gap-4 flex-wrap">
         <div className="text-sm">
           {flaggedItems.length > 0 ? (
             <span className="text-red-400 flex items-center gap-1.5">

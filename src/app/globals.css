@@ -135,6 +135,30 @@
   .status-badge {
     @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
+  /* Glass card: opaque (so pop-ups stay readable), soft sheen, hairline border,
+     depth shadow. No backdrop blur: the page background is plain, so blur would
+     cost GPU time on POS tablets without any visible effect. */
+  .glass-card {
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015) 55%, rgba(255, 255, 255, 0.03)),
+      hsl(222 40% 11%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+      0 10px 30px -14px rgba(0, 0, 0, 0.7),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+  /* 3D tilt on management screens (driven by <TiltLayer>, which sets --rx/--ry) */
+  .tilt-ready {
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift, 0px));
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.3s ease;
+  }
+  .tilt-ready.tilt-active {
+    transition: transform 0.08s linear, box-shadow 0.35s ease, border-color 0.3s ease;
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow:
+      0 24px 50px -18px rgba(0, 0, 0, 0.8),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
 }
 
 /* Inter font */

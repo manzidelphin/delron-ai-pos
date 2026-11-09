@@ -155,7 +155,7 @@ function ModulesTab() {
       })}
       {confirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-sm w-full space-y-4">
+          <div className="glass-card rounded-2xl p-6 max-w-sm w-full space-y-4">
             <h3 className="font-bold text-white">Disable {confirm} module?</h3>
             <p className="text-sm text-slate-400">This will hide all {confirm} features. Your data will be preserved.</p>
             <div className="flex gap-3">
@@ -228,7 +228,7 @@ function StaffTab() {
           <Plus className="w-4 h-4" />Add Staff
         </button>
       </div>
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="border-b border-slate-700 bg-slate-900/50">
@@ -262,7 +262,7 @@ function StaffTab() {
 
       {showAdd && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full space-y-4">
+          <div className="glass-card rounded-2xl p-6 max-w-md w-full space-y-4">
             <h3 className="font-bold text-white text-lg">{editRow ? "Edit Staff" : "Add Staff Member"}</h3>
             <div className="space-y-3">
               {!editRow && <>
@@ -396,7 +396,7 @@ function NotificationsTab() {
         </div>
         <div className="space-y-3">
           {SMS_TOGGLES.map((t) => (
-            <div key={t.key} className="flex items-center gap-4 p-4 bg-slate-800 border border-slate-700 rounded-xl">
+            <div key={t.key} className="flex items-center gap-4 p-4 glass-card rounded-xl">
               <div className="flex-1">
                 <p className="text-sm font-medium text-white">{t.label}</p>
                 <p className="text-xs text-slate-400">{t.desc}</p>
@@ -437,7 +437,7 @@ function ReceiptTab() {
           <div key={f.key}><label className="text-sm font-medium text-slate-300 mb-1.5 block">{f.label}</label><input value={form[f.key] as string} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" /></div>
         ))}
         {[{ key: "show_logo" as const, label: "Show logo on receipt" }, { key: "show_ebm" as const, label: "Show EBM number field" }].map(t => (
-          <div key={t.key} className="flex items-center justify-between p-4 bg-slate-800 border border-slate-700 rounded-xl">
+          <div key={t.key} className="flex items-center justify-between p-4 glass-card rounded-xl">
             <p className="text-sm font-medium text-white">{t.label}</p>
             <button onClick={() => setForm(p => ({ ...p, [t.key]: !p[t.key] }))} className={cn("w-11 h-6 rounded-full border transition-all relative", form[t.key] ? "bg-blue-500 border-blue-400" : "bg-slate-700 border-slate-600")}>
               <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow", form[t.key] ? "left-[calc(100%-22px)]" : "left-0.5")} />
@@ -520,7 +520,7 @@ function SecurityTab() {
     <div className="space-y-6 max-w-xl">
       <div><h3 className="text-lg font-semibold text-white mb-1">Security</h3><p className="text-sm text-slate-400">Manage your password and PIN</p></div>
       {/* Change password */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-4">
+      <div className="glass-card rounded-xl p-5 space-y-4">
         <div className="flex items-center gap-2"><KeyRound className="w-4 h-4 text-blue-400" /><h4 className="font-semibold text-white">Change Password</h4></div>
         {["current","next","confirm"].map(k => (
           <div key={k}><label className="text-xs text-slate-400 mb-1 block capitalize">{k === "next" ? "New password" : k === "confirm" ? "Confirm password" : "Current password"}</label>
@@ -535,7 +535,7 @@ function SecurityTab() {
         </button>
       </div>
       {/* Change PIN */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-4">
+      <div className="glass-card rounded-xl p-5 space-y-4">
         <div className="flex items-center gap-2"><Shield className="w-4 h-4 text-green-400" /><h4 className="font-semibold text-white">Change PIN</h4></div>
         <div><label className="text-xs text-slate-400 mb-1 block">New PIN (4 digits)</label><input value={pinForm.next} onChange={e => setPinForm(p => ({ ...p, next: e.target.value.replace(/\D/g,"").slice(0,4) }))} placeholder="XXXX" maxLength={4} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white font-mono tracking-widest focus:outline-none focus:border-blue-500" /></div>
         <button onClick={changePin} disabled={savingPin} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium disabled:opacity-50 transition-colors">
@@ -544,7 +544,7 @@ function SecurityTab() {
       </div>
       {/* Two-Factor Authentication — owner only */}
       {isOwner && (
-        <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+        <div className="glass-card rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <Shield className="w-4 h-4 text-blue-400" />
             <h4 className="font-semibold text-white">Two-Factor Authentication</h4>

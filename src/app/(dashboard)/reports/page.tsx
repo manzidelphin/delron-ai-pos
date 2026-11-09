@@ -160,7 +160,7 @@ export default function ReportsHubPage() {
               <button
                 key={card.key}
                 onClick={() => router.push(card.href)}
-                className="group bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-xl p-6 text-left transition-all hover:shadow-lg hover:shadow-black/20"
+                className="group glass-card hover:border-slate-600 rounded-xl p-6 text-left transition-all hover:shadow-lg hover:shadow-black/20"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className={cn("w-11 h-11 rounded-xl border flex items-center justify-center", card.bg)}>

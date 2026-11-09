@@ -75,7 +75,7 @@ export default function BarReportsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Daily chart */}
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="glass-card rounded-2xl p-5">
           <h2 className="text-base font-bold text-foreground mb-4">Daily Revenue</h2>
           {loading ? (
             <div className="h-48 bg-muted/30 rounded-xl animate-pulse" />
@@ -95,7 +95,7 @@ export default function BarReportsPage() {
         </div>
 
         {/* Top items */}
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="glass-card rounded-2xl p-5">
           <h2 className="text-base font-bold text-foreground mb-4">Top Selling Items</h2>
           {loading ? (
             <div className="space-y-3">
@@ -121,7 +121,7 @@ export default function BarReportsPage() {
       </div>
 
       {/* Bottle vs Shot Variance — Theft Detection */}
-      <div className="bg-card border border-border rounded-2xl p-5">
+      <div className="glass-card rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="w-5 h-5 text-yellow-400" />
           <h2 className="text-base font-bold text-foreground">Bottle vs Shot Variance (Theft Detection)</h2>

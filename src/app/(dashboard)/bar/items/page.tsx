@@ -147,7 +147,7 @@ function ItemModal({ item, onClose, onSave }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col">
+      <div className="glass-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-700 flex-shrink-0">
           <h2 className="text-lg font-bold text-white">
@@ -339,7 +339,7 @@ function DeleteModal({ item, onClose, onDeleted }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
         <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto">
           <AlertTriangle className="w-6 h-6 text-red-400" />
         </div>
@@ -472,7 +472,7 @@ export default function BarItemsPage() {
           ))}
         </div>
       ) : filteredItems.length === 0 ? (
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-16 text-center">
+        <div className="glass-card rounded-2xl p-16 text-center">
           <Beer className="w-12 h-12 text-slate-600 mx-auto mb-3" />
           <p className="text-slate-400 font-medium">
             {search || catFilter ? "No items match your filters" : "No bar items yet"}

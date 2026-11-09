@@ -116,7 +116,7 @@ export default function BarTablesPage() {
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-32 bg-card border border-border rounded-2xl animate-pulse" />
+            <div key={i} className="h-32 glass-card rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : tables.length === 0 ? (
@@ -135,7 +135,7 @@ export default function BarTablesPage() {
       {/* Status change modal */}
       {statusModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-xs">
+          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-xs">
             <div className="flex items-center justify-between p-5 border-b border-border">
               <h2 className="text-lg font-bold text-foreground">Table {statusModal.table_number}</h2>
               <button onClick={() => setStatusModal(null)} className="text-muted-foreground hover:text-foreground">✕</button>
@@ -171,7 +171,7 @@ export default function BarTablesPage() {
       {/* Create/Edit modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm">
+          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between p-5 border-b border-border">
               <h2 className="text-lg font-bold text-foreground">{editTable ? "Edit Table" : "Add Table"}</h2>
               <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-foreground">✕</button>

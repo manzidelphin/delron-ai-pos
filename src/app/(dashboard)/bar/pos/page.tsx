@@ -455,7 +455,7 @@ export default function BarPOSPage() {
         <div className="flex-1 overflow-y-auto p-4">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {loading ? (
-              [...Array(8)].map((_, i) => <div key={i} className="h-28 bg-card border border-border rounded-xl animate-pulse" />)
+              [...Array(8)].map((_, i) => <div key={i} className="h-28 glass-card rounded-xl animate-pulse" />)
             ) : isFoodView ? (
               // Food / restaurant items (restaurant-only businesses or when "food" tab selected)
               filteredFood.length === 0 ? (
@@ -466,7 +466,7 @@ export default function BarPOSPage() {
                     key={item.id}
                     onClick={() => { setFoodQty(1); setFoodModal(item); }}
                     disabled={!activeTab}
-                    className="p-4 rounded-xl border text-left transition-all hover:scale-[1.02] active:scale-[0.98] bg-card border-border hover:border-orange-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-4 rounded-xl border text-left transition-all hover:scale-[1.02] active:scale-[0.98] glass-card hover:border-orange-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <p className="text-sm font-bold text-foreground truncate">{item.name}</p>
                     <p className="text-xs text-muted-foreground capitalize mt-0.5">{item.category}</p>
@@ -490,7 +490,7 @@ export default function BarPOSPage() {
                     "p-4 rounded-xl border text-left transition-all hover:scale-[1.02] active:scale-[0.98]",
                     item.quantity_bottles === 0
                       ? "bg-card/50 border-border opacity-50 cursor-not-allowed"
-                      : "bg-card border-border hover:border-blue-500/50"
+                      : "glass-card hover:border-blue-500/50"
                   )}
                 >
                   <p className="text-sm font-bold text-foreground truncate">{item.name}</p>
@@ -627,7 +627,7 @@ export default function BarPOSPage() {
       {/* Food modal */}
       {foodModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs text-orange-400 font-semibold uppercase tracking-wide mb-1">Food Item</p>
@@ -693,7 +693,7 @@ export default function BarPOSPage() {
       {checkoutOpen && checkoutData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-0 max-h-[90vh] overflow-y-auto">
-            <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm">
               <div className="flex items-center justify-between p-4 border-b border-slate-700">
                 <h2 className="font-bold text-white">{saleComplete ? "Payment Complete" : "Receipt"}</h2>
                 <button

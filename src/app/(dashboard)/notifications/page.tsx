@@ -125,7 +125,7 @@ export default function NotificationsPage() {
             <button
               onClick={markAllRead}
               disabled={actionLoading}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground hover:border-blue-500/50 transition-all text-sm"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-muted-foreground hover:text-foreground hover:border-blue-500/50 transition-all text-sm"
             >
               <CheckCheck className="w-4 h-4" />
               Mark all read
@@ -134,7 +134,7 @@ export default function NotificationsPage() {
           <button
             onClick={clearRead}
             disabled={actionLoading}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-all text-sm"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-all text-sm"
           >
             <Trash2 className="w-4 h-4" />
             Clear read
@@ -166,7 +166,7 @@ export default function NotificationsPage() {
           <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
         </div>
       ) : notifications.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
+        <div className="glass-card rounded-xl p-12 text-center">
           <Bell className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">No notifications yet</p>
         </div>
@@ -177,7 +177,7 @@ export default function NotificationsPage() {
               key={notification.id}
               onClick={() => !notification.is_read && markRead(notification.id)}
               className={cn(
-                "bg-card border rounded-xl p-4 transition-all cursor-pointer group",
+                "glass-card rounded-xl p-4 transition-all cursor-pointer group",
                 notification.is_read
                   ? "border-border opacity-60"
                   : "border-blue-500/30 hover:border-blue-500/50"

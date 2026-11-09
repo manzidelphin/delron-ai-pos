@@ -17,7 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import {
-  ACCENT, AuroraBackground, CountUp, GlassCard, GlassIcon, LiveDot, SectionTitle,
+  ACCENT, CountUp, GlassCard, GlassIcon, LiveDot, SectionTitle,
   riseIn, staggerContainer, type Accent,
 } from "@/components/dashboard/glass";
 
@@ -141,7 +141,7 @@ function KpiCard({ label, value, change, icon, accent, spark }: {
           <GlassIcon accent={accent}>{icon}</GlassIcon>
           {change !== undefined && (
             <div className={cn(
-              "flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold backdrop-blur",
+              "flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold",
               up ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" : "border-rose-400/20 bg-rose-400/10 text-rose-300"
             )}>
               {up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -234,9 +234,7 @@ export default function DashboardPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="relative isolate -m-4 md:-m-6 min-h-full p-4 md:p-6">
-        <AuroraBackground />
-
+      <div className="relative">
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-6">
           {/* Header */}
           <motion.div variants={riseIn} className="flex flex-wrap items-end justify-between gap-3">
@@ -253,7 +251,7 @@ export default function DashboardPage() {
                 {mounted && <> · {new Date().toLocaleDateString("en-RW", { weekday: "long", month: "long", day: "numeric" })}</>}
               </p>
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 backdrop-blur">
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300">
               <LiveDot /> Live · refreshes every 30s
             </div>
           </motion.div>
@@ -362,7 +360,7 @@ export default function DashboardPage() {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => router.push(alert.href)}
                         className={cn(
-                          "w-full flex items-center gap-3 rounded-2xl border p-3.5 text-left backdrop-blur-xl transition-colors",
+                          "w-full flex items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors",
                           hot ? "border-white/15 bg-white/[0.07] hover:bg-white/[0.1]" : "border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06]"
                         )}
                         style={hot ? { boxShadow: `0 8px 28px -10px rgba(${ACCENT[alert.accent].glow},0.6)` } : undefined}
@@ -386,7 +384,7 @@ export default function DashboardPage() {
                       whileHover={{ y: -3 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => router.push(action.href)}
-                      className="group/a flex flex-col items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.05] p-3.5 text-left text-sm font-medium text-white backdrop-blur-xl transition-colors hover:border-blue-400/30 hover:bg-blue-500/10"
+                      className="group/a flex flex-col items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.05] p-3.5 text-left text-sm font-medium text-white transition-colors hover:border-blue-400/30 hover:bg-blue-500/10"
                     >
                       <span className="text-blue-300">{action.icon}</span>
                       <span className="flex w-full items-center">
@@ -504,7 +502,7 @@ export default function DashboardPage() {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.05 * i }}
-                        className="flex items-center gap-2 rounded-xl border border-emerald-400/15 bg-white/[0.04] px-3 py-2 backdrop-blur"
+                        className="flex items-center gap-2 rounded-xl border border-emerald-400/15 bg-white/[0.04] px-3 py-2"
                       >
                         <div className="relative w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400/40 to-emerald-600/20 ring-1 ring-emerald-400/30 flex items-center justify-center flex-shrink-0">
                           <span className="text-xs font-bold text-emerald-200">{s.name[0]}</span>

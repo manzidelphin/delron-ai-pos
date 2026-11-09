@@ -16,7 +16,7 @@ export function PageSkeleton() {
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-4">
+          <div key={i} className="glass-card rounded-xl p-5 space-y-4">
             <div className="flex items-start justify-between">
               <Bone className="w-10 h-10 rounded-lg" />
               <Bone className="w-16 h-6 rounded-full" />
@@ -26,7 +26,7 @@ export function PageSkeleton() {
           </div>
         ))}
       </div>
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-4">
+      <div className="glass-card rounded-xl p-5 space-y-4">
         <Bone className="w-36 h-5" />
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 py-3 border-b border-slate-700/50">
@@ -43,7 +43,7 @@ export function PageSkeleton() {
 
 export function CardSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-3">
+    <div className="glass-card rounded-xl p-5 space-y-3">
       <Bone className="w-32 h-5" />
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex gap-3 items-center">

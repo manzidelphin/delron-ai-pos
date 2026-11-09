@@ -108,7 +108,7 @@ export default function RestockPage() {
       </div>
 
       {/* Supplier & Notes */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 space-y-3">
+      <div className="glass-card rounded-xl p-4 space-y-3">
         <h2 className="text-sm font-semibold text-white">Delivery Details (optional)</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -135,7 +135,7 @@ export default function RestockPage() {
       </div>
 
       {/* Items list */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white">Bar Items</h2>
           <span className="text-xs text-slate-500">
@@ -217,7 +217,7 @@ export default function RestockPage() {
       </div>
 
       {/* Submit */}
-      <div className="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
+      <div className="flex items-center justify-between glass-card rounded-xl px-4 py-3">
         <div className="text-sm text-slate-400">
           {entriesWithQty.length > 0 ? (
             <span>

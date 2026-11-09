@@ -318,7 +318,7 @@ export default function ImportPage() {
           </div>
 
           {/* Template guide */}
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5">
+          <div className="glass-card rounded-2xl p-5">
             <div className="flex items-center gap-3 mb-4">
               <FileSpreadsheet className="w-5 h-5 text-green-400" />
               <h3 className="font-semibold text-white">Template Guide</h3>
@@ -353,7 +353,7 @@ export default function ImportPage() {
       {step === "preview" && (
         <div className="space-y-4">
           {/* Summary bar */}
-          <div className="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-xl p-4">
+          <div className="flex items-center justify-between glass-card rounded-xl p-4">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-slate-400" />
@@ -380,7 +380,7 @@ export default function ImportPage() {
           </div>
 
           {/* Preview table */}
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+          <div className="glass-card rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -463,7 +463,7 @@ export default function ImportPage() {
 
       {/* STEP: Importing */}
       {step === "importing" && (
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-12 flex flex-col items-center gap-6">
+        <div className="glass-card rounded-2xl p-12 flex flex-col items-center gap-6">
           <div className="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center">
             <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
           </div>
@@ -485,7 +485,7 @@ export default function ImportPage() {
 
       {/* STEP: Done */}
       {step === "done" && importResult && (
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-12 flex flex-col items-center gap-6">
+        <div className="glass-card rounded-2xl p-12 flex flex-col items-center gap-6">
           <div className="w-16 h-16 rounded-2xl bg-green-500/20 flex items-center justify-center">
             <CheckCircle2 className="w-8 h-8 text-green-400" />
           </div>

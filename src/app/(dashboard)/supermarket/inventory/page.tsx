@@ -200,7 +200,7 @@ export default function InventoryPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Low Stock Alert Table */}
-        <div className="xl:col-span-2 bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+        <div className="xl:col-span-2 glass-card rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
@@ -290,7 +290,7 @@ export default function InventoryPage() {
         </div>
 
         {/* Category Chart */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+        <div className="glass-card rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-700">
             <h3 className="font-semibold text-white">Stock by Category</h3>
             <p className="text-xs text-slate-500 mt-0.5">Product count per category</p>
@@ -348,7 +348,7 @@ export default function InventoryPage() {
       {/* Stock Adjustment Modal */}
       {adjustModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm">
+          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between p-5 border-b border-slate-700">
               <h2 className="font-bold text-white">Adjust Stock</h2>
               <button onClick={() => setAdjustModal(null)} className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-400">

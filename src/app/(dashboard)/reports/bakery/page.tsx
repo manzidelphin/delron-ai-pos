@@ -161,7 +161,7 @@ export default function BakeryReportPage() {
           <p className="text-slate-400 text-sm mt-0.5">Production, sales, waste, and baker performance</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={handleExportPDF} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
+          <button onClick={handleExportPDF} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
             PDF
           </button>
@@ -187,7 +187,7 @@ export default function BakeryReportPage() {
       {/* Charts */}
       {mounted && data && (
         <>
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+          <div className="glass-card rounded-xl p-5">
             <h2 className="font-semibold text-white mb-4">Production vs Waste by Day</h2>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={data.daily_chart}>
@@ -207,7 +207,7 @@ export default function BakeryReportPage() {
 
           {/* Item Breakdown */}
           {data.items_breakdown.length > 0 && (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+            <div className="glass-card rounded-xl overflow-hidden">
               <div className="p-5 border-b border-slate-700">
                 <h2 className="font-semibold text-white">Item Breakdown</h2>
               </div>
@@ -246,7 +246,7 @@ export default function BakeryReportPage() {
 
           {/* Baker Performance */}
           {data.baker_performance.length > 0 && (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+            <div className="glass-card rounded-xl overflow-hidden">
               <div className="p-5 border-b border-slate-700">
                 <h2 className="font-semibold text-white">Baker Performance</h2>
               </div>

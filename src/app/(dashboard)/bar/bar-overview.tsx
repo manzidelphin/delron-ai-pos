@@ -90,7 +90,7 @@ export default function BarDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Hourly chart */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-5">
+        <div className="lg:col-span-2 glass-card rounded-2xl p-5">
           <h2 className="text-base font-bold text-foreground mb-4">Hourly Revenue (Today)</h2>
           {loading ? (
             <div className="h-48 bg-muted/30 rounded-xl animate-pulse" />
@@ -111,7 +111,7 @@ export default function BarDashboardPage() {
         </div>
 
         {/* Low stock */}
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="glass-card rounded-2xl p-5">
           <h2 className="text-base font-bold text-foreground mb-4">Low Stock Alert</h2>
           {loading ? (
             <div className="space-y-3">
@@ -133,7 +133,7 @@ export default function BarDashboardPage() {
       </div>
 
       {/* Open tabs */}
-      <div className="bg-card border border-border rounded-2xl p-5">
+      <div className="glass-card rounded-2xl p-5">
         <h2 className="text-base font-bold text-foreground mb-4">Open Tabs</h2>
         {loading ? (
           <div className="h-24 bg-muted/30 rounded-xl animate-pulse" />

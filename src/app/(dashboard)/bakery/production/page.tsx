@@ -174,7 +174,7 @@ export default function ProductionPage() {
             {[1, 2, 3, 4].map((i) => <div key={i} className="h-52 bg-slate-800 rounded-2xl animate-pulse" />)}
           </div>
         ) : items.length === 0 ? (
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-16 text-center">
+          <div className="glass-card rounded-2xl p-16 text-center">
             <ChefHat className="w-12 h-12 text-slate-600 mx-auto mb-3" />
             <p className="text-slate-400 font-medium">No baked items set up yet</p>
             <a href="/bakery/items" className="mt-4 inline-block h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all leading-10">

@@ -53,7 +53,7 @@ export function DataTable<T extends Record<string, unknown>>({
   const hasCheckbox = !!onSelect;
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+    <div className="glass-card rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>

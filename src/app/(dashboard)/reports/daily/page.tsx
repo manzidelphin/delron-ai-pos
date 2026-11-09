@@ -273,7 +273,7 @@ export default function DailyReportPage() {
           <button
             onClick={handleExportPDF}
             disabled={exporting || loading || !viewData}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40"
           >
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
             PDF
@@ -299,7 +299,7 @@ export default function DailyReportPage() {
 
       {/* Date picker + live indicator */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2">
+        <div className="flex items-center gap-2 glass-card rounded-xl px-3 py-2">
           <Calendar className="w-4 h-4 text-slate-400" />
           <input
             type="date"
@@ -346,7 +346,7 @@ export default function DailyReportPage() {
           { label: "Transactions",   value: String(viewData?.kpis.total_transactions ?? 0), icon: <Activity className="w-5 h-5" />, color: "text-purple-400" },
           { label: "Shifts Today",   value: String(viewData?.kpis.shifts_today ?? 0),       icon: <Clock className="w-5 h-5" />, color: "text-amber-400" },
         ].map((kpi) => (
-          <div key={kpi.label} className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+          <div key={kpi.label} className="glass-card rounded-xl p-4">
             {loading ? (
               <div className="space-y-2 animate-pulse">
                 <div className="h-3 bg-slate-700 rounded w-2/3" />
@@ -366,7 +366,7 @@ export default function DailyReportPage() {
       </div>
 
       {/* Products Sold Table */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="p-5 border-b border-slate-700 flex items-center justify-between">
           <div>
             <h2 className="font-semibold text-white">Products Sold</h2>
@@ -423,7 +423,7 @@ export default function DailyReportPage() {
       </div>
 
       {/* Staff Breakdown */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="p-5 border-b border-slate-700">
           <h2 className="font-semibold text-white">Staff Breakdown</h2>
           <p className="text-xs text-slate-400 mt-0.5">Revenue and transactions per staff member</p>
@@ -469,7 +469,7 @@ export default function DailyReportPage() {
       </div>
 
       {/* Previously Generated Reports */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="p-5 border-b border-slate-700 flex items-center justify-between">
           <div>
             <h2 className="font-semibold text-white">Previously Generated Reports</h2>
@@ -532,7 +532,7 @@ export default function DailyReportPage() {
       {/* Confirm modal */}
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <div>

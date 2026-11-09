@@ -180,13 +180,13 @@ export default function BarInventoryPage() {
           <option value="">All Categories</option>
           {CATEGORIES.map((c) => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
         </select>
-        <button onClick={load} className="h-10 w-10 flex items-center justify-center rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={load} className="h-10 w-10 flex items-center justify-center rounded-xl glass-card text-muted-foreground hover:text-foreground transition-colors">
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+      <div className="glass-card rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -267,7 +267,7 @@ export default function BarInventoryPage() {
       {/* Item Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-border">
               <h2 className="text-lg font-bold text-foreground">{editing ? "Edit Item" : "Add Bar Item"}</h2>
               <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-foreground">✕</button>
@@ -359,7 +359,7 @@ export default function BarInventoryPage() {
       {/* Restock Modal */}
       {showRestock && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm">
+          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between p-5 border-b border-border">
               <h2 className="text-lg font-bold text-foreground">Restock: {showRestock.name}</h2>
               <button onClick={() => setShowRestock(null)} className="text-muted-foreground hover:text-foreground">✕</button>

@@ -87,7 +87,7 @@ function ProductModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl my-4 animate-fade-in">
+      <div className="glass-card rounded-2xl shadow-2xl w-full max-w-2xl my-4 animate-fade-in">
         <div className="flex items-center justify-between p-6 border-b border-slate-700">
           <h2 className="text-xl font-bold text-white">{isEdit ? "Edit Product" : "Add New Product"}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-400 hover:text-white">
@@ -223,7 +223,7 @@ function DeleteConfirm({ product, onClose, onDelete }: { product: Product; onClo
   };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm animate-fade-in">
+      <div className="glass-card rounded-2xl p-6 w-full max-w-sm animate-fade-in">
         <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
           <Trash2 className="w-6 h-6 text-red-400" />
         </div>
@@ -448,7 +448,7 @@ export default function ProductsPage() {
             <option value="out">Out of Stock</option>
           </select>
 
-          <button onClick={fetchProducts} className="h-10 w-10 flex items-center justify-center bg-slate-800 border border-slate-700 rounded-xl text-slate-400 hover:text-white hover:border-slate-600 transition-all">
+          <button onClick={fetchProducts} className="h-10 w-10 flex items-center justify-center glass-card rounded-xl text-slate-400 hover:text-white hover:border-slate-600 transition-all">
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
           </button>
         </div>

@@ -102,13 +102,13 @@ export default function ShiftsReportPage() {
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">Track all staff shifts and cash reconciliation</p>
         </div>
-        <button onClick={load} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground text-sm transition-colors">
+        <button onClick={load} className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-muted-foreground hover:text-foreground text-sm transition-colors">
           <RefreshCw className="w-4 h-4" /> Refresh
         </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-card border border-border rounded-xl p-4 flex flex-wrap gap-3 items-end">
+      <div className="glass-card rounded-xl p-4 flex flex-wrap gap-3 items-end">
         <div>
           <label className="block text-xs text-muted-foreground mb-1">From</label>
           <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
@@ -157,7 +157,7 @@ export default function ShiftsReportPage() {
       )}
 
       {/* Shifts table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">All Shifts</h2>
           <span className="text-xs text-muted-foreground">{shifts.length} records</span>

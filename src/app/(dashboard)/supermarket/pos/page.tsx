@@ -595,7 +595,7 @@ export default function POSPage() {
       {/* Checkout Modal — receipt shown first, payment method chosen after */}
       {checkoutOpen && receiptData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm">
+          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between p-4 border-b border-slate-700">
               <h2 className="font-bold text-white">{saleComplete ? "Payment Complete" : "Receipt"}</h2>
               <button

@@ -90,7 +90,7 @@ export default function RestaurantDashboardPage() {
           { label: "Today Revenue",        value: loading ? "—" : formatRWF(data?.today_revenue ?? 0), icon: <TrendingUp className="w-5 h-5 text-green-400" />, sub: "food sales" },
           { label: "Today Orders",         value: loading ? "—" : data?.today_orders ?? 0,       icon: <ChefHat className="w-5 h-5 text-blue-400" />,           sub: "food orders" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-card border border-border rounded-2xl p-4">
+          <div key={stat.label} className="glass-card rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-muted-foreground text-xs font-medium">{stat.label}</p>
               {stat.icon}

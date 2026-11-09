@@ -162,7 +162,7 @@ export default function BarReportPage() {
           <p className="text-slate-400 text-sm mt-0.5">Bottles, shots, tabs, and shot variance analysis</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={handleExportPDF} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
+          <button onClick={handleExportPDF} disabled={exporting || skeleton} className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-slate-300 hover:border-blue-500/50 text-sm disabled:opacity-40">
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
             PDF
           </button>
@@ -189,7 +189,7 @@ export default function BarReportPage() {
         <>
           {/* Revenue by day + Category */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Bar Revenue by Day</h2>
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={data.daily_revenue}>
@@ -202,7 +202,7 @@ export default function BarReportPage() {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Revenue by Category</h2>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
@@ -218,7 +218,7 @@ export default function BarReportPage() {
 
           {/* Top Drinks + Hourly */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Top 10 Drinks by Revenue</h2>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={data.top_drinks} layout="vertical">
@@ -231,7 +231,7 @@ export default function BarReportPage() {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <div className="glass-card rounded-xl p-5">
               <h2 className="font-semibold text-white mb-4">Hourly Revenue</h2>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={data.hourly.filter((h) => h.revenue > 0)}>
@@ -247,7 +247,7 @@ export default function BarReportPage() {
 
           {/* Shot Variance */}
           {data.variance_table.length > 0 && (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+            <div className="glass-card rounded-xl overflow-hidden">
               <div className="p-5 border-b border-slate-700">
                 <h2 className="font-semibold text-white">Shot Variance Report</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Rows in red = possible variance &gt; 10%</p>
@@ -284,7 +284,7 @@ export default function BarReportPage() {
 
           {/* Tables Report */}
           {data.tables_report.some((t) => t.times_used > 0) && (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+            <div className="glass-card rounded-xl overflow-hidden">
               <div className="p-5 border-b border-slate-700">
                 <h2 className="font-semibold text-white">Tables Report</h2>
               </div>

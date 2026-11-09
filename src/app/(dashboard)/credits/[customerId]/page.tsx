@@ -67,7 +67,7 @@ export default function CustomerCreditHistoryPage() {
       </button>
 
       {/* Customer Summary */}
-      <div className="bg-card border border-border rounded-xl p-6">
+      <div className="glass-card rounded-xl p-6">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
             <span className="text-lg font-bold text-blue-400">
@@ -119,7 +119,7 @@ export default function CustomerCreditHistoryPage() {
         </h2>
 
         {sorted.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-12 text-center text-muted-foreground">
+          <div className="glass-card rounded-xl p-12 text-center text-muted-foreground">
             No credit history found for this customer
           </div>
         ) : (
@@ -127,7 +127,7 @@ export default function CustomerCreditHistoryPage() {
             {sorted.map((credit) => (
               <div
                 key={credit.id}
-                className="bg-card border border-border rounded-xl p-5 space-y-3"
+                className="glass-card rounded-xl p-5 space-y-3"
               >
                 {/* Credit header */}
                 <div className="flex items-start justify-between">

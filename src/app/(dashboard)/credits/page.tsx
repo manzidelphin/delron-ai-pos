@@ -248,7 +248,7 @@ export default function CreditsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="glass-card rounded-xl p-5">
           <div className="w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center mb-3">
             <CreditCard className="w-5 h-5 text-blue-400" />
           </div>
@@ -258,7 +258,7 @@ export default function CreditsPage() {
           <p className="text-sm text-muted-foreground mt-0.5">Total Outstanding</p>
         </div>
 
-        <div className="bg-card border border-red-500/30 rounded-xl p-5">
+        <div className="glass-card border-red-500/30 rounded-xl p-5">
           <div className="w-10 h-10 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center mb-3">
             <AlertTriangle className="w-5 h-5 text-red-400" />
           </div>
@@ -270,7 +270,7 @@ export default function CreditsPage() {
           </p>
         </div>
 
-        <div className="bg-card border border-amber-500/30 rounded-xl p-5">
+        <div className="glass-card border-amber-500/30 rounded-xl p-5">
           <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-center mb-3">
             <Clock className="w-5 h-5 text-amber-400" />
           </div>
@@ -282,7 +282,7 @@ export default function CreditsPage() {
           </p>
         </div>
 
-        <div className="bg-card border border-green-500/30 rounded-xl p-5">
+        <div className="glass-card border-green-500/30 rounded-xl p-5">
           <div className="w-10 h-10 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center justify-center mb-3">
             <CheckCircle className="w-5 h-5 text-green-400" />
           </div>
@@ -325,7 +325,7 @@ export default function CreditsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -438,7 +438,7 @@ export default function CreditsPage() {
       {/* Partial Payment Modal */}
       {partialModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm">
+          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between p-5 border-b border-slate-700">
               <h2 className="text-lg font-bold text-white">Partial Payment</h2>
               <button

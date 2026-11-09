@@ -92,7 +92,7 @@ export default function BakeryRestockPage() {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+      <div className="glass-card rounded-xl p-4 space-y-3">
         <h2 className="text-sm font-semibold text-foreground">Delivery Details (optional)</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -108,7 +108,7 @@ export default function BakeryRestockPage() {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Ingredients</h2>
           <span className="text-xs text-muted-foreground">
@@ -154,7 +154,7 @@ export default function BakeryRestockPage() {
         )}
       </div>
 
-      <div className="flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3">
+      <div className="flex items-center justify-between glass-card rounded-xl px-4 py-3">
         <div className="text-sm text-muted-foreground">
           {entriesWithQty.length > 0
             ? <span>Restocking <span className="text-foreground font-medium">{entriesWithQty.length}</span> ingredient{entriesWithQty.length !== 1 ? "s" : ""}: {entriesWithQty.map((i) => `${i.name} (+${qtys[i.id]} ${i.unit})`).join(", ")}</span>

@@ -94,7 +94,7 @@ export default function BarStockPage() {
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={load}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white text-sm transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card text-slate-400 hover:text-white text-sm transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -125,7 +125,7 @@ export default function BarStockPage() {
       </div>
 
       {/* Stock Table */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white">Stock Movement — Today</h2>
           <span className="text-xs text-slate-500">{items.length} items</span>
@@ -199,7 +199,7 @@ export default function BarStockPage() {
 
       {/* Recent Restocks */}
       {recentRestocks.length > 0 && (
-        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+        <div className="glass-card rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-700">
             <h2 className="text-sm font-semibold text-white">Recent Restocks</h2>
           </div>

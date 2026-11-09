@@ -131,7 +131,7 @@ function ItemModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
+      <div className="glass-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-slate-700 shrink-0">
           <h2 className="text-lg font-bold text-white">
             {isEdit ? `Edit — ${item!.name}` : "New Menu Item"}
@@ -299,7 +299,7 @@ function DeleteModal({ item, onClose, onDeleted }: { item: MenuItem; onClose: ()
   };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
         <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto">
           <AlertTriangle className="w-6 h-6 text-red-400" />
         </div>
@@ -396,7 +396,7 @@ export default function RestaurantMenuPage() {
           {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-48 bg-card rounded-2xl animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-16 text-center">
+        <div className="glass-card rounded-2xl p-16 text-center">
           <UtensilsCrossed className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground font-medium">
             {search || catFilter !== "all" ? "No items match your filters" : "No menu items yet"}
@@ -419,7 +419,7 @@ export default function RestaurantMenuPage() {
               <div
                 key={item.id}
                 className={cn(
-                  "bg-card border rounded-2xl p-5 group transition-all",
+                  "glass-card rounded-2xl p-5 group transition-all",
                   item.is_active ? "border-border hover:border-orange-500/30" : "border-border/40 opacity-60"
                 )}
               >

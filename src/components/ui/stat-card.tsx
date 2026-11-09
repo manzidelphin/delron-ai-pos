@@ -30,7 +30,7 @@ export function StatCard({
 }: StatCardProps) {
   if (loading) {
     return (
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 animate-pulse">
+      <div className="glass-card rounded-xl p-5 animate-pulse">
         <div className="flex items-start justify-between mb-4">
           <div className="w-10 h-10 rounded-lg bg-slate-700" />
           <div className="w-16 h-6 rounded-full bg-slate-700" />
@@ -42,7 +42,7 @@ export function StatCard({
   }
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 hover:border-slate-600 transition-all">
+    <div className="glass-card rounded-xl p-5 hover:border-slate-600 transition-all">
       <div className="flex items-start justify-between mb-4">
         <div className={cn("w-10 h-10 rounded-lg border flex items-center justify-center", colorMap[color])}>
           {icon}
