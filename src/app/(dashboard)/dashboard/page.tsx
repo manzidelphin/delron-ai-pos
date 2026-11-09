@@ -7,14 +7,19 @@ import { useCallback, useEffect, useState } from "react";
 import {
   TrendingUp, TrendingDown, ShoppingCart, CreditCard, AlertTriangle, Zap,
   Store, ChefHat, Beer, UtensilsCrossed, ArrowRight, Users, Activity,
-  Loader2, Package, Clock,
+  Loader2, Package, Clock, Sparkles, CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
+import {
+  ACCENT, AuroraBackground, CountUp, GlassCard, GlassIcon, LiveDot, SectionTitle,
+  riseIn, staggerContainer, type Accent,
+} from "@/components/dashboard/glass";
 
 interface Briefing {
   greeting: string; revenue_summary: string; top_alert: string;
@@ -40,6 +45,33 @@ interface DashboardData {
   staff_on_shift: {id: string; name: string; role: string; since: string}[];
 }
 
+// Stable formatter so CountUp doesn't restart its animation on every render.
+const rwf = (n: number) => formatRWF(Math.round(n));
+
+const MODULE_ICON: Record<string, React.ReactNode> = {
+  supermarket: <Store className="w-4 h-4" />,
+  bakery: <ChefHat className="w-4 h-4" />,
+  bar: <Beer className="w-4 h-4" />,
+  restaurant: <UtensilsCrossed className="w-4 h-4" />,
+};
+const MODULE_ACCENT: Record<string, Accent> = { supermarket: "blue", bakery: "amber", bar: "green", restaurant: "purple" };
+const MODULE_LABEL: Record<string, string> = { supermarket: "Supermarket", bakery: "Bakery", bar: "Bar", restaurant: "Restaurant" };
+
+const chartTooltip = {
+  contentStyle: {
+    background: "rgba(15,23,42,0.75)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 12,
+    boxShadow: "0 12px 32px -8px rgba(0,0,0,0.6)",
+  },
+  labelStyle: { color: "#cbd5e1", fontSize: 11 },
+  itemStyle: { color: "#fff", fontWeight: 600 },
+  cursor: { stroke: "rgba(148,163,184,0.25)", strokeWidth: 1, fill: "rgba(148,163,184,0.06)" },
+};
+
+/* ── AI briefing ───────────────────────────────────────────────────────────── */
+
 function AIBriefingCard() {
   const { setOpen } = useAIStore();
   const [briefing, setBriefing] = useState<Briefing | null>(null);
@@ -49,73 +81,116 @@ function AIBriefingCard() {
     fetch("/api/ai/briefing").then(r => r.ok ? r.json() : null).then(d => { setBriefing(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
-  if (loading) return (
-    <div className="bg-gradient-to-r from-blue-500/10 via-blue-600/5 to-transparent border border-blue-500/20 rounded-xl p-4 flex items-center gap-3">
-      <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
-      <p className="text-sm text-slate-400">DELRON AI is preparing your briefing...</p>
-    </div>
-  );
-  if (!briefing) return null;
-  return (
-    <div className="bg-gradient-to-r from-blue-500/10 via-blue-600/5 to-transparent border border-blue-500/20 rounded-xl p-5">
-      <div className="flex items-center gap-2.5 mb-3">
-        <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-          <Zap className="w-4 h-4 text-blue-400" />
-        </div>
-        <p className="text-sm font-bold text-white">DELRON AI — Daily Briefing</p>
-      </div>
-      <p className="text-white font-semibold mb-1">{briefing.greeting}</p>
-      <p className="text-sm text-slate-400 mb-3">{briefing.revenue_summary}</p>
-      <div className="space-y-1.5 mb-3">
-        {briefing.top_alert && <div className="flex items-center gap-2 text-sm"><span className="text-amber-400">⚠</span><span className="text-white">{briefing.top_alert}</span></div>}
-        {briefing.stock_alerts?.map((a, i) => <div key={i} className="flex items-center gap-2 text-sm text-slate-400"><span>📦</span><span>{a}</span></div>)}
-        {briefing.credit_alerts?.map((a, i) => <div key={i} className="flex items-center gap-2 text-sm text-slate-400"><span>💳</span><span>{a}</span></div>)}
-        {briefing.raw_data?.open_tabs ? <div className="flex items-center gap-2 text-sm text-slate-400"><span>🍺</span><span>Bar has {briefing.raw_data.open_tabs} open {briefing.raw_data.open_tabs === 1 ? "tab" : "tabs"}</span></div> : null}
-      </div>
-      {briefing.tip && <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg px-3 py-2 mb-3"><p className="text-xs text-blue-400"><span className="font-semibold">💡 Tip: </span>{briefing.tip}</p></div>}
-      <button onClick={() => setOpen(true)} className="flex items-center gap-1 text-blue-400 text-xs font-medium hover:text-blue-300 transition-colors">
-        Ask DELRON AI anything <ArrowRight className="w-3 h-3" />
-      </button>
-    </div>
-  );
-}
+  if (!loading && !briefing) return null;
 
-function RevCard({ label, value, change, icon, color = "blue" }: { label: string; value: string; change?: number; icon: React.ReactNode; color?: "blue"|"green"|"amber"|"red" }) {
-  const colors = { blue: "bg-blue-500/10 text-blue-400 border-blue-500/20", green: "bg-green-500/10 text-green-400 border-green-500/20", amber: "bg-amber-500/10 text-amber-400 border-amber-500/20", red: "bg-red-500/10 text-red-400 border-red-500/20" };
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 hover:border-slate-600 transition-all">
-      <div className="flex items-start justify-between mb-4">
-        <div className={cn("w-10 h-10 rounded-lg border flex items-center justify-center", colors[color])}>{icon}</div>
-        {change !== undefined && (
-          <div className={cn("flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full", change >= 0 ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400")}>
-            {change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {Math.abs(change)}%
+    <GlassCard accent="cyan">
+      <div className="relative p-5">
+        {/* animated gradient rim on the left */}
+        <div aria-hidden className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full bg-gradient-to-b from-cyan-400 via-blue-500 to-violet-500" />
+        <div className="flex items-center gap-3 mb-3 pl-2">
+          <GlassIcon accent="cyan" className="h-9 w-9"><Sparkles className="w-4 h-4" /></GlassIcon>
+          <div>
+            <p className="text-sm font-bold text-white">DELRON AI · Daily Briefing</p>
+            <p className="text-[11px] text-slate-400">Generated from today&apos;s numbers</p>
+          </div>
+        </div>
+        {loading ? (
+          <div className="flex items-center gap-3 pl-2 py-2">
+            <Loader2 className="w-4 h-4 text-cyan-300 animate-spin" />
+            <p className="text-sm text-slate-400">DELRON AI is preparing your briefing...</p>
+          </div>
+        ) : briefing && (
+          <div className="pl-2">
+            <p className="text-white font-semibold mb-1">{briefing.greeting}</p>
+            <p className="text-sm text-slate-300/80 mb-3">{briefing.revenue_summary}</p>
+            <div className="grid gap-1.5 mb-3 sm:grid-cols-2">
+              {briefing.top_alert && <div className="flex items-center gap-2 text-sm sm:col-span-2"><span className="text-amber-400">⚠</span><span className="text-white">{briefing.top_alert}</span></div>}
+              {briefing.stock_alerts?.map((a, i) => <div key={`s${i}`} className="flex items-center gap-2 text-sm text-slate-300/80"><span>📦</span><span>{a}</span></div>)}
+              {briefing.credit_alerts?.map((a, i) => <div key={`c${i}`} className="flex items-center gap-2 text-sm text-slate-300/80"><span>💳</span><span>{a}</span></div>)}
+              {briefing.raw_data?.open_tabs ? <div className="flex items-center gap-2 text-sm text-slate-300/80"><span>🍺</span><span>Bar has {briefing.raw_data.open_tabs} open {briefing.raw_data.open_tabs === 1 ? "tab" : "tabs"}</span></div> : null}
+            </div>
+            {briefing.tip && (
+              <div className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.06] px-3 py-2 mb-3">
+                <p className="text-xs text-cyan-200"><span className="font-semibold">💡 Tip: </span>{briefing.tip}</p>
+              </div>
+            )}
+            <button onClick={() => setOpen(true)} className="group/btn inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-white/10">
+              <Zap className="w-3 h-3" /> Ask DELRON AI anything
+              <ArrowRight className="w-3 h-3 transition-transform group-hover/btn:translate-x-0.5" />
+            </button>
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      <p className="text-sm text-slate-400 mt-0.5">{label}</p>
-    </div>
+    </GlassCard>
   );
 }
 
-const MODULE_ICON: Record<string, React.ReactNode> = {
-  supermarket: <Store className="w-4 h-4 text-blue-400" />,
-  bakery: <ChefHat className="w-4 h-4 text-amber-400" />,
-  bar: <Beer className="w-4 h-4 text-green-400" />,
-  restaurant: <UtensilsCrossed className="w-4 h-4 text-purple-400" />,
-};
-const MODULE_COLOR: Record<string, string> = { supermarket: "bg-blue-500/10", bakery: "bg-amber-500/10", bar: "bg-green-500/10", restaurant: "bg-purple-500/10" };
-const MODULE_LABEL: Record<string, string> = { supermarket: "Supermarket", bakery: "Bakery", bar: "Bar", restaurant: "Restaurant" };
+/* ── KPI card ──────────────────────────────────────────────────────────────── */
+
+function KpiCard({ label, value, change, icon, accent, spark }: {
+  label: string; value: number; change?: number; icon: React.ReactNode; accent: Accent;
+  spark?: { v: number }[];
+}) {
+  const up = (change ?? 0) >= 0;
+  const gid = `spark-${accent}`;
+  return (
+    <GlassCard accent={accent} tilt>
+      <div className="flex h-full flex-col p-5">
+        <div className="flex items-start justify-between mb-5">
+          <GlassIcon accent={accent}>{icon}</GlassIcon>
+          {change !== undefined && (
+            <div className={cn(
+              "flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold backdrop-blur",
+              up ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" : "border-rose-400/20 bg-rose-400/10 text-rose-300"
+            )}>
+              {up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {Math.abs(change)}%
+            </div>
+          )}
+        </div>
+        <p className="text-[26px] leading-tight font-bold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(255,255,255,0.12)]">
+          <CountUp value={value} format={rwf} />
+        </p>
+        <p className="text-sm text-slate-400 mt-1">{label}</p>
+        {spark && spark.length > 1 && (
+          <div className="mt-3 -mx-1 h-10">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={spark} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+                <defs>
+                  <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={`rgb(${ACCENT[accent].glow})`} stopOpacity={0.5} />
+                    <stop offset="100%" stopColor={`rgb(${ACCENT[accent].glow})`} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area type="monotone" dataKey="v" stroke={`rgb(${ACCENT[accent].glow})`} strokeWidth={1.75} fill={`url(#${gid})`} isAnimationActive />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+    </GlassCard>
+  );
+}
+
+/* ── Page ──────────────────────────────────────────────────────────────────── */
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { business, staff, activeOperator, hasModule } = useAuthStore();
+  const store = useAuthStore();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // The auth store is persisted in localStorage and the greeting depends on the
+  // viewer's clock, neither of which exists on the server. Use them only after
+  // mount so the server HTML and the first client render match (no hydration error).
+  const business = mounted ? store.business : null;
+  const staff = mounted ? store.staff : null;
+  const activeOperator = mounted ? store.activeOperator : null;
+  const hasModule = (m: Parameters<typeof store.hasModule>[0]) => mounted && store.hasModule(m);
 
   const load = useCallback(async () => {
     try {
@@ -132,6 +207,7 @@ export default function DashboardPage() {
   }, [load]);
 
   const greeting = () => {
+    if (!mounted) return "Welcome";
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
     if (h < 17) return "Good afternoon";
@@ -139,272 +215,380 @@ export default function DashboardPage() {
   };
 
   const activeModules = (["supermarket", "bakery", "bar", "restaurant"] as const).filter((m) => hasModule(m));
+  const moduleTotal = activeModules.reduce((s, m) => s + (data?.revenue.by_module[m] ?? 0), 0);
+  const hourlySpark = (data?.hourly_today ?? []).map((h) => ({ v: h.revenue }));
+  const weekSpark = (data?.last_7_days ?? []).map((d) => ({ v: d.revenue }));
+
+  const alerts = [
+    { icon: <AlertTriangle className="w-4 h-4" />, label: "Low stock items", value: data?.alerts.low_stock ?? 0, accent: "amber" as Accent, href: "/reports/stock" },
+    { icon: <CreditCard className="w-4 h-4" />, label: "Overdue credits", value: data?.alerts.overdue_credits ?? 0, accent: "red" as Accent, href: "/credits" },
+    { icon: <Beer className="w-4 h-4" />, label: "Open bar tabs", value: data?.alerts.open_tabs ?? 0, accent: "blue" as Accent, href: "/bar/tables", show: hasModule("bar") },
+  ].filter((a) => a.show !== false);
+
+  const actions = [
+    { label: "New Sale", href: "/supermarket/pos", icon: <ShoppingCart className="w-4 h-4" />, show: hasModule("supermarket") },
+    { label: "Log Production", href: "/bakery/production", icon: <ChefHat className="w-4 h-4" />, show: hasModule("bakery") },
+    { label: "View Reports", href: "/reports", icon: <TrendingUp className="w-4 h-4" />, show: true },
+    { label: "Add Credit", href: "/credits", icon: <CreditCard className="w-4 h-4" />, show: true },
+  ].filter((a) => a.show);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">
-          {greeting()}, {(activeOperator?.name ?? staff?.name)?.split(" ")[0] ?? "there"} 👋
-        </h1>
-        <p className="text-slate-400 text-sm mt-0.5">
-          {business?.name ?? "Your business"} · {new Date().toLocaleDateString("en-RW", { weekday: "long", month: "long", day: "numeric" })}
-        </p>
-      </div>
+    <MotionConfig reducedMotion="user">
+      <div className="relative isolate -m-4 md:-m-6 min-h-full p-4 md:p-6">
+        <AuroraBackground />
 
-      {/* AI Briefing */}
-      <AIBriefingCard />
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-6">
+          {/* Header */}
+          <motion.div variants={riseIn} className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent">
+                  {greeting()}, {(activeOperator?.name ?? staff?.name)?.split(" ")[0] ?? "there"}
+                </span>{" "}
+                <span aria-hidden>👋</span>
+              </h1>
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-400">
+                <CalendarDays className="w-3.5 h-3.5" />
+                {business?.name ?? "Your business"}
+                {mounted && <> · {new Date().toLocaleDateString("en-RW", { weekday: "long", month: "long", day: "numeric" })}</>}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 backdrop-blur">
+              <LiveDot /> Live · refreshes every 30s
+            </div>
+          </motion.div>
 
-      {/* Revenue Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <RevCard label="Revenue today" value={formatRWF(data?.revenue.today ?? 0)} change={data?.revenue.today_change} icon={<TrendingUp className="w-5 h-5" />} color="blue" />
-        <RevCard label="This week" value={formatRWF(data?.revenue.week ?? 0)} change={data?.revenue.week_change} icon={<ShoppingCart className="w-5 h-5" />} color="green" />
-        <RevCard label="This month" value={formatRWF(data?.revenue.month ?? 0)} change={data?.revenue.month_change} icon={<Activity className="w-5 h-5" />} color="amber" />
-        <RevCard label={`Outstanding (${data?.credits.count ?? 0} customers)`} value={formatRWF(data?.credits.outstanding ?? 0)} icon={<CreditCard className="w-5 h-5" />} color="red" />
-      </div>
+          {/* AI Briefing */}
+          <AIBriefingCard />
 
-      {/* Module Breakdown */}
-      {activeModules.length > 1 && (
-        <div>
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Today by Module</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {activeModules.map((m) => (
-              <div key={m} className="flex items-center gap-3 p-4 bg-slate-800 border border-slate-700 rounded-xl">
-                <div className={cn("p-2 rounded-lg", MODULE_COLOR[m])}>{MODULE_ICON[m]}</div>
-                <div>
-                  <p className="text-xs text-slate-400">{MODULE_LABEL[m]}</p>
-                  <p className="font-bold text-white text-sm">{formatRWF(data?.revenue.by_module[m] ?? 0)}</p>
+          {/* KPI cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <KpiCard label="Revenue today" value={data?.revenue.today ?? 0} change={data?.revenue.today_change} icon={<TrendingUp className="w-5 h-5" />} accent="blue" spark={hourlySpark} />
+            <KpiCard label="This week" value={data?.revenue.week ?? 0} change={data?.revenue.week_change} icon={<ShoppingCart className="w-5 h-5" />} accent="green" spark={weekSpark} />
+            <KpiCard label="This month" value={data?.revenue.month ?? 0} change={data?.revenue.month_change} icon={<Activity className="w-5 h-5" />} accent="amber" />
+            <KpiCard label={`Outstanding (${data?.credits.count ?? 0} customers)`} value={data?.credits.outstanding ?? 0} icon={<CreditCard className="w-5 h-5" />} accent="red" />
+          </div>
+
+          {/* Module breakdown */}
+          {activeModules.length > 1 && (
+            <motion.div variants={riseIn}>
+              <SectionTitle>Today by Module</SectionTitle>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {activeModules.map((m) => {
+                  const value = data?.revenue.by_module[m] ?? 0;
+                  const share = moduleTotal > 0 ? Math.round((value / moduleTotal) * 100) : 0;
+                  const accent = MODULE_ACCENT[m];
+                  return (
+                    <GlassCard key={m} accent={accent} tilt intensity={6}>
+                      <div className="p-4">
+                        <div className="flex items-center gap-3">
+                          <GlassIcon accent={accent} className="h-9 w-9">{MODULE_ICON[m]}</GlassIcon>
+                          <div className="min-w-0">
+                            <p className="text-xs text-slate-400">{MODULE_LABEL[m]}</p>
+                            <p className="font-bold text-white text-sm truncate"><CountUp value={value} format={rwf} /></p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
+                            <motion.div
+                              className="h-full rounded-full"
+                              style={{ background: `linear-gradient(90deg, rgba(${ACCENT[accent].glow},0.5), rgb(${ACCENT[accent].glow}))` }}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${share}%` }}
+                              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                            />
+                          </div>
+                          <span className={cn("text-[11px] font-semibold tabular-nums", ACCENT[accent].text)}>{share}%</span>
+                        </div>
+                      </div>
+                    </GlassCard>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Revenue chart + attention / actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <GlassCard accent="blue" className="lg:col-span-2">
+              <div className="flex h-full flex-col p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-semibold text-white flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-blue-300" /> Revenue Last 7 Days
+                  </h2>
+                  <span className="text-xs text-slate-400">RWF</span>
+                </div>
+                <div className="min-h-[240px] flex-1">
+                  {mounted && data ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={data.last_7_days} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+                        <defs>
+                          <linearGradient id="rev7" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.45} />
+                            <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="rev7stroke" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="#22d3ee" />
+                            <stop offset="100%" stopColor="#8b5cf6" />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 6" stroke="rgba(148,163,184,0.12)" vertical={false} />
+                        <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+                        <Tooltip {...chartTooltip} formatter={(v: number) => [formatRWF(v), "Revenue"]} />
+                        <Area type="monotone" dataKey="revenue" stroke="url(#rev7stroke)" strokeWidth={2.5} fill="url(#rev7)"
+                          dot={{ r: 3, fill: "#0f172a", stroke: "#60a5fa", strokeWidth: 2 }}
+                          activeDot={{ r: 6, fill: "#60a5fa", stroke: "rgba(96,165,250,0.35)", strokeWidth: 8 }} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-300" /></div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </GlassCard>
 
-      {/* Alerts + Live Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Live Activity Feed */}
-        <div className="lg:col-span-2 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
-            <h2 className="font-semibold text-white flex items-center gap-2">
-              <Activity className="w-4 h-4 text-blue-400" /> Live Transactions
-            </h2>
-            <div className="flex items-center gap-1.5 text-xs text-slate-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              {data?.revenue.transactions_today ?? 0} today
-            </div>
-          </div>
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
-            </div>
-          ) : !data?.recent_transactions.length ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <ShoppingCart className="w-8 h-8 text-slate-600 mb-2" />
-              <p className="text-sm text-slate-400">No transactions yet today</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-700/50">
-              {data.recent_transactions.map((tx) => (
-                <div key={tx.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-700/20 transition-colors">
-                  <div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
-                    {MODULE_ICON[tx.module_source ?? ""] ?? <ShoppingCart className="w-4 h-4 text-slate-400" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white capitalize">{MODULE_LABEL[tx.module_source ?? ""] ?? "Sale"}</p>
-                    <p className="text-xs text-slate-400">{tx.cashier_name} · {tx.payment_method.replace("_", " ")}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-bold text-green-400">{formatRWF(tx.total)}</p>
-                    <p className="text-xs text-slate-500">{formatTime(tx.created_at)}</p>
-                  </div>
+            <div className="space-y-4">
+              <div>
+                <SectionTitle>Needs Attention</SectionTitle>
+                <div className="space-y-2.5">
+                  {alerts.map((alert) => {
+                    const hot = alert.value > 0;
+                    return (
+                      <motion.button
+                        key={alert.label}
+                        variants={riseIn}
+                        whileHover={{ x: 3 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => router.push(alert.href)}
+                        className={cn(
+                          "w-full flex items-center gap-3 rounded-2xl border p-3.5 text-left backdrop-blur-xl transition-colors",
+                          hot ? "border-white/15 bg-white/[0.07] hover:bg-white/[0.1]" : "border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06]"
+                        )}
+                        style={hot ? { boxShadow: `0 8px 28px -10px rgba(${ACCENT[alert.accent].glow},0.6)` } : undefined}
+                      >
+                        <GlassIcon accent={hot ? alert.accent : "blue"} className={cn("h-9 w-9", !hot && "opacity-50")}>{alert.icon}</GlassIcon>
+                        <p className="flex-1 text-sm font-medium text-white">{alert.label}</p>
+                        <span className={cn("text-xl font-bold tabular-nums", hot ? ACCENT[alert.accent].text : "text-slate-500")}>{alert.value}</span>
+                      </motion.button>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
 
-        {/* Alerts Panel */}
-        <div className="space-y-3">
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Needs Attention</h2>
-          {[
-            { icon: <AlertTriangle className="w-4 h-4" />, label: "Low stock items", value: data?.alerts.low_stock ?? 0, color: "amber", href: "/reports/stock" },
-            { icon: <CreditCard className="w-4 h-4" />, label: "Overdue credits", value: data?.alerts.overdue_credits ?? 0, color: "red", href: "/credits" },
-            { icon: <Beer className="w-4 h-4" />, label: "Open bar tabs", value: data?.alerts.open_tabs ?? 0, color: "blue", href: "/bar/tables", show: hasModule("bar") },
-          ].filter((a) => a.show !== false).map((alert) => (
-            <button
-              key={alert.label}
-              onClick={() => router.push(alert.href)}
-              className={cn(
-                "w-full flex items-center gap-3 p-4 rounded-xl border transition-all text-left hover:scale-[1.01]",
-                alert.value > 0
-                  ? alert.color === "red" ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" : alert.color === "amber" ? "bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10" : "bg-blue-500/5 border-blue-500/20 hover:bg-blue-500/10"
-                  : "bg-slate-800 border-slate-700 hover:bg-slate-700/50"
+              <div>
+                <SectionTitle>Quick Actions</SectionTitle>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {actions.map((action) => (
+                    <motion.button
+                      key={action.href}
+                      variants={riseIn}
+                      whileHover={{ y: -3 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => router.push(action.href)}
+                      className="group/a flex flex-col items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.05] p-3.5 text-left text-sm font-medium text-white backdrop-blur-xl transition-colors hover:border-blue-400/30 hover:bg-blue-500/10"
+                    >
+                      <span className="text-blue-300">{action.icon}</span>
+                      <span className="flex w-full items-center">
+                        {action.label}
+                        <ArrowRight className="w-3.5 h-3.5 ml-auto text-slate-500 transition-all group-hover/a:translate-x-0.5 group-hover/a:text-blue-300" />
+                      </span>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Live transactions + hourly */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <GlassCard accent="green" className="lg:col-span-2">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+                <h2 className="font-semibold text-white flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-emerald-300" /> Live Transactions
+                </h2>
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <LiveDot /> {data?.revenue.transactions_today ?? 0} today
+                </div>
+              </div>
+              {loading ? (
+                <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-blue-300" /></div>
+              ) : !data?.recent_transactions.length ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <ShoppingCart className="w-8 h-8 text-slate-600 mb-2" />
+                  <p className="text-sm text-slate-400">No transactions yet today</p>
+                </div>
+              ) : (
+                <div className="max-h-[360px] overflow-y-auto">
+                  <AnimatePresence initial={false}>
+                    {data.recent_transactions.map((tx) => {
+                      const accent = MODULE_ACCENT[tx.module_source ?? ""] ?? "blue";
+                      return (
+                        <motion.div
+                          key={tx.id}
+                          layout
+                          initial={{ opacity: 0, x: -12, backgroundColor: "rgba(34,197,94,0.12)" }}
+                          animate={{ opacity: 1, x: 0, backgroundColor: "rgba(34,197,94,0)" }}
+                          transition={{ duration: 0.6 }}
+                          className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.03]"
+                        >
+                          <GlassIcon accent={accent} className="h-8 w-8 rounded-lg">
+                            {MODULE_ICON[tx.module_source ?? ""] ?? <ShoppingCart className="w-4 h-4" />}
+                          </GlassIcon>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white capitalize">{MODULE_LABEL[tx.module_source ?? ""] ?? "Sale"}</p>
+                            <p className="text-xs text-slate-400">{tx.cashier_name} · {tx.payment_method.replace("_", " ")}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm font-bold text-emerald-300 tabular-nums">{formatRWF(tx.total)}</p>
+                            <p className="text-xs text-slate-500">{formatTime(tx.created_at)}</p>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
               )}
-            >
-              <div className={cn("p-2 rounded-lg",
-                alert.value > 0
-                  ? alert.color === "red" ? "bg-red-500/10 text-red-400" : alert.color === "amber" ? "bg-amber-500/10 text-amber-400" : "bg-blue-500/10 text-blue-400"
-                  : "bg-slate-700 text-slate-400"
-              )}>
-                {alert.icon}
+            </GlassCard>
+
+            <GlassCard accent="green">
+              <div className="p-5">
+                <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-emerald-300" /> Today by Hour
+                </h2>
+                <div className="h-[260px]">
+                  {mounted && data ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.hourly_today.filter((_, i) => i % 2 === 0 || data.hourly_today[i].revenue > 0)} margin={{ top: 8, right: 4, bottom: 0, left: -12 }}>
+                        <defs>
+                          <linearGradient id="hourBar" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#34d399" stopOpacity={0.95} />
+                            <stop offset="100%" stopColor="#059669" stopOpacity={0.25} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 6" stroke="rgba(148,163,184,0.12)" vertical={false} />
+                        <XAxis dataKey="hour" tick={{ fill: "#94a3b8", fontSize: 9 }} interval={3} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+                        <Tooltip {...chartTooltip} formatter={(v: number) => [formatRWF(v), "Revenue"]} />
+                        <Bar dataKey="revenue" fill="url(#hourBar)" radius={[6, 6, 2, 2]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-emerald-300" /></div>
+                  )}
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-white">{alert.label}</p>
+            </GlassCard>
+          </div>
+
+          {/* Staff on shift */}
+          {(data?.staff_on_shift?.length ?? 0) > 0 && (
+            <GlassCard accent="green">
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <LiveDot />
+                  <h2 className="text-sm font-semibold text-emerald-300">
+                    {data!.staff_on_shift.length} staff currently on shift
+                  </h2>
+                  <button onClick={() => router.push("/reports/shifts")} className="ml-auto text-xs text-emerald-400/80 hover:text-emerald-300 transition-colors flex items-center gap-1">
+                    View all shifts <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {data!.staff_on_shift.map((s, i) => {
+                    const sinceMin = Math.floor((Date.now() - new Date(s.since).getTime()) / 60_000);
+                    const sinceLabel = sinceMin >= 60 ? `${Math.floor(sinceMin / 60)}h ${sinceMin % 60}m` : `${sinceMin}m`;
+                    return (
+                      <motion.div
+                        key={s.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.05 * i }}
+                        className="flex items-center gap-2 rounded-xl border border-emerald-400/15 bg-white/[0.04] px-3 py-2 backdrop-blur"
+                      >
+                        <div className="relative w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400/40 to-emerald-600/20 ring-1 ring-emerald-400/30 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-bold text-emerald-200">{s.name[0]}</span>
+                          <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-slate-900" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-white">{s.name}</p>
+                          <p className="text-[10px] text-slate-400 capitalize">{s.role} · {sinceLabel}</p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
-              <span className={cn("text-xl font-bold", alert.value > 0 ? alert.color === "red" ? "text-red-400" : alert.color === "amber" ? "text-amber-400" : "text-blue-400" : "text-slate-500")}>
-                {alert.value}
-              </span>
-            </button>
-          ))}
-
-          {/* Quick Actions */}
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest pt-1">Quick Actions</h2>
-          <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-            {[
-              { label: "New Sale", href: "/supermarket/pos", icon: <ShoppingCart className="w-4 h-4" />, show: hasModule("supermarket") },
-              { label: "Log Production", href: "/bakery/production", icon: <ChefHat className="w-4 h-4" />, show: hasModule("bakery") },
-              { label: "View Reports", href: "/reports", icon: <TrendingUp className="w-4 h-4" />, show: true },
-              { label: "Add Credit", href: "/credits", icon: <CreditCard className="w-4 h-4" />, show: true },
-            ].filter((a) => a.show).map((action, i) => (
-              <button
-                key={action.href}
-                onClick={() => router.push(action.href)}
-                className={cn("w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-white hover:bg-slate-700/40 transition-colors text-left", i > 0 && "border-t border-slate-700/60")}
-              >
-                <span className="text-slate-400">{action.icon}</span>
-                {action.label}
-                <ArrowRight className="w-3.5 h-3.5 text-slate-600 ml-auto" />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Charts */}
-      {mounted && data && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Last 7 days */}
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-            <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-400" /> Revenue Last 7 Days
-            </h2>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={data.last_7_days}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 10 }} />
-                <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
-                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} formatter={(v: number) => [formatRWF(v), "Revenue"]} />
-                <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6", r: 3 }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Today hourly */}
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-            <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-green-400" /> Today by Hour
-            </h2>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={data.hourly_today.filter((_, i) => i % 2 === 0 || data.hourly_today[i].revenue > 0)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="hour" tick={{ fill: "#94a3b8", fontSize: 9 }} interval={3} />
-                <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
-                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} formatter={(v: number) => [formatRWF(v), "Revenue"]} />
-                <Bar dataKey="revenue" fill="#22c55e" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* Staff on Shift — live indicator */}
-      {(data?.staff_on_shift?.length ?? 0) > 0 && (
-        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
-            <h2 className="text-sm font-semibold text-green-400">
-              {data!.staff_on_shift.length} staff currently on shift
-            </h2>
-            <button onClick={() => router.push("/reports/shifts")} className="ml-auto text-xs text-green-600 hover:text-green-400 transition-colors flex items-center gap-1">
-              View all shifts <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {data!.staff_on_shift.map((s) => {
-              const sinceMs  = Date.now() - new Date(s.since).getTime();
-              const sinceMin = Math.floor(sinceMs / 60_000);
-              const sinceLabel = sinceMin >= 60 ? `${Math.floor(sinceMin / 60)}h ${sinceMin % 60}m` : `${sinceMin}m`;
-              return (
-                <div key={s.id} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/60 border border-green-500/10">
-                  <div className="w-7 h-7 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-green-400">{s.name[0]}</span>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-white">{s.name}</p>
-                    <p className="text-[10px] text-slate-400 capitalize">{s.role} · {sinceLabel}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Bottom grid: top sellers + staff on duty */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Top sellers */}
-        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-700">
-            <h2 className="font-semibold text-white flex items-center gap-2"><Package className="w-4 h-4 text-amber-400" /> Top Sellers Today</h2>
-          </div>
-          {!data?.top_sellers_today.length ? (
-            <div className="flex flex-col items-center justify-center py-10 text-slate-500 text-sm">
-              <Package className="w-6 h-6 mb-2 text-slate-600" />No sales yet
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-700/50">
-              {data.top_sellers_today.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 px-5 py-3">
-                  <span className="text-slate-500 text-xs w-5 text-center font-bold">{i + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                    <p className="text-xs text-slate-400 capitalize">{item.module} · {item.quantity} units</p>
-                  </div>
-                  <p className="text-sm font-bold text-green-400">{formatRWF(item.revenue)}</p>
-                </div>
-              ))}
-            </div>
+            </GlassCard>
           )}
-        </div>
 
-        {/* Staff on duty */}
-        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-700">
-            <h2 className="font-semibold text-white flex items-center gap-2"><Users className="w-4 h-4 text-purple-400" /> Staff Activity Today</h2>
-          </div>
-          {!data?.staff_on_duty.length ? (
-            <div className="flex flex-col items-center justify-center py-10 text-slate-500 text-sm">
-              <Users className="w-6 h-6 mb-2 text-slate-600" />No staff activity yet
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-700/50">
-              {data.staff_on_duty.map((s) => (
-                <div key={s.id} className="flex items-center gap-3 px-5 py-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-blue-400">{s.name[0]}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white">{s.name}</p>
-                    <p className="text-xs text-slate-400 capitalize">{s.role} · {s.transactions} transactions</p>
-                  </div>
-                  <p className="text-sm font-semibold text-white">{formatRWF(s.revenue)}</p>
+          {/* Top sellers + staff activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <GlassCard accent="amber">
+              <div className="px-5 py-4 border-b border-white/[0.06]">
+                <h2 className="font-semibold text-white flex items-center gap-2"><Package className="w-4 h-4 text-amber-300" /> Top Sellers Today</h2>
+              </div>
+              {!data?.top_sellers_today.length ? (
+                <div className="flex flex-col items-center justify-center py-10 text-slate-500 text-sm">
+                  <Package className="w-6 h-6 mb-2 text-slate-600" />No sales yet
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              ) : (
+                <div>
+                  {data.top_sellers_today.map((item, i) => {
+                    const max = Math.max(1, ...data.top_sellers_today.map((t) => t.revenue));
+                    return (
+                      <div key={i} className="relative flex items-center gap-3 px-5 py-3 border-b border-white/[0.04] last:border-0">
+                        <motion.div
+                          aria-hidden
+                          className="absolute inset-y-1 left-0 rounded-r-xl bg-gradient-to-r from-amber-400/[0.10] to-transparent"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.max(8, (item.revenue / max) * 100)}%` }}
+                          transition={{ duration: 0.9, delay: 0.05 * i, ease: [0.16, 1, 0.3, 1] }}
+                        />
+                        <span className={cn(
+                          "relative flex h-6 w-6 items-center justify-center rounded-lg text-xs font-bold",
+                          i === 0 ? "bg-amber-400/20 text-amber-300 ring-1 ring-amber-400/30" : "text-slate-500"
+                        )}>{i + 1}</span>
+                        <div className="relative flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white truncate">{item.name}</p>
+                          <p className="text-xs text-slate-400 capitalize">{item.module} · {item.quantity} units</p>
+                        </div>
+                        <p className="relative text-sm font-bold text-emerald-300 tabular-nums">{formatRWF(item.revenue)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </GlassCard>
+
+            <GlassCard accent="purple">
+              <div className="px-5 py-4 border-b border-white/[0.06]">
+                <h2 className="font-semibold text-white flex items-center gap-2"><Users className="w-4 h-4 text-violet-300" /> Staff Activity Today</h2>
+              </div>
+              {!data?.staff_on_duty.length ? (
+                <div className="flex flex-col items-center justify-center py-10 text-slate-500 text-sm">
+                  <Users className="w-6 h-6 mb-2 text-slate-600" />No staff activity yet
+                </div>
+              ) : (
+                <div>
+                  {data.staff_on_duty.map((s) => (
+                    <div key={s.id} className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.03] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400/40 to-blue-500/20 ring-1 ring-violet-400/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-violet-100">{s.name[0]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white">{s.name}</p>
+                        <p className="text-xs text-slate-400 capitalize">{s.role} · {s.transactions} transactions</p>
+                      </div>
+                      <p className="text-sm font-semibold text-white tabular-nums">{formatRWF(s.revenue)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </GlassCard>
+          </div>
+        </motion.div>
       </div>
-    </div>
+    </MotionConfig>
   );
 }
