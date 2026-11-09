@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, Shield, Zap } from "lucide-react";
 
@@ -49,6 +50,11 @@ export default function LoginPage() {
         toast.error(error.message);
         return;
       }
+
+      // A full email login starts a fresh session: drop any leftover PIN operator
+      // (cookie + store), otherwise the server keeps acting as that operator.
+      await fetch("/api/auth/pin-login", { method: "DELETE" }).catch(() => {});
+      useAuthStore.getState().clearOperator();
 
       // Check if 2FA is enabled for this account
       const checkRes = await fetch("/api/auth/2fa/check");

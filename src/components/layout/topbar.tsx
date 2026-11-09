@@ -33,6 +33,9 @@ export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   }, []);
 
   const handleLogout = async () => {
+    // Clear any PIN-operator cookie too, or the next person to log in on this
+    // device is treated by the server as that operator.
+    await fetch("/api/auth/pin-login", { method: "DELETE" }).catch(() => {});
     const supabase = createClient();
     await supabase.auth.signOut();
     reset();

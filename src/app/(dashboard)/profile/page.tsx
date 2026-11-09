@@ -52,6 +52,8 @@ export default function ProfilePage() {
   };
 
   const handleLogout = async () => {
+    // Clear any PIN-operator cookie too (see topbar logout).
+    await fetch("/api/auth/pin-login", { method: "DELETE" }).catch(() => {});
     const supabase = createClient();
     await supabase.auth.signOut();
     reset();
