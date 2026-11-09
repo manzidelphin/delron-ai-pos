@@ -13,9 +13,12 @@ export async function getAuthContext(): Promise<
   | { businessId: null; branchId: null; staffId: null; ownerStaffId: null; role: null; error: NextResponse }
 > {
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifies the session JWT locally when the project uses asymmetric
+  // signing keys (no network call); otherwise it falls back to getUser(). Only the
+  // user id is needed here. The middleware still calls getUser() on every request.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+  const user = userId ? { id: userId } : null;
 
   const cookieStore = cookies();
 

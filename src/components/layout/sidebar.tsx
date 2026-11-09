@@ -75,6 +75,10 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
               )}
               <button
                 onClick={() => router.push(item.href)}
+                // Start loading the page as soon as the pointer/finger is on the item.
+                onMouseEnter={() => router.prefetch(item.href)}
+                onTouchStart={() => router.prefetch(item.href)}
+                onFocus={() => router.prefetch(item.href)}
                 title={!isOpen ? (item.labelFn ? item.labelFn(hasModule) : item.label) : undefined}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",

@@ -23,9 +23,10 @@ export default async function DashboardLayout({
   }
 
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Only "is someone signed in?" is needed here; getClaims() avoids a network
+  // round trip when the JWT can be verified locally (middleware already ran getUser()).
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims?.sub ? { id: claimsData.claims.sub } : null;
 
   if (!user) {
     // Allow PIN-authenticated operators (cashiers on dedicated POS devices).

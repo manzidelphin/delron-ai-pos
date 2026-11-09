@@ -3,10 +3,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  console.log(
-    "[middleware] path:", pathname,
-    "| pos_operator:", request.cookies.get("pos_operator")?.value ?? "(not present)"
-  );
 
   // Forward pathname as a request header so Server Component layouts can read it
   const requestHeaders = new Headers(request.headers);
@@ -133,6 +129,20 @@ export async function updateSession(request: NextRequest) {
   // check if their business is suspended and redirect to /account-suspended.
   // Platform admins are excluded; impersonating admins pass through (they need access
   // to suspended businesses to help resolve billing issues).
+  // One query for the user's staff row + business status; reused for the device stamp below.
+  let staffBusinessId: string | null | undefined; // undefined = not looked up yet
+  const lookupStaff = async () => {
+    const { data } = await supabase
+      .from("staff")
+      .select("business_id, businesses(subscription_status)")
+      .eq("user_id", user!.id)
+      .eq("is_active", true)
+      .maybeSingle();
+    staffBusinessId = data?.business_id ?? null;
+    const biz = data?.businesses as { subscription_status?: string } | { subscription_status?: string }[] | null | undefined;
+    return Array.isArray(biz) ? biz[0]?.subscription_status : biz?.subscription_status;
+  };
+
   if (
     user &&
     !isPublicRoute &&
@@ -140,47 +150,29 @@ export async function updateSession(request: NextRequest) {
     !pathname.startsWith("/admin") &&
     pathname !== "/account-suspended"
   ) {
-    // Allow platform admins through unconditionally
-    const { data: adminRecord } = await supabase
-      .from("platform_admins")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    // Impersonating admins pass through (they need access to suspended businesses).
+    const impCookie = request.cookies.get("admin_impersonation")?.value;
+    let isImpersonating = false;
+    if (impCookie) {
+      try {
+        const imp = JSON.parse(impCookie) as { target_business_id?: string };
+        isImpersonating = !!imp.target_business_id;
+      } catch { /* ignore */ }
+    }
 
-    if (!adminRecord) {
-      // Check for active impersonation (admin viewing a suspended business — let through)
-      const impCookie = request.cookies.get("admin_impersonation")?.value;
-      let isImpersonating = false;
-      if (impCookie) {
-        try {
-          const imp = JSON.parse(impCookie) as { target_business_id?: string };
-          isImpersonating = !!imp.target_business_id;
-        } catch { /* ignore */ }
-      }
+    if (!isImpersonating && (await lookupStaff()) === "suspended") {
+      // Platform admins are exempt — only checked in the rare suspended case.
+      const { data: adminRecord } = await supabase
+        .from("platform_admins")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      if (!isImpersonating) {
-        // Look up user's business subscription status
-        const { data: staffRecord } = await supabase
-          .from("staff")
-          .select("business_id")
-          .eq("user_id", user.id)
-          .eq("is_active", true)
-          .maybeSingle();
-
-        if (staffRecord?.business_id) {
-          const { data: bizStatus } = await supabase
-            .from("businesses")
-            .select("subscription_status")
-            .eq("id", staffRecord.business_id)
-            .single();
-
-          if (bizStatus?.subscription_status === "suspended") {
-            console.log("[middleware] Suspended business → /account-suspended for user:", user.id);
-            const url = request.nextUrl.clone();
-            url.pathname = "/account-suspended";
-            return NextResponse.redirect(url);
-          }
-        }
+      if (!adminRecord) {
+        console.log("[middleware] Suspended business → /account-suspended for user:", user.id);
+        const url = request.nextUrl.clone();
+        url.pathname = "/account-suspended";
+        return NextResponse.redirect(url);
       }
     }
   }
@@ -188,12 +180,8 @@ export async function updateSession(request: NextRequest) {
   // Stamp this device with the owner's businessId so /pos-login works without a session
   if (user && !request.cookies.get("pos_business_id")?.value) {
     try {
-      const { data: staffRecord } = await supabase
-        .from("staff")
-        .select("business_id")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .single();
+      if (staffBusinessId === undefined) await lookupStaff();
+      const staffRecord = staffBusinessId ? { business_id: staffBusinessId } : null;
       if (staffRecord?.business_id) {
         supabaseResponse.cookies.set("pos_business_id", staffRecord.business_id, {
           httpOnly: false,
