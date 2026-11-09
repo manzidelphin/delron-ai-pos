@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
-import { barSale } from "@/lib/bar";
+import { barSale, needsBarPreparation } from "@/lib/bar";
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const auth = await getAuthContext();
@@ -127,6 +127,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       unit_price,
       total_price: line_total,
       notes: isShot ? "served as shot" : null,
+      // Only cocktails and shots wait on the Bar KDS; the rest is handed straight over.
+      status: needsBarPreparation(item.category, isShot) ? "pending" : "served",
     })
     .select()
     .single();

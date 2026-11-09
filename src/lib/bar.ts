@@ -13,6 +13,15 @@ export function isShotItem(item: ShotFields): boolean {
   return Number(item.shots_per_bottle ?? 0) > 1 && Number(item.price_per_shot ?? 0) > 0;
 }
 
+/**
+ * Drinks the bartender has to make go to the Bar KDS: cocktails and shots.
+ * Everything else (bottles of beer, soft drinks, whole bottles) is simply handed
+ * over, so it's saved as already served and never clutters the display.
+ */
+export function needsBarPreparation(category: string | null | undefined, servedAsShot: boolean): boolean {
+  return servedAsShot || (category ?? "").trim().toLowerCase() === "cocktail";
+}
+
 export interface BarStock extends ShotFields {
   price_per_bottle: number | string;
   quantity_bottles: number | string;

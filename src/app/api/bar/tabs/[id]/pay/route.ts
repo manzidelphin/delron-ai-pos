@@ -65,13 +65,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       .eq("id", tab.table_id);
   }
 
-  // Auto-mark any still-pending food items as served so the KDS clears them.
-  // Payment implies the transaction is complete regardless of kitchen status.
+  // Auto-mark everything still waiting (food AND drinks) as served so both the
+  // kitchen and bar displays clear it. Payment means the tab is done.
   await supabase
     .from("order_items")
     .update({ status: "served" })
     .eq("order_id", params.id)
-    .eq("item_type", "menu_item")
     .in("status", ["pending", "preparing", "ready"]);
 
   // Fetch all items for receipt

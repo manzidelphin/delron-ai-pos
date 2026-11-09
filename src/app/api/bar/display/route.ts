@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
+import { needsBarPreparation } from "@/lib/bar";
 
 export async function GET() {
   const auth = await getAuthContext();
@@ -11,11 +12,13 @@ export async function GET() {
   // .eq("orders.business_id", ...) only filters the join result, not the parent rows —
   // all order_items across every business would still return with orders:null for non-matches.
   // Fix: pre-fetch valid order IDs so the filter is on a top-level column.
+  // Only tabs that are still open: paid tabs ("completed") are done, and including
+  // them left every drink ever sold stuck on the display.
   const { data: bizOrders } = await supabase
     .from("orders")
     .select("id")
     .eq("business_id", auth.businessId)
-    .in("status", ["open", "pending", "completed"]);
+    .in("status", ["open", "pending"]);
 
   const orderIds = (bizOrders ?? []).map((o) => o.id);
 
@@ -23,18 +26,30 @@ export async function GET() {
     return NextResponse.json({ pending: [], preparing: [], ready: [] });
   }
 
-  const { data: items, error } = await supabase
+  // Drinks only (not food, supermarket or bakery items).
+  const { data: rows, error } = await supabase
     .from("order_items")
     .select("*, orders(table_id, floor_tables(table_number))")
     .in("order_id", orderIds)
+    .eq("item_type", "bar_item")
     .in("status", ["pending", "preparing", "ready"])
     .order("created_at");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const pending = (items ?? []).filter((i) => i.status === "pending");
-  const preparing = (items ?? []).filter((i) => i.status === "preparing");
-  const ready = (items ?? []).filter((i) => i.status === "ready");
+  // Only drinks the bartender has to make: cocktails and shots.
+  const barItemIds = Array.from(new Set((rows ?? []).map((r) => r.item_id).filter(Boolean)));
+  const { data: barItems } = barItemIds.length
+    ? await supabase.from("bar_items").select("id, category").in("id", barItemIds)
+    : { data: [] as Array<{ id: string; category: string | null }> };
+  const categoryById = new Map((barItems ?? []).map((b) => [b.id, b.category]));
+  const items = (rows ?? []).filter((r) =>
+    needsBarPreparation(categoryById.get(r.item_id), (r.notes ?? "").includes("shot"))
+  );
+
+  const pending = items.filter((i) => i.status === "pending");
+  const preparing = items.filter((i) => i.status === "preparing");
+  const ready = items.filter((i) => i.status === "ready");
 
   return NextResponse.json({ pending, preparing, ready });
 }
@@ -57,19 +72,25 @@ export async function PUT(request: NextRequest) {
 
   const supabase = createAdminClient();
 
+  // Verify ownership BEFORE changing anything (it used to update first and check
+  // after, so another business's item could be changed).
+  const { data: existing } = await supabase
+    .from("order_items")
+    .select("id, orders!inner(business_id)")
+    .eq("id", order_item_id)
+    .eq("orders.business_id", auth.businessId)
+    .maybeSingle();
+
+  if (!existing) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+
   const { data, error } = await supabase
     .from("order_items")
     .update({ status })
     .eq("id", order_item_id)
-    .select("*, orders(business_id)")
+    .select()
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Verify ownership
-  if ((data.orders as { business_id: string })?.business_id !== auth.businessId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
 
   return NextResponse.json({ order_item: data });
 }

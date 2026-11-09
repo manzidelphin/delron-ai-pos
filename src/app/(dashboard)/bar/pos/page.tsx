@@ -758,9 +758,11 @@ export default function BarPOSPage() {
       {/* Checkout modal — receipt shown first, payment method chosen after */}
       {checkoutOpen && checkoutData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-0 max-h-[90vh] overflow-y-auto">
-            <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm">
-              <div className="flex items-center justify-between p-4 border-b border-slate-700">
+          {/* Header and payment buttons always visible; only the receipt scrolls if
+              it is taller than the screen (it used to push the buttons off-screen). */}
+          <div className="flex flex-col items-center w-full max-w-sm max-h-full">
+            <div className="glass-card rounded-2xl shadow-2xl w-full flex flex-col max-h-[calc(100vh-2rem)] overflow-hidden">
+              <div className="shrink-0 flex items-center justify-between p-4 border-b border-slate-700">
                 <h2 className="font-bold text-white">{saleComplete ? "Payment Complete" : "Receipt"}</h2>
                 <button
                   onClick={() => {
@@ -774,7 +776,7 @@ export default function BarPOSPage() {
                 </button>
               </div>
 
-              <div className="p-4">
+              <div className="flex-1 min-h-0 overflow-y-auto p-4">
                 <BarReceipt
                   receiptNumber={checkoutData.receiptNumber}
                   businessName={business?.name ?? "My Business"}
@@ -790,7 +792,7 @@ export default function BarPOSPage() {
                 />
               </div>
 
-              <div className="p-4 border-t border-slate-700">
+              <div className="shrink-0 p-4 border-t border-slate-700">
                 {saleComplete ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-center gap-2 text-green-400 font-bold">✅ Payment Complete</div>
