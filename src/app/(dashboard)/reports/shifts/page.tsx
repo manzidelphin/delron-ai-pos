@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useApi } from "@/lib/use-api";
 import { Clock, Users, DollarSign, AlertTriangle, CheckCircle2, RefreshCw, Loader2 } from "lucide-react";
 import { formatRWF } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -54,10 +55,6 @@ function fmtDate(iso: string): string {
 }
 
 export default function ShiftsReportPage() {
-  const [shifts,    setShifts]    = useState<Shift[]>([]);
-  const [staffList, setStaffList] = useState<StaffFilter[]>([]);
-  const [loading,   setLoading]   = useState(true);
-
   const today = new Date().toISOString().split("T")[0];
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString().split("T")[0];
 
@@ -65,24 +62,13 @@ export default function ShiftsReportPage() {
   const [dateTo,    setDateTo]    = useState(today);
   const [staffId,   setStaffId]   = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
-      if (staffId) params.set("staff_id", staffId);
-      const res = await fetch(`/api/shifts?${params}`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setShifts(data.shifts ?? []);
-      setStaffList(data.staff_list ?? []);
-    } catch {
-      /* silent */
-    } finally {
-      setLoading(false);
-    }
-  }, [dateFrom, dateTo, staffId]);
-
-  useEffect(() => { load(); }, [load]);
+  // Cached per filter combination; errors stay silent as before.
+  const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
+  if (staffId) params.set("staff_id", staffId);
+  const { data, isLoading: loading, mutate } = useApi<{ shifts?: Shift[]; staff_list?: StaffFilter[] }>(`/api/shifts?${params}`);
+  const shifts = data?.shifts ?? [];
+  const staffList = data?.staff_list ?? [];
+  const load = useCallback(() => { mutate(); }, [mutate]);
 
   const activeShifts  = shifts.filter((s) => s.status === "active");
   const endedShifts   = shifts.filter((s) => s.status === "ended");

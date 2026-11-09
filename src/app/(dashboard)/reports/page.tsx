@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useApi } from "@/lib/use-api";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
 import { formatRWF } from "@/lib/utils";
@@ -87,28 +87,18 @@ const REPORT_CARDS = [
 export default function ReportsHubPage() {
   const router = useRouter();
   const { hasModule, business } = useAuthStore();
-  const [stats, setStats] = useState<QuickStats | null>(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const [salesRes, stockRes] = await Promise.all([
-          fetch(`/api/reports/sales?from=${new Date().toISOString().split("T")[0]}&to=${new Date().toISOString().split("T")[0]}`),
-          fetch("/api/reports/stock"),
-        ]);
-        const salesData = await salesRes.json();
-        const stockData = await stockRes.json();
-
-        setStats({
-          revenue_today: salesData.kpis?.total_revenue ?? 0,
-          transactions_today: salesData.kpis?.total_transactions ?? 0,
-          top_product: salesData.top_products?.[0]?.item_name ?? "—",
-          low_stock_count: (stockData.summary?.supermarket_low ?? 0) + (stockData.summary?.bar_low ?? 0) + (stockData.summary?.materials_low ?? 0),
-        });
-      } catch {}
-    }
-    load();
-  }, []);
+  // Cached between visits (same two requests as before, in parallel).
+  const today = new Date().toISOString().split("T")[0];
+  type SalesSummary = { kpis?: { total_revenue?: number; total_transactions?: number }; top_products?: Array<{ item_name?: string }> };
+  type StockSummary = { summary?: { supermarket_low?: number; bar_low?: number; materials_low?: number } };
+  const { data: salesData } = useApi<SalesSummary>(`/api/reports/sales?from=${today}&to=${today}`);
+  const { data: stockData } = useApi<StockSummary>("/api/reports/stock");
+  const stats: QuickStats | null = salesData && stockData ? {
+    revenue_today: salesData.kpis?.total_revenue ?? 0,
+    transactions_today: salesData.kpis?.total_transactions ?? 0,
+    top_product: salesData.top_products?.[0]?.item_name ?? "—",
+    low_stock_count: (stockData.summary?.supermarket_low ?? 0) + (stockData.summary?.bar_low ?? 0) + (stockData.summary?.materials_low ?? 0),
+  } : null;
 
   const visibleCards = REPORT_CARDS.filter(
     (c) => !c.module || hasModule(c.module)

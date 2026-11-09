@@ -8,6 +8,7 @@ import { cn, getInitials } from "@/lib/utils";
 import { Menu, Bell, Sun, Moon, LogOut, ChevronDown, MapPin } from "lucide-react";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
+import { clearApiCache } from "@/lib/use-api";
 
 export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
     const supabase = createClient();
     await supabase.auth.signOut();
     reset();
+    await clearApiCache(); // never show this business's cached figures to the next user
     toast.success("Logged out successfully");
     router.push("/login");
   };

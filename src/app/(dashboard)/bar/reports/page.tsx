@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useMemo, useState } from "react";
+import { useApi } from "@/lib/use-api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, ShoppingBag, AlertTriangle } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
@@ -23,8 +24,6 @@ interface ReportData {
 }
 
 export default function BarReportsPage() {
-  const [data, setData] = useState<ReportData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 7);
@@ -32,22 +31,20 @@ export default function BarReportsPage() {
   });
   const [to, setTo] = useState(() => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" }));
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // Cached per date range. A half-typed date (invalid) simply waits instead of erroring.
+  const url = useMemo(() => {
     try {
       const fromISO = new Date(`${from}T00:00:00+02:00`).toISOString();
       const toISO   = new Date(`${to}T23:59:59+02:00`).toISOString();
-      const res = await fetch(`/api/bar/reports?from=${fromISO}&to=${toISO}`);
-      const json = await res.json();
-      setData(json);
+      return `/api/bar/reports?from=${fromISO}&to=${toISO}`;
     } catch {
-      toast.error("Failed to load reports");
-    } finally {
-      setLoading(false);
+      return null;
     }
   }, [from, to]);
-
-  useEffect(() => { load(); }, [load]);
+  const { data: swrData, isLoading: loading } = useApi<ReportData>(url, {
+    onError: () => toast.error("Failed to load reports"),
+  });
+  const data = swrData ?? null;
 
   return (
     <div className="p-6 space-y-6">

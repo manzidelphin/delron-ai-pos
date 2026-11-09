@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useApi } from "@/lib/use-api";
 import { StatCard } from "@/components/ui/stat-card";
 import { DateRangeFilter } from "@/components/reports/date-range-filter";
 import { formatRWF } from "@/lib/utils";
@@ -39,24 +40,11 @@ const ROLE_BADGE: Record<string, string> = {
 export default function StaffReportPage() {
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
-  const [data, setData] = useState<StaffData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/reports/staff?from=${from}&to=${to}`);
-      if (!res.ok) throw new Error();
-      setData(await res.json());
-    } catch {
-      toast.error("Failed to load staff report");
-    } finally {
-      setLoading(false);
-    }
-  }, [from, to]);
-
-  useEffect(() => { load(); }, [load]);
+  // Cached per date range: returning to a range shows it instantly, then refreshes.
+  const { data: swrData, isLoading: loading } = useApi<StaffData>(`/api/reports/staff?from=${from}&to=${to}`, { onError: () => toast.error("Failed to load staff report") });
+  const data = swrData ?? null;
 
   const handleExportPDF = async () => {
     if (!data) return;

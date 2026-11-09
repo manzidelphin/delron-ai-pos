@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/auth-store";
+import { useApi } from "@/lib/use-api";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { formatRWF } from "@/lib/utils";
@@ -39,34 +39,16 @@ interface DashboardData {
 
 export default function BakeryDashboard() {
   const { isLoaded } = useAuthStore();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [finishedGoods, setFinishedGoods] = useState<Array<{ id: string; name: string; quantity: number }>>([]);
-  const [upcomingOrders, setUpcomingOrders] = useState<UpcomingCustomOrder[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Cached between visits (three requests in parallel, as before).
+  const dash = useApi<DashboardData>(isLoaded ? "/api/bakery/dashboard" : null);
+  const items = useApi<{ items?: Array<{ id: string; name: string; quantity: number }> }>(isLoaded ? "/api/bakery/finished-goods" : null);
+  const orders = useApi<{ orders?: UpcomingCustomOrder[] }>(isLoaded ? "/api/bakery/custom-orders?filter=active" : null);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [dashRes, itemsRes, ordersRes] = await Promise.all([
-        fetch("/api/bakery/dashboard"),
-        fetch("/api/bakery/finished-goods"),
-        fetch("/api/bakery/custom-orders?filter=active"),
-      ]);
-      if (dashRes.ok) setData(await dashRes.json());
-      if (itemsRes.ok) {
-        const json = await itemsRes.json();
-        setFinishedGoods(json.items ?? []);
-      }
-      if (ordersRes.ok) {
-        const json = await ordersRes.json();
-        setUpcomingOrders((json.orders ?? []).slice(0, 5));
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { if (isLoaded) load(); }, [isLoaded, load]);
+  const data = dash.data ?? null;
+  const finishedGoods = items.data?.items ?? [];
+  const upcomingOrders = (orders.data?.orders ?? []).slice(0, 5);
+  const isLoading = !isLoaded || dash.isLoading || items.isLoading || orders.isLoading;
+  const load = () => { dash.mutate(); items.mutate(); orders.mutate(); };
 
   const stats = data?.stats;
 

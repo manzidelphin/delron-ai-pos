@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useApi } from "@/lib/use-api";
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -43,27 +44,14 @@ interface BarData {
 export default function BarReportPage() {
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
-  const [data, setData] = useState<BarData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/reports/bar?from=${from}&to=${to}`);
-      if (!res.ok) throw new Error();
-      setData(await res.json());
-    } catch {
-      toast.error("Failed to load bar report");
-    } finally {
-      setLoading(false);
-    }
-  }, [from, to]);
-
-  useEffect(() => { load(); }, [load]);
+  // Cached per date range: returning to a range shows it instantly, then refreshes.
+  const { data: swrData, isLoading: loading } = useApi<BarData>(`/api/reports/bar?from=${from}&to=${to}`, { onError: () => toast.error("Failed to load bar report") });
+  const data = swrData ?? null;
 
   const handleExportPDF = async () => {
     if (!data) return;

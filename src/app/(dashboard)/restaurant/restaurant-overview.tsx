@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useApi } from "@/lib/use-api";
 import { UtensilsCrossed, ChefHat, Monitor, RefreshCw, Clock, TrendingUp } from "lucide-react";
 import { formatRWF } from "@/lib/utils";
 import { toast } from "sonner";
@@ -18,36 +18,19 @@ interface DashboardData {
 export default function RestaurantDashboardPage() {
   const { business } = useAuthStore();
   const { openDisplay } = useCustomerDisplay(business?.id);
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Cached between visits.
+  const onError = () => toast.error("Failed to load restaurant data");
+  const menu = useApi<{ items?: Array<{ is_active: boolean }> }>("/api/restaurant/menu", { onError });
+  const kds = useApi<{ pending?: unknown[]; preparing?: unknown[] }>("/api/restaurant/kds", { onError });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [menuRes, kdsRes] = await Promise.all([
-        fetch("/api/restaurant/menu"),
-        fetch("/api/restaurant/kds"),
-      ]);
-      const [menuJson, kdsJson] = await Promise.all([menuRes.json(), kdsRes.json()]);
-
-      const activeItems = (menuJson.items ?? []).filter((i: { is_active: boolean }) => i.is_active).length;
-      const pending     = (kdsJson.pending  ?? []).length;
-      const preparing   = (kdsJson.preparing ?? []).length;
-
-      setData({
-        menu_items_count: activeItems,
-        pending_orders:   pending + preparing,
-        today_revenue:    0,
-        today_orders:     0,
-      });
-    } catch {
-      toast.error("Failed to load restaurant data");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
+  const loading = menu.isLoading || kds.isLoading;
+  const data: DashboardData | null = menu.data && kds.data ? {
+    menu_items_count: (menu.data.items ?? []).filter((i) => i.is_active).length,
+    pending_orders:   (kds.data.pending ?? []).length + (kds.data.preparing ?? []).length,
+    today_revenue:    0,
+    today_orders:     0,
+  } : null;
+  const load = () => { menu.mutate(); kds.mutate(); };
 
   const QUICK_LINKS = [
     { href: "/restaurant/menu", icon: <UtensilsCrossed className="w-6 h-6" />, label: "Menu Management", desc: "Add, edit, and manage food items with recipes", color: "bg-orange-500/10 border-orange-500/20 hover:border-orange-500/40" },

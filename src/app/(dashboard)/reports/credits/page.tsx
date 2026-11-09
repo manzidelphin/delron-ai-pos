@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useApi } from "@/lib/use-api";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -47,27 +48,14 @@ interface CreditsReportData {
 export default function CreditsReportPage() {
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
-  const [data, setData] = useState<CreditsReportData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/reports/credits?from=${from}&to=${to}`);
-      if (!res.ok) throw new Error();
-      setData(await res.json());
-    } catch {
-      toast.error("Failed to load credit report");
-    } finally {
-      setLoading(false);
-    }
-  }, [from, to]);
-
-  useEffect(() => { load(); }, [load]);
+  // Cached per date range: returning to a range shows it instantly, then refreshes.
+  const { data: swrData, isLoading: loading } = useApi<CreditsReportData>(`/api/reports/credits?from=${from}&to=${to}`, { onError: () => toast.error("Failed to load credit report") });
+  const data = swrData ?? null;
 
   const handleExportPDF = async () => {
     if (!data) return;

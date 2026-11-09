@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useApi } from "@/lib/use-api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Wine, Users, TrendingUp, AlertTriangle, RefreshCw } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
@@ -20,23 +20,11 @@ interface DashboardData {
 }
 
 export default function BarDashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/bar/dashboard");
-      const json = await res.json();
-      setData(json);
-    } catch {
-      toast.error("Failed to load dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { load(); }, []);
+  // Cached between visits: shows the last figures instantly, refreshes in the background.
+  const { data, isLoading: loading, mutate } = useApi<DashboardData>("/api/bar/dashboard", {
+    onError: () => toast.error("Failed to load dashboard"),
+  });
+  const load = () => { mutate(); };
 
   const stats = data?.stats;
 

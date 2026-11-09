@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useApi } from "@/lib/use-api";
 import { StatCard } from "@/components/ui/stat-card";
 import { formatRWF } from "@/lib/utils";
 import { Package, AlertTriangle, DollarSign, FileDown, TableProperties, Loader2 } from "lucide-react";
@@ -53,11 +54,15 @@ interface KitchenMaterial {
 
 export default function StockReportPage() {
   const { hasModule } = useAuthStore();
-  const [data,           setData]          = useState<StockData | null>(null);
-  const [kitchenMats,    setKitchenMats]   = useState<KitchenMaterial[]>([]);
-  const [kitchenValue,   setKitchenValue]  = useState(0);
-  const [loading,        setLoading]       = useState(true);
-  const [tab,            setTab]           = useState<Tab>("supermarket");
+  // Cached between visits; kitchen stock only for businesses with a restaurant.
+  const onError = () => toast.error("Failed to load stock report");
+  const stock = useApi<StockData>("/api/reports/stock", { onError });
+  const kitchen = useApi<{ materials?: KitchenMaterial[]; valuation?: number }>(hasModule("restaurant") ? "/api/restaurant/stock" : null, { onError });
+  const data = stock.data ?? null;
+  const kitchenMats = kitchen.data?.materials ?? [];
+  const kitchenValue = kitchen.data?.valuation ?? 0;
+  const loading = stock.isLoading || kitchen.isLoading;
+  const [tab,           setTab]           = useState<Tab>("supermarket");
   const [statusFilter,   setStatusFilter]  = useState("all");
   const [exporting,      setExporting]     = useState(false);
 
@@ -68,31 +73,6 @@ export default function StockReportPage() {
       else if (hasModule("bakery"))  setTab("materials");
       else if (hasModule("restaurant")) setTab("kitchen");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const fetches: Promise<Response>[] = [fetch("/api/reports/stock")];
-        if (hasModule("restaurant")) fetches.push(fetch("/api/restaurant/stock"));
-
-        const responses = await Promise.all(fetches);
-        const jsons     = await Promise.all(responses.map((r) => r.json()));
-
-        setData(jsons[0]);
-        if (hasModule("restaurant") && jsons[1]) {
-          setKitchenMats(jsons[1].materials ?? []);
-          setKitchenValue(jsons[1].valuation ?? 0);
-        }
-      } catch {
-        toast.error("Failed to load stock report");
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
