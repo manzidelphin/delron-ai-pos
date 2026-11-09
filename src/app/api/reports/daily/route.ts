@@ -1,11 +1,14 @@
 ﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
+import { forbidUnlessManagement } from "@/lib/role-guard";
 import { buildDailyReportData } from "@/lib/daily-report";
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
+  const denied = forbidUnlessManagement(auth.role);
+  if (denied) return denied;
 
   const { searchParams } = new URL(req.url);
   // Default to today in Rwanda time (UTC+2)
@@ -43,6 +46,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
+  const denied = forbidUnlessManagement(auth.role);
+  if (denied) return denied;
 
   const body = await req.json();
   const date = body.date ?? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().split("T")[0];

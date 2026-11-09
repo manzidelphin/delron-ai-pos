@@ -1,10 +1,13 @@
 ﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
+import { forbidUnlessManagement } from "@/lib/role-guard";
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthContext();
   if (auth.error) return auth.error;
+  const denied = forbidUnlessManagement(auth.role);
+  if (denied) return denied;
 
   const { searchParams } = new URL(req.url);
   // Use Kigali local date (UTC+2); toISOString() is UTC and can be off by one calendar day.

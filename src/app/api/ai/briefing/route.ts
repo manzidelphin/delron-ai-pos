@@ -2,12 +2,15 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
+import { forbidUnlessManagement } from "@/lib/role-guard";
 
 export async function GET() {
   // Outer catch — ensures we always return valid JSON, never an empty body
   try {
     const auth = await getAuthContext();
     if (auth.error) return auth.error;
+    const denied = forbidUnlessManagement(auth.role);
+    if (denied) return denied;
 
     const supabase = createAdminClient();
     const { businessId } = auth;

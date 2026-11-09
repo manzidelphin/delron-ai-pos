@@ -20,7 +20,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+  { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" />, roles: ["owner", "manager"] },
   { label: "POS", href: "/supermarket/pos", icon: <ShoppingCart className="w-4 h-4" />, module: "supermarket", roles: ["owner", "manager", "cashier"] },
   { label: "Products", href: "/supermarket/products", icon: <Package className="w-4 h-4" />, module: "supermarket", roles: ["owner", "manager"] },
   { label: "Import", href: "/supermarket/import", icon: <Store className="w-4 h-4" />, module: "supermarket", roles: ["owner", "manager"] },

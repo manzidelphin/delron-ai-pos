@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useBusiness } from "@/hooks/use-business";
 import { useAuthStore } from "@/store/auth-store";
 import { NAV_ITEMS } from "@/config/nav-items";
+import { roleHomePath } from "@/lib/roles";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import AIChatWidget from "@/components/ai/ai-chat-widget";
@@ -45,7 +46,7 @@ function ImpersonationBanner({ businessName }: { businessName: string }) {
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { isLoaded, impersonation } = useBusiness();
-  const { canAccess, hasModule } = useAuthStore();
+  const { canAccess, hasModule, effectiveRole, business } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -56,26 +57,28 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       )
     : [];
 
-  // Use the most specific match (longest href). Section headers like /bar are only
+  // Use the most specific matches (longest href). Section headers like /bar are only
   // a fallback when no more specific nav item covers the path. This prevents /bar
   // (bartender-accessible) from granting access to /bar/items (owner/manager only).
-  const mostSpecific = matchingItems.reduce<(typeof NAV_ITEMS)[0] | null>(
-    (best, item) => (!best || item.href.length > best.href.length ? item : best),
-    null
-  );
+  // Several entries can share an href (e.g. /bar/pos for bar and restaurant-only
+  // businesses); the page is allowed if any of them allows it.
+  const longest = matchingItems.reduce((max, item) => Math.max(max, item.href.length), 0);
+  const mostSpecific = matchingItems.filter((item) => item.href.length === longest);
 
-  const isBlocked = mostSpecific
-    ? (() => {
-        if (mostSpecific.module && !hasModule(mostSpecific.module)) return true;
-        if (mostSpecific.anyModule && !mostSpecific.anyModule.some((m) => hasModule(m))) return true;
-        if (mostSpecific.roles && !canAccess(mostSpecific.roles)) return true;
-        return false;
-      })()
-    : false;
+  const isAllowed = (item: (typeof NAV_ITEMS)[0]) => {
+    if (item.module && !hasModule(item.module)) return false;
+    if (item.anyModule && !item.anyModule.some((m) => hasModule(m))) return false;
+    if (item.roles && !canAccess(item.roles)) return false;
+    return true;
+  };
 
+  const isBlocked = mostSpecific.length > 0 && !mostSpecific.some(isAllowed);
+
+  // Send blocked users to their own work screen (only owners/managers may see /dashboard).
+  const homePath = roleHomePath(effectiveRole(), business?.modules ?? []);
   useEffect(() => {
-    if (isBlocked) router.replace("/dashboard");
-  }, [isBlocked, router]);
+    if (isBlocked && homePath !== pathname) router.replace(homePath);
+  }, [isBlocked, homePath, pathname, router]);
 
   if (!isLoaded || isBlocked) {
     return (
