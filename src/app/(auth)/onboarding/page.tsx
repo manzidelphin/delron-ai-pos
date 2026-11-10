@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
-  Zap,
   Store,
   ChefHat,
   Beer,
@@ -157,9 +157,7 @@ export default function OnboardingPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" fill="white" />
-            </div>
+            <Image src="/brand/logo-mark.png" alt="DELRON" width={36} height={36} className="w-9 h-9 rounded-xl flex-shrink-0" priority />
             <span className="text-xl font-bold text-white">DELRON AI POS</span>
           </div>
           <p className="text-slate-400 text-sm">Set up your business in 5 minutes</p>

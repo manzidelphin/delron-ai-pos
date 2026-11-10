@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { useAIStore } from "@/store/ai-store";
@@ -39,9 +40,7 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 h-16 px-4 border-b border-sidebar-border flex-shrink-0">
-        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-          <Zap className="w-4 h-4 text-white" fill="white" />
-        </div>
+        <Image src="/brand/logo-mark.png" alt="DELRON" width={32} height={32} className="w-8 h-8 rounded-lg flex-shrink-0" priority />
         {isOpen && (
           <div className="min-w-0">
             <div className="font-bold text-sm text-white leading-none">DELRON</div>

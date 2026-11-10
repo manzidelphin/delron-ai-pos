@@ -31,8 +31,11 @@ export const metadata: Metadata = {
     siteName: "DELRON AI POS",
   },
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
+    icon: [
+      { url: "/favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/favicon-48.png",
     apple: "/apple-icon.png",
   },
 };

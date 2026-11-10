@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";
-import { Eye, EyeOff, Loader2, Shield, Zap } from "lucide-react";
+import { Eye, EyeOff, Loader2, Shield } from "lucide-react";
 
 type Step = "credentials" | "otp";
 
@@ -176,9 +177,7 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" fill="white" />
-            </div>
+            <Image src="/brand/logo-mark.png" alt="DELRON" width={40} height={40} className="w-10 h-10 rounded-xl flex-shrink-0" priority />
             <span className="text-2xl font-bold text-white tracking-tight">DELRON</span>
           </div>
           <p className="text-slate-400 text-sm">Rwanda&apos;s AI-powered business platform</p>

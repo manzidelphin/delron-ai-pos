@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { CustomerDisplayPayload } from "@/hooks/use-customer-display";
@@ -60,9 +61,7 @@ function CustomerDisplay() {
       <div className="flex items-center justify-between px-8 py-4 border-b border-white/10 bg-[#1e293b]/60">
         <div className="flex items-center gap-3">
           {/* DELRON D logo */}
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
-            <span className="text-white font-black text-xl leading-none">D</span>
-          </div>
+          <Image src="/brand/logo-mark.png" alt="DELRON" width={40} height={40} className="w-10 h-10 rounded-xl flex-shrink-0" priority />
           <div>
             <p className="font-black text-white text-lg leading-none">DELRON</p>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest">AI POS</p>

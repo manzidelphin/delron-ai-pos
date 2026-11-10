@@ -65,7 +65,6 @@ export async function updateSession(request: NextRequest) {
     "/api/webhooks",
     "/supermarket", "/supermarket/pos",
     "/customer-display",
-    "/api/pwa-icon",
     "/offline.html",
     "/sitemap.xml",
     "/robots.txt",

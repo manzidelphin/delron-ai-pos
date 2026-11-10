@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Zap, Delete, LogIn, Loader2, ArrowLeft, Phone } from "lucide-react";
+import { Delete, LogIn, Loader2, ArrowLeft, Phone } from "lucide-react";
 import OfflineBanner from "@/components/layout/offline-banner";
 import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";
@@ -368,9 +369,7 @@ export default function PosLoginPage() {
       <div className="relative w-full max-w-3xl mx-auto flex flex-col items-center gap-8">
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
-          <div className="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-            <Zap className="w-7 h-7 text-white" fill="white" />
-          </div>
+          <Image src="/brand/logo-mark.png" alt="DELRON" width={56} height={56} className="w-14 h-14 rounded-2xl flex-shrink-0" priority />
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white tracking-tight">DELRON AI POS</h1>
             <p className="text-slate-400 text-sm mt-0.5">

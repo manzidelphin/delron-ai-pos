@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { Menu, X, Zap, Instagram } from "lucide-react";
+import { Menu, X, Instagram } from "lucide-react";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -28,9 +29,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/30">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
+              <Image src="/brand/logo-mark.png" alt="DELRON" width={32} height={32} className="w-8 h-8 rounded-lg flex-shrink-0" priority />
               <span className="font-bold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent">
                 DELRON AI POS
               </span>
@@ -127,9 +126,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-10">
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
-                  <Zap className="w-3.5 h-3.5 text-white" />
-                </div>
+                <Image src="/brand/logo-mark.png" alt="DELRON" width={28} height={28} className="w-7 h-7 rounded-lg flex-shrink-0" priority />
                 <span className="font-bold text-sm">DELRON AI POS</span>
               </div>
               <p className="text-slate-400 text-xs leading-relaxed max-w-[200px]">

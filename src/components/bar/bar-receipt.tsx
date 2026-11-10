@@ -74,7 +74,9 @@ function BarReceiptContent({
       className="receipt-print bg-white text-black p-6 rounded-lg max-w-[300px] mx-auto text-sm font-mono"
     >
       <div className="text-center border-b border-dashed border-gray-400 pb-3 mb-3">
-        <p className="font-black text-lg tracking-widest">DELRON AI POS</p>
+        {/* Plain img (not next/image) so it is loaded before the print dialog opens */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/logo-receipt.png" alt="DELRON AI POS" width={120} height={117} className="mx-auto mb-2 w-[120px] h-auto" />
         <p className="font-bold">{businessName}</p>
         <p className="text-xs text-gray-600">{branchName} — BAR</p>
         {tableNumber && <p className="text-xs font-bold mt-1">TABLE {tableNumber}</p>}

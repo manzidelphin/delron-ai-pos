@@ -1,9 +1,10 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle2, Loader2, Mail, XCircle, Zap } from "lucide-react";
+import { CheckCircle2, Loader2, Mail, XCircle } from "lucide-react";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 type State = "idle" | "loading" | "success" | "expired" | "failed";
@@ -127,9 +128,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" fill="white" />
-            </div>
+            <Image src="/brand/logo-mark.png" alt="DELRON" width={36} height={36} className="w-9 h-9 rounded-xl flex-shrink-0" priority />
             <span className="text-xl font-bold text-white">DELRON AI POS</span>
           </div>
         </div>
