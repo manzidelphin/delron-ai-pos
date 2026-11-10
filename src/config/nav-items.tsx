@@ -60,6 +60,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Stock", href: "/reports/stock", icon: <Package className="w-4 h-4" />, roles: ["owner", "manager"], anyModule: ["supermarket", "bakery", "restaurant"] as BusinessModule[] },
   { label: "Bakery", href: "/reports/bakery", icon: <ChefHat className="w-4 h-4" />, module: "bakery", roles: ["owner", "manager"] },
   { label: "Bar", href: "/reports/bar", icon: <Beer className="w-4 h-4" />, module: "bar", roles: ["owner", "manager"] },
+  { label: "Restaurant", href: "/reports/restaurant", icon: <UtensilsCrossed className="w-4 h-4" />, module: "restaurant", roles: ["owner", "manager"] },
   { label: "Credits", href: "/reports/credits", icon: <CreditCard className="w-4 h-4" />, roles: ["owner", "manager"] },
   { label: "Staff", href: "/reports/staff", icon: <Users className="w-4 h-4" />, roles: ["owner", "manager"] },
   { label: "Shifts", href: "/reports/shifts", icon: <Clock className="w-4 h-4" />, roles: ["owner", "manager"] },
