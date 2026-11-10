@@ -39,6 +39,20 @@ export async function POST(request: NextRequest) {
       .update({ status: "occupied" })
       .eq("id", table_id)
       .eq("business_id", auth.businessId);
+
+    // One open bill per table: if this table already has one, hand that back
+    // instead of starting a second (duplicates kept tables stuck on the POS).
+    const { data: existing } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("business_id", auth.businessId)
+      .eq("table_id", table_id)
+      .eq("order_type", "bar_tab")
+      .not("status", "in", "(completed,cancelled)")
+      .order("total", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (existing?.length) return NextResponse.json({ tab: existing[0], existing: true });
   }
 
   const { data, error } = await supabase

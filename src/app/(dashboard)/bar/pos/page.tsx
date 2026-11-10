@@ -233,7 +233,10 @@ export default function BarPOSPage() {
   };
 
   const openTab = async (table: FloorTable) => {
-    if (table.status === "occupied") {
+    // A table can show "empty" while it still has an open bill (status got out of
+    // step), so always look for that bill first instead of starting a second one.
+    // The server also returns the existing bill rather than creating a duplicate.
+    if (table.status === "occupied" || tabByTable[table.id]) {
       // Known open tab for this table: load it directly (one request).
       const knownTabId = tabByTable[table.id];
       if (knownTabId) {
