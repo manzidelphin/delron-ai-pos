@@ -117,10 +117,23 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // A signed-in user on /login goes to their home. Without a business (staff row) the
+  // dashboard would send them straight back here, so: platform admins go to /admin,
+  // and anyone else is left on /login instead of bouncing in a loop.
   if (user && pathname === "/login") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    const { data: staffRow } = await supabase
+      .from("staff").select("business_id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
+    let target: string | null = staffRow ? "/dashboard" : null;
+    if (!target) {
+      const { data: adminRecord } = await supabase
+        .from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+      if (adminRecord) target = "/admin";
+    }
+    if (target) {
+      const url = request.nextUrl.clone();
+      url.pathname = target;
+      return NextResponse.redirect(url);
+    }
   }
 
   // ── Suspension hard lock ────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { isManagementRole, roleHomePath } from "@/lib/roles";
 import type { BusinessModule, UserRole } from "@/types";
 
@@ -22,7 +23,17 @@ export function forbidUnlessManagement(role: UserRole | null | undefined): NextR
  */
 export async function requireManagementPage(): Promise<void> {
   const auth = await getAuthContext();
-  if (auth.error) redirect("/login");
+  if (auth.error) {
+    // Signed in but no business: a platform admin belongs on /admin. Sending them to
+    // /login would bounce straight back to /dashboard (redirect loop).
+    const { data: { user } } = await createClient().auth.getUser();
+    if (user) {
+      const { data: adminRecord } = await createAdminClient()
+        .from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+      if (adminRecord) redirect("/admin");
+    }
+    redirect("/login");
+  }
   if (isManagementRole(auth.role)) return;
 
   const { data } = await createAdminClient()
