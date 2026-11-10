@@ -215,5 +215,7 @@
     margin: 0 auto;
     max-width: 80mm;
     border-radius: 0;
+    /* Thermal paper: almost no side/top padding, nothing wasted */
+    padding: 1mm 2mm;
   }
 }

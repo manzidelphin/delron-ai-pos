@@ -1,9 +1,9 @@
 "use client";
 
-import { formatRWF } from "@/lib/utils";
 import type { CartItem } from "@/types";
 import { PrintPortal } from "@/components/print-portal";
 import { MomoPayLine } from "@/components/pos/momo-pay-line";
+import { ReceiptPaper, ReceiptHeader, ReceiptInfo, ReceiptItems, ReceiptRow, ReceiptFooter, amount, branchLabel } from "@/components/pos/receipt-parts";
 
 interface ReceiptProps {
   receiptNumber: string;
@@ -21,6 +21,19 @@ interface ReceiptProps {
   /** MoMo Pay till code, printed under the total */
   momoPayCode?: string | null;
 }
+
+const PAYMENT_LABELS: Record<string, string> = {
+  cash: "Cash",
+  mtn_momo: "MTN MoMo",
+  airtel_money: "Airtel Money",
+  bank_transfer: "Bank Transfer",
+  bank: "Bank",
+  credit: "Credit (Pay Later)",
+};
+
+const WEIGHT_UNITS = new Set(["kg", "g", "litre", "l", "ml", "gram", "grams", "liter", "liters"]);
+const fmtQty = (qty: number, unit?: string): string | number =>
+  WEIGHT_UNITS.has((unit ?? "").toLowerCase()) ? `${parseFloat(qty.toFixed(3))} ${unit}` : Math.round(qty);
 
 // On-screen receipt plus a print-only copy (window.print() only shows #print-root).
 export function Receipt(props: ReceiptProps) {
@@ -51,137 +64,44 @@ function ReceiptContent({
   id,
 }: ReceiptProps & { id?: string }) {
   const date = timestamp ? new Date(timestamp) : new Date();
-
-  const WEIGHT_UNITS = new Set(["kg", "g", "litre", "l", "ml", "gram", "grams", "liter", "liters"]);
-  const fmtQty = (qty: number, unit?: string) => {
-    if (WEIGHT_UNITS.has((unit ?? "").toLowerCase())) {
-      return parseFloat(qty.toFixed(3)) + " " + unit;
-    }
-    return String(Math.round(qty));
-  };
-
-  const paymentLabel: Record<string, string> = {
-    cash: "Cash",
-    mtn_momo: "MTN MoMo",
-    airtel_money: "Airtel Money",
-    bank_transfer: "Bank Transfer",
-    credit: "Credit (Pay Later)",
-  };
+  // Business name already on top: the branch line must not repeat it.
+  const branch = branchLabel(businessName, branchName);
 
   return (
-    <div
-      id={id}
-      className="receipt-print bg-white text-black p-6 rounded-lg max-w-[300px] mx-auto text-sm font-mono"
-    >
-      {/* Header */}
-      <div className="text-center border-b border-dashed border-gray-400 pb-3 mb-3">
-        {/* Plain img (not next/image) so it is loaded before the print dialog opens */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/logo-receipt.png" alt="DELRON AI POS" width={120} height={117} className="mx-auto mb-2 w-[120px] h-auto" />
-        <p className="font-bold">{businessName}</p>
-        <p className="text-xs text-gray-600">{branchName}</p>
-        <p className="text-xs text-gray-500 mt-1">
-          {date.toLocaleDateString("en-RW", {
-            weekday: "short",
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}{" "}
-          {date.toLocaleTimeString("en-RW", { hour: "2-digit", minute: "2-digit" })}
-        </p>
-      </div>
+    <ReceiptPaper id={id}>
+      <ReceiptHeader businessName={businessName} subtitle={branch || undefined} date={date} />
 
-      {/* Receipt info */}
-      <div className="text-xs space-y-0.5 mb-3 border-b border-dashed border-gray-400 pb-3">
-        <div className="flex justify-between">
-          <span className="text-gray-500">Receipt #</span>
-          <span className="font-bold">{receiptNumber}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-500">Cashier</span>
-          <span>{cashierName}</span>
-        </div>
-      </div>
+      <ReceiptInfo rows={[["Receipt", receiptNumber], ["Cashier", cashierName]]} />
 
-      {/* Items */}
-      <div className="mb-3 border-b border-dashed border-gray-400 pb-3">
-        {items.map((item, i) => (
-          <div key={i} className="mb-1.5">
-            <div className="flex justify-between">
-              <span className="font-medium truncate pr-2 max-w-[160px]">{item.item_name}</span>
-              <span className="font-bold">{formatRWF(item.total_price)}</span>
-            </div>
-            <div className="text-xs text-gray-500 pl-2">
-              {fmtQty(item.quantity, item.unit)} × {formatRWF(item.unit_price)}
-            </div>
-          </div>
-        ))}
-      </div>
+      <ReceiptItems
+        lines={items.map((item) => ({
+          name: item.item_name,
+          qty: fmtQty(item.quantity, item.unit),
+          unitPrice: item.unit_price,
+          total: item.total_price,
+        }))}
+      />
 
-      {/* Totals */}
-      <div className="space-y-1 mb-3 border-b border-dashed border-gray-400 pb-3 text-xs">
-        <div className="flex justify-between">
-          <span className="text-gray-500">Subtotal</span>
-          <span>{formatRWF(subtotal)}</span>
-        </div>
-        {discount > 0 && (
-          <div className="flex justify-between text-green-700">
-            <span>Discount</span>
-            <span>-{formatRWF(discount)}</span>
-          </div>
-        )}
-        <div className="flex justify-between font-black text-base mt-1">
-          <span>TOTAL</span>
-          <span>{formatRWF(total)}</span>
-        </div>
-      </div>
+      {discount > 0 && (
+        <>
+          <ReceiptRow label="Subtotal" value={amount(subtotal)} />
+          <ReceiptRow label="Discount" value={`-${amount(discount)}`} />
+        </>
+      )}
+      <ReceiptRow label="TOTAL" value={`RWF ${amount(total)}`} strong />
 
       <MomoPayLine code={momoPayCode} />
 
-      {/* Payment — only known once the customer has selected & confirmed a method */}
+      {/* Payment: only known once the customer has selected and confirmed a method */}
       {paymentMethod && (
-        <div className="text-xs space-y-0.5 mb-3 border-b border-dashed border-gray-400 pb-3">
-          <div className="flex justify-between">
-            <span className="text-gray-500">Payment</span>
-            <span>{paymentLabel[paymentMethod] ?? paymentMethod}</span>
-          </div>
-          {amountPaid !== undefined && amountPaid > 0 && (
-            <>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Paid</span>
-                <span>{formatRWF(amountPaid)}</span>
-              </div>
-              {change !== undefined && change > 0 && (
-                <div className="flex justify-between font-bold">
-                  <span>Change</span>
-                  <span>{formatRWF(change)}</span>
-                </div>
-              )}
-            </>
-          )}
+        <div className="pt-1">
+          <ReceiptRow label="Payment" value={PAYMENT_LABELS[paymentMethod] ?? paymentMethod} />
+          {amountPaid !== undefined && amountPaid > 0 && <ReceiptRow label="Paid" value={amount(amountPaid)} />}
+          {change !== undefined && change > 0 && <ReceiptRow label="Change" value={amount(change)} />}
         </div>
       )}
 
-      {/* EBM */}
-      <div className="text-xs text-gray-500 mb-3 space-y-0.5">
-        <div className="flex justify-between">
-          <span>EBM #</span>
-          <span>— (Coming Soon)</span>
-        </div>
-        <div className="flex justify-between">
-          <span>VAT</span>
-          <span>0.00 RWF</span>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="text-center text-xs text-gray-500 border-t border-dashed border-gray-400 pt-3">
-        <p className="font-medium">Thank you for shopping with us!</p>
-        <p className="mt-0.5">Powered by DELRON AI POS</p>
-        <p className="text-[10px] mt-1 text-gray-400">
-          This receipt is valid for returns within 7 days
-        </p>
-      </div>
-    </div>
+      <ReceiptFooter message="Thank you for shopping with us!" />
+    </ReceiptPaper>
   );
 }
