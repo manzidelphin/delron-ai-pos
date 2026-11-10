@@ -7,7 +7,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { name, category, barcode, price_per_bottle, price_per_shot, shots_per_bottle, quantity_bottles, min_quantity, is_active } = body;
+  const { name, category, barcode, price_per_bottle, price_per_shot, price_per_double, price_per_quarter, shots_per_bottle, quantity_bottles, min_quantity, is_active } = body;
 
   const supabase = createAdminClient();
 
@@ -21,6 +21,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (barcode         != null) update.barcode          = barcode || null;
   if (price_per_bottle != null) update.price_per_bottle = parseFloat(price_per_bottle);
   if (price_per_shot  != null) update.price_per_shot   = parseFloat(price_per_shot) || null;
+  // undefined = not sent (keep); null or "" = clear (size no longer offered)
+  if (price_per_double  !== undefined) update.price_per_double  = parseFloat(price_per_double) || null;
+  if (price_per_quarter !== undefined) update.price_per_quarter = parseFloat(price_per_quarter) || null;
   if (parsedShots     != null) update.shots_per_bottle = parsedShots || null;
   if (parsedQty       != null) update.quantity_bottles = parsedQty;
   if (min_quantity    != null) update.min_quantity      = parseFloat(min_quantity);

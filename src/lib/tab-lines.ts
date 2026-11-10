@@ -1,9 +1,10 @@
 /**
  * A tab keeps one order_items row per "Add to Tab" so the kitchen and bar displays
  * still see each new order as it arrives. For the cart, the customer display and
- * the receipt, rows for the same item at the same price (and the same way of
- * serving: shot vs bottle) are shown as one line with the quantities added up.
+ * the receipt, rows for the same item at the same price and serving size
+ * (single / double / quarter / bottle) are shown as one line with the quantities added up.
  */
+import { normalizeServe, serveFromNotes, SERVE_LABELS, type ServeSize } from "@/lib/bar";
 
 export interface TabRow {
   id: string;
@@ -13,18 +14,26 @@ export interface TabRow {
   total_price: number;
   item_type?: string;
   notes?: string | null;
-  serve_as?: "bottle" | "shot";
+  serve_as?: string;
 }
 
-export function isShotRow(row: Pick<TabRow, "notes" | "serve_as">): boolean {
-  return row.serve_as === "shot" || row.notes === "served as shot";
+/** Serving size of a row: saved in notes; serve_as is only set on rows built in the browser. */
+export function rowServe(row: Pick<TabRow, "notes" | "serve_as">): ServeSize {
+  const fromField = normalizeServe(row.serve_as);
+  return fromField !== "bottle" ? fromField : serveFromNotes(row.notes);
+}
+
+/** " (single)", " (double)", " (quarter)" for poured drinks; nothing for bottles and food. */
+export function serveSuffix(row: Pick<TabRow, "notes" | "serve_as">): string {
+  const size = rowServe(row);
+  return size === "bottle" ? "" : ` (${SERVE_LABELS[size].toLowerCase()})`;
 }
 
 export function groupTabLines<T extends TabRow>(rows: T[]): (T & { ids: string[] })[] {
   const lines = new Map<string, T & { ids: string[] }>();
   for (const row of rows) {
-    const shot = isShotRow(row);
-    const key = [row.item_type ?? "", row.item_name.trim().toLowerCase(), shot ? "shot" : "", Number(row.unit_price)].join("|");
+    const size = rowServe(row);
+    const key = [row.item_type ?? "", row.item_name.trim().toLowerCase(), size, Number(row.unit_price)].join("|");
     const line = lines.get(key);
     if (line) {
       line.quantity = Number(line.quantity) + Number(row.quantity);
@@ -35,7 +44,7 @@ export function groupTabLines<T extends TabRow>(rows: T[]): (T & { ids: string[]
         ...row,
         quantity: Number(row.quantity),
         total_price: Number(row.total_price),
-        serve_as: shot ? "shot" : "bottle",
+        serve_as: size,
         ids: [row.id],
       });
     }

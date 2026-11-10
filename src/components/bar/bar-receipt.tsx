@@ -3,7 +3,7 @@
 import { formatRWF } from "@/lib/utils";
 import { PrintPortal } from "@/components/print-portal";
 import { MomoPayLine } from "@/components/pos/momo-pay-line";
-import { groupTabLines } from "@/lib/tab-lines";
+import { groupTabLines, serveSuffix } from "@/lib/tab-lines";
 
 interface BarOrderItem {
   id: string;
@@ -13,7 +13,7 @@ interface BarOrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
-  serve_as: "bottle" | "shot";
+  serve_as?: string;
 }
 
 interface BarReceiptProps {
@@ -112,7 +112,7 @@ function BarReceiptContent({
           <div key={i} className="mb-1.5">
             <div className="flex justify-between">
               <span className="font-medium truncate pr-2 max-w-[160px]">
-                {item.item_name}{item.serve_as === "shot" ? " (shot)" : ""}
+                {item.item_name}{serveSuffix(item)}
               </span>
               <span className="font-bold">{formatRWF(item.total_price)}</span>
             </div>

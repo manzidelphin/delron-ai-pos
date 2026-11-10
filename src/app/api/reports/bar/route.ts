@@ -1,6 +1,7 @@
 ﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
+import { serveFromNotes, shotsPerServe, SERVE_LABELS } from "@/lib/bar";
 import { forbidUnlessManagement } from "@/lib/role-guard";
 
 export async function GET(req: NextRequest) {
@@ -79,11 +80,15 @@ export async function GET(req: NextRequest) {
     .map(([date, revenue]) => ({ date, revenue }));
 
   // Top drinks
+  // Each serving size is its own row ("james (single)", "james (double)", "james"),
+  // so shots are never added to bottle counts.
   const drinkMap: Record<string, { qty: number; revenue: number }> = {};
   for (const d of drinkItems) {
-    if (!drinkMap[d.item_name]) drinkMap[d.item_name] = { qty: 0, revenue: 0 };
-    drinkMap[d.item_name].qty += d.quantity ?? 0;
-    drinkMap[d.item_name].revenue += d.total_price ?? 0;
+    const size = serveFromNotes(d.notes);
+    const name = size === "bottle" ? d.item_name : `${d.item_name} (${SERVE_LABELS[size].toLowerCase()})`;
+    if (!drinkMap[name]) drinkMap[name] = { qty: 0, revenue: 0 };
+    drinkMap[name].qty += Number(d.quantity ?? 0);
+    drinkMap[name].revenue += Number(d.total_price ?? 0);
   }
   const topDrinks = Object.entries(drinkMap)
     .map(([name, v]) => ({ name, ...v }))
@@ -120,11 +125,15 @@ export async function GET(req: NextRequest) {
     revenue: hourlyMap[h] ?? 0,
   }));
 
-  // Shot variance table for shot items
+  // Shot variance table for shot items: shots poured (single 1, double 2, quarter 1/4 bottle).
+  // Whole bottles are not shots and are left out.
+  const perBottleById = new Map(barItems.map((b) => [b.id, Number(b.shots_per_bottle ?? 0)]));
   const shotItemsMap: Record<string, { qty: number }> = {};
   for (const d of drinkItems) {
+    const size = serveFromNotes(d.notes);
+    if (size === "bottle") continue;
     shotItemsMap[d.item_id] = {
-      qty: (shotItemsMap[d.item_id]?.qty ?? 0) + (d.quantity ?? 0),
+      qty: (shotItemsMap[d.item_id]?.qty ?? 0) + Number(d.quantity ?? 0) * shotsPerServe(size, perBottleById.get(d.item_id)),
     };
   }
 
@@ -172,14 +181,15 @@ export async function GET(req: NextRequest) {
   }));
 
   // KPIs
-  // serve_as is stored in notes as "serve_as:shot" or "serve_as:bottle" (is_shot_item doesn't exist)
+  // The serving size is saved in notes ("served as shot" / "double shot" / "quarter bottle");
+  // no note = whole bottle. Shots sold = shots poured (a double is 2, a quarter 1/4 bottle).
   const bottlesSold = drinkItems
-    .filter((d) => !d.notes?.includes("serve_as:shot"))
-    .reduce((s, d) => s + (d.quantity ?? 0), 0);
+    .filter((d) => serveFromNotes(d.notes) === "bottle")
+    .reduce((s, d) => s + Number(d.quantity ?? 0), 0);
 
-  const shotsSold = drinkItems
-    .filter((d) => d.notes?.includes("serve_as:shot"))
-    .reduce((s, d) => s + (d.quantity ?? 0), 0);
+  const shotsSold = Math.round(drinkItems
+    .filter((d) => serveFromNotes(d.notes) !== "bottle")
+    .reduce((s, d) => s + Number(d.quantity ?? 0) * shotsPerServe(serveFromNotes(d.notes), perBottleById.get(d.item_id)), 0) * 100) / 100;
 
   const tablesServed = new Set(orders.filter((o) => o.table_id).map((o) => o.table_id)).size;
   const avgTabValue = tablesServed > 0 ? Math.round(totalRevenue / tablesServed) : 0;

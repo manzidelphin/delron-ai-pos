@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { name, category, barcode, price_per_bottle, price_per_shot, shots_per_bottle, quantity_bottles, min_quantity } = body;
+  const { name, category, barcode, price_per_bottle, price_per_shot, price_per_double, price_per_quarter, shots_per_bottle, quantity_bottles, min_quantity } = body;
 
   if (!name || !price_per_bottle) {
     return NextResponse.json({ error: "name and price_per_bottle required" }, { status: 400 });
@@ -66,6 +66,8 @@ export async function POST(request: NextRequest) {
       barcode:          barcode || null,
       price_per_bottle: parseFloat(price_per_bottle),
       price_per_shot:   price_per_shot ? parseFloat(price_per_shot) : null,
+      price_per_double:  price_per_double ? parseFloat(price_per_double) || null : null,
+      price_per_quarter: price_per_quarter ? parseFloat(price_per_quarter) || null : null,
       shots_per_bottle: parsedShots || null,
       quantity_bottles: parsedQty,
       shots_remaining,

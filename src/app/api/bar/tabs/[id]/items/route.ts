@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
-import { barSale, needsBarPreparation } from "@/lib/bar";
+import { barSale, needsBarPreparation, normalizeServe } from "@/lib/bar";
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const auth = await getAuthContext();
@@ -9,7 +9,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   const body = await request.json();
   const { bar_item_id, menu_item_id, quantity, serve_as } = body;
-  // serve_as: "bottle" | "shot" (bar items only)
+  // serve_as: "single" | "double" | "quarter" | "bottle" (bar items only; old "shot" = single)
 
   if (!quantity || (!bar_item_id && !menu_item_id)) {
     return NextResponse.json({ error: "quantity and either bar_item_id or menu_item_id are required" }, { status: 400 });
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   // Price + stock rules shared with the POS (src/lib/bar.ts): shots only for items
   // with a shot count AND a shot price; a whole bottle of a shot item also removes
   // its shots so bottles and shots_remaining stay in step.
-  const sale = barSale(item, qty, serve_as === "shot" ? "shot" : "bottle");
+  const sale = barSale(item, qty, normalizeServe(serve_as));
   const isShot = sale.isShot;
   const unit_price = sale.unitPrice;
   const line_total = sale.lineTotal;
@@ -126,8 +126,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       quantity: qty,
       unit_price,
       total_price: line_total,
-      notes: isShot ? "served as shot" : null,
-      // Only cocktails and shots wait on the Bar KDS; the rest is handed straight over.
+      notes: sale.note,
+      // Only cocktails and poured drinks (single, double, quarter) wait on the Bar KDS; the rest is handed straight over.
       status: needsBarPreparation(item.category, isShot) ? "pending" : "served",
     })
     .select()

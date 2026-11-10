@@ -2,6 +2,7 @@
 
 import { Trash2 } from "lucide-react";
 import { formatRWF } from "@/lib/utils";
+import { rowServe } from "@/lib/tab-lines";
 import { cn } from "@/lib/utils";
 
 interface OrderItem {
@@ -10,11 +11,13 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
-  serve_as: "bottle" | "shot";
+  serve_as?: string;
   item_type: string;
   notes?: string | null;
   status: string;
 }
+
+const BADGES = { single: "SINGLE", double: "DOUBLE", quarter: "QUARTER", bottle: "BTL" } as const;
 
 interface TabItemProps {
   item: OrderItem;
@@ -30,11 +33,11 @@ export function TabItem({ item, onRemove }: TabItemProps) {
           {item.item_type === "bar_item" && (
             <span className={cn(
               "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-              item.notes === "served as shot"
+              rowServe(item) !== "bottle"
                 ? "bg-amber-500/20 text-amber-400"
                 : "bg-green-500/20 text-green-400"
             )}>
-              {item.notes === "served as shot" ? "SHOT" : "BTL"}
+              {BADGES[rowServe(item)]}
             </span>
           )}
         </div>

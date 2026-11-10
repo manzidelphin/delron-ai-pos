@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
+import { bottlesUsed, serveFromNotes } from "@/lib/bar";
 import { sendSMS } from "@/lib/sms";
 
 export async function POST(_request: NextRequest) {
@@ -103,14 +104,10 @@ export async function POST(_request: NextRequest) {
       .eq("item_type", "bar_item");
 
     (soldItems ?? []).forEach((si: { item_id: string; quantity: number; notes?: string }) => {
-      const isShot = si.notes?.toLowerCase().includes("shot") ?? false;
-      if (!isShot) {
-        soldMap[si.item_id] = (soldMap[si.item_id] ?? 0) + Number(si.quantity);
-      } else {
-        const item = activeItems.find((i) => i.id === si.item_id);
-        const spb = item?.shots_per_bottle ?? 1;
-        soldMap[si.item_id] = (soldMap[si.item_id] ?? 0) + Number(si.quantity) / spb;
-      }
+      // Bottles used: whole bottles count 1, poured sizes their share of a bottle.
+      const item = activeItems.find((i) => i.id === si.item_id);
+      soldMap[si.item_id] = (soldMap[si.item_id] ?? 0) +
+        bottlesUsed(serveFromNotes(si.notes), Number(si.quantity), item?.shots_per_bottle);
     });
   }
 

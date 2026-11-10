@@ -1,12 +1,15 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { rowServe } from "@/lib/tab-lines";
+import { SERVE_LABELS } from "@/lib/bar";
 
 interface KDSItem {
   id: string;
   item_name: string;
   quantity: number;
-  serve_as: "bottle" | "shot";
+  serve_as?: string;
+  notes?: string | null;
   status: "pending" | "preparing" | "ready";
   created_at: string;
   orders?: {
@@ -57,11 +60,11 @@ export function KDSOrderCard({ item, onStatusChange }: KDSOrderCardProps) {
             <span className="text-2xl font-black text-white">×{item.quantity}</span>
             <span className={cn(
               "text-xs font-bold px-2 py-0.5 rounded-full",
-              item.serve_as === "shot"
+              rowServe(item) !== "bottle"
                 ? "bg-amber-500/20 text-amber-400"
                 : "bg-green-500/20 text-green-400"
             )}>
-              {item.serve_as === "shot" ? "SHOT" : "BOTTLE"}
+              {rowServe(item) === "bottle" ? "BOTTLE" : SERVE_LABELS[rowServe(item)].toUpperCase()}
             </span>
           </div>
         </div>

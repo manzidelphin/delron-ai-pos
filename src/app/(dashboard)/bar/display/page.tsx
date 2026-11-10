@@ -10,7 +10,8 @@ interface KDSItem {
   id: string;
   item_name: string;
   quantity: number;
-  serve_as: "bottle" | "shot";
+  serve_as?: string;
+  notes?: string | null;
   status: "pending" | "preparing" | "ready";
   created_at: string;
   orders?: { floor_tables?: { table_number: number } | null } | null;

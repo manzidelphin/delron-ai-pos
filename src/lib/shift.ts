@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSMS } from "@/lib/sms";
+import { bottlesUsed, serveFromNotes } from "@/lib/bar";
 import { sendShiftEndedEmail } from "@/lib/email";
 
 export interface ShiftSummary {
@@ -166,13 +167,10 @@ export async function closeShift({
         .eq("item_type", "bar_item");
 
       (soldItems ?? []).forEach((si: { item_id: string; quantity: number; notes?: string }) => {
-        const isShot = si.notes?.toLowerCase().includes("shot") ?? false;
-        if (!isShot) {
-          soldMap[si.item_id] = (soldMap[si.item_id] ?? 0) + Number(si.quantity);
-        } else {
-          const item = items.find((i) => i.id === si.item_id);
-          soldMap[si.item_id] = (soldMap[si.item_id] ?? 0) + Number(si.quantity) / (item?.shots_per_bottle ?? 1);
-        }
+        // Bottles used: whole bottles count 1, poured sizes their share of a bottle.
+        const item = items.find((i) => i.id === si.item_id);
+        soldMap[si.item_id] = (soldMap[si.item_id] ?? 0) +
+          bottlesUsed(serveFromNotes(si.notes), Number(si.quantity), item?.shots_per_bottle);
       });
     }
 

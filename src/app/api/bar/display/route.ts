@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
-import { needsBarPreparation } from "@/lib/bar";
+import { needsBarPreparation, serveFromNotes } from "@/lib/bar";
 
 export async function GET() {
   const auth = await getAuthContext();
@@ -37,14 +37,14 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Only drinks the bartender has to make: cocktails and shots.
+  // Only drinks the bartender has to make: cocktails and poured drinks (single, double, quarter).
   const barItemIds = Array.from(new Set((rows ?? []).map((r) => r.item_id).filter(Boolean)));
   const { data: barItems } = barItemIds.length
     ? await supabase.from("bar_items").select("id, category").in("id", barItemIds)
     : { data: [] as Array<{ id: string; category: string | null }> };
   const categoryById = new Map((barItems ?? []).map((b) => [b.id, b.category]));
   const items = (rows ?? []).filter((r) =>
-    needsBarPreparation(categoryById.get(r.item_id), (r.notes ?? "").includes("shot"))
+    needsBarPreparation(categoryById.get(r.item_id), serveFromNotes(r.notes) !== "bottle")
   );
 
   const pending = items.filter((i) => i.status === "pending");

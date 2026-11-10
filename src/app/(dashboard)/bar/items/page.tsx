@@ -17,6 +17,8 @@ interface BarItem {
   barcode: string | null;
   price_per_bottle: number;
   price_per_shot: number | null;
+  price_per_double?: number | null;
+  price_per_quarter?: number | null;
   shots_per_bottle: number | null;
   quantity_bottles: number;
   shots_remaining: number;
@@ -31,6 +33,8 @@ interface BarItemForm {
   price_per_bottle: string;
   shots_per_bottle: string;
   price_per_shot: string;
+  price_per_double: string;
+  price_per_quarter: string;
   quantity_bottles: string;
   min_quantity: string;
   is_active: boolean;
@@ -52,7 +56,7 @@ const CATEGORY_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.value, c]));
 
 const EMPTY_FORM: BarItemForm = {
   name: "", category: "beer", barcode: "",
-  price_per_bottle: "", shots_per_bottle: "", price_per_shot: "",
+  price_per_bottle: "", shots_per_bottle: "", price_per_shot: "", price_per_double: "", price_per_quarter: "",
   quantity_bottles: "0", min_quantity: "2", is_active: true,
 };
 
@@ -74,6 +78,8 @@ function ItemModal({ item, onClose, onSave }: {
           price_per_bottle: String(item.price_per_bottle),
           shots_per_bottle: item.shots_per_bottle ? String(item.shots_per_bottle) : "",
           price_per_shot:   item.price_per_shot   ? String(item.price_per_shot)   : "",
+          price_per_double:  item.price_per_double  ? String(item.price_per_double)  : "",
+          price_per_quarter: item.price_per_quarter ? String(item.price_per_quarter) : "",
           quantity_bottles: String(item.quantity_bottles),
           min_quantity:     String(item.min_quantity),
           is_active:        item.is_active,
@@ -130,6 +136,8 @@ function ItemModal({ item, onClose, onSave }: {
           price_per_bottle: form.price_per_bottle,
           shots_per_bottle: form.shots_per_bottle || null,
           price_per_shot:   isShotItem && form.price_per_shot ? form.price_per_shot : null,
+          price_per_double:  isShotItem && form.price_per_double  ? form.price_per_double  : null,
+          price_per_quarter: isShotItem && form.price_per_quarter ? form.price_per_quarter : null,
           quantity_bottles: form.quantity_bottles,
           min_quantity:     form.min_quantity,
           is_active:        form.is_active,
@@ -238,7 +246,7 @@ function ItemModal({ item, onClose, onSave }: {
               <>
                 <div>
                   <label className="text-sm font-medium text-slate-300 block mb-1.5">
-                    Price per Shot (RWF)
+                    Single Shot Price (RWF)
                     {form.price_per_bottle && form.shots_per_bottle && (
                       <span className="text-xs text-slate-500 ml-2 font-normal">
                         auto: {formatRWF(Math.round(parseFloat(form.price_per_bottle) / parseInt(form.shots_per_bottle)))}
@@ -252,9 +260,29 @@ function ItemModal({ item, onClose, onSave }: {
                     className="w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-300 block mb-1.5">Double Shot Price (RWF)</label>
+                    <input
+                      type="number" min="0" value={form.price_per_double}
+                      onChange={(e) => set("price_per_double", e.target.value)}
+                      placeholder={form.price_per_shot ? `e.g. ${parseFloat(form.price_per_shot) * 2}` : "Leave empty = not sold"}
+                      className="w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-300 block mb-1.5">Quarter Bottle Price (RWF)</label>
+                    <input
+                      type="number" min="0" value={form.price_per_quarter}
+                      onChange={(e) => set("price_per_quarter", e.target.value)}
+                      placeholder="Leave empty = not sold"
+                      className="w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
                 <div className="flex items-start gap-2 text-xs text-amber-400/80">
                   <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                  This item can be sold as a full bottle OR individual shots at the bar POS.
+                  Sold at the POS as Single (1 shot), Double (2 shots), Quarter (¼ bottle{form.shots_per_bottle ? ` = ${parseInt(form.shots_per_bottle) / 4} shots` : ""}) or the whole bottle. Leave a price empty to not offer that size.
                 </div>
               </>
             )}

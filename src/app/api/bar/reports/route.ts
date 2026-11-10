@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
+import { serveFromNotes, shotsPerServe } from "@/lib/bar";
 import { forbidUnlessManagement } from "@/lib/role-guard";
 
 export async function GET(request: NextRequest) {
@@ -62,8 +63,10 @@ export async function GET(request: NextRequest) {
   const totalRevenue = transactions.reduce((s, t) => s + (t.total ?? 0), 0);  // was: t.total_amount
   const totalOrders = transactions.length;
 
-  // Per-item sales summary
-  // serve_as was stored in notes as "serve_as:shot" or "serve_as:bottle"
+  // Per-item sales summary. The serving size is saved in notes ("served as shot",
+  // "served as double shot", "served as quarter bottle"); a row without one is a
+  // whole bottle. shots_sold counts shots poured: single 1, double 2, quarter 1/4 bottle.
+  const perBottleById = new Map(barItems.map((b) => [b.id, Number(b.shots_per_bottle ?? 0)]));
   const itemMap: Record<string, { name: string; bottles_sold: number; shots_sold: number; revenue: number }> = {};
   for (const item of oi) {
     const key = item.item_id;
@@ -71,12 +74,13 @@ export async function GET(request: NextRequest) {
     if (!itemMap[key]) {
       itemMap[key] = { name: item.item_name, bottles_sold: 0, shots_sold: 0, revenue: 0 };
     }
-    if (item.notes?.includes("serve_as:shot")) {
-      itemMap[key].shots_sold += item.quantity;
+    const size = serveFromNotes(item.notes);
+    if (size === "bottle") {
+      itemMap[key].bottles_sold += Number(item.quantity);
     } else {
-      itemMap[key].bottles_sold += item.quantity;
+      itemMap[key].shots_sold += Number(item.quantity) * shotsPerServe(size, perBottleById.get(key));
     }
-    itemMap[key].revenue += item.total_price ?? 0;
+    itemMap[key].revenue += Number(item.total_price ?? 0);
   }
 
   // Bottle vs shot variance (theft detection)

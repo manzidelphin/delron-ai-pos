@@ -5,7 +5,7 @@ import { Search, Plus, CreditCard, SplitSquareHorizontal, Printer, X, Loader2, M
 import { useCustomerDisplay } from "@/hooks/use-customer-display";
 import { ShotModal } from "@/components/bar/shot-modal";
 import { TabItem } from "@/components/bar/tab-item";
-import { groupTabLines } from "@/lib/tab-lines";
+import { groupTabLines, serveSuffix } from "@/lib/tab-lines";
 import { SplitBillModal } from "@/components/bar/split-bill-modal";
 import { TableCard } from "@/components/bar/table-card";
 import { BarReceipt } from "@/components/bar/bar-receipt";
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 import type { BarItem } from "@/types";
-import { barSale } from "@/lib/bar";
+import { barSale, serveOptions, servePrice, SERVE_LABELS, type ServeSize } from "@/lib/bar";
 
 interface MenuItem {
   id: string;
@@ -51,7 +51,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
-  serve_as: "bottle" | "shot";
+  serve_as?: string;
   item_type: string;
   notes?: string | null;
   status: string;
@@ -123,7 +123,7 @@ export default function BarPOSPage() {
     const tabTotal = activeTab?.total ?? tabItems.reduce((s, i) => s + i.total_price, 0);
     broadcast({
       items: groupTabLines(tabItems).map((i) => ({
-        name: i.serve_as === "shot" ? `${i.item_name} (shot)` : i.item_name,
+        name: `${i.item_name}${serveSuffix(i)}`,
         qty: i.quantity,
         unit_price: i.unit_price,
         total: i.total_price,
@@ -256,7 +256,7 @@ export default function BarPOSPage() {
     }
   };
 
-  const addItem = async (item: BarItem, qty: number, serveAs: "bottle" | "shot") => {
+  const addItem = async (item: BarItem, qty: number, serveAs: ServeSize) => {
     if (!activeTab) return toast.error("Select a table first");
     setShotModal(null);
     try {
@@ -565,12 +565,12 @@ export default function BarPOSPage() {
                   <p className="text-xs text-muted-foreground capitalize mt-0.5">{item.category.replace("_", " ")}</p>
                   <div className="mt-2 space-y-0.5">
                     <p className="text-sm font-bold text-blue-400">{formatRWF(item.price_per_bottle)}</p>
-                    {item.is_shot_item && item.price_per_shot && (
-                      <p className="text-xs text-amber-400">Shot: {formatRWF(item.price_per_shot)}</p>
-                    )}
+                    {serveOptions(item).filter((s) => s !== "bottle").map((s) => (
+                      <p key={s} className="text-xs text-amber-400">{SERVE_LABELS[s]}: {formatRWF(servePrice(item, s))}</p>
+                    ))}
                     <p className={cn("text-xs", item.quantity_bottles === 0 ? "text-red-400" : "text-muted-foreground")}>
                       {item.quantity_bottles === 0 ? "Out of stock" : `${item.quantity_bottles} btl`}
-                      {item.is_shot_item && ` · ${item.shots_remaining} shots`}
+                      {item.is_shot_item && ` · ${Math.round(Number(item.shots_remaining) * 100) / 100} shots`}
                     </p>
                   </div>
                 </button>

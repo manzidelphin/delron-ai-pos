@@ -226,6 +226,10 @@ export interface BarItem {
   category: string;
   price_per_bottle: number;
   price_per_shot: number | null;
+  /** Double shot (2 shots); null = not offered */
+  price_per_double?: number | null;
+  /** Quarter bottle (shots_per_bottle / 4 shots); null = not offered */
+  price_per_quarter?: number | null;
   shots_per_bottle: number | null;
   quantity_bottles: number;
   shots_remaining: number;
