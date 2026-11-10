@@ -96,8 +96,8 @@ function ReceiptContent({
       {paymentMethod && (
         <div className="pt-1">
           <ReceiptRow label="Payment" value={PAYMENT_LABELS[paymentMethod] ?? paymentMethod} />
-          {amountPaid !== undefined && amountPaid > 0 && <ReceiptRow label="Paid" value={amount(amountPaid)} />}
-          {change !== undefined && change > 0 && <ReceiptRow label="Change" value={amount(change)} />}
+          {amountPaid !== undefined && amountPaid > 0 && <ReceiptRow label="Paid" value={`RWF ${amount(amountPaid)}`} />}
+          {change !== undefined && change > 0 && <ReceiptRow label="Change" value={`RWF ${amount(change)}`} />}
         </div>
       )}
 

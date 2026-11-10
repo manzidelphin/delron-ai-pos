@@ -72,27 +72,21 @@ export interface ReceiptLine {
 }
 
 /**
- * Items as one line each: quantity, full name (wraps if long), unit price, line total.
- * The quantity is always printed, also when it is 1.
+ * Each item: full name (wraps if long) with its amount, then "qty × RWF price"
+ * underneath, also when the quantity is 1.
  */
 export function ReceiptItems({ lines }: { lines: ReceiptLine[] }) {
   return (
     <div className="pb-1.5 mb-1.5 border-b border-dashed border-gray-500">
-      <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-2 items-start">
-        <span className="text-[10px] font-bold uppercase">Qty</span>
-        <span className="text-[10px] font-bold uppercase">Item</span>
-        <span className="text-[10px] font-bold uppercase text-right">Price</span>
-        <span className="text-[10px] font-bold uppercase text-right">Total</span>
-        <span className="col-span-4 border-b border-gray-300 mt-0.5 mb-0.5" />
-        {lines.map((l, i) => (
-          <div key={i} className="contents">
-            <span className="py-[1px] whitespace-nowrap">{l.qty}</span>
-            <span className="py-[1px] font-semibold break-words min-w-0">{l.name}</span>
-            <span className="py-[1px] text-right whitespace-nowrap">{amount(l.unitPrice)}</span>
-            <span className="py-[1px] text-right font-bold whitespace-nowrap">{amount(l.total)}</span>
+      {lines.map((l, i) => (
+        <div key={i} className="py-0.5">
+          <div className="flex justify-between gap-2">
+            <span className="font-semibold break-words min-w-0">{l.name}</span>
+            <span className="font-bold whitespace-nowrap">RWF {amount(l.total)}</span>
           </div>
-        ))}
-      </div>
+          <div className="text-[11px] pl-2">{l.qty} × RWF {amount(l.unitPrice)}</div>
+        </div>
+      ))}
     </div>
   );
 }
