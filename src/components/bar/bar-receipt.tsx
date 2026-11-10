@@ -2,8 +2,12 @@
 
 import { formatRWF } from "@/lib/utils";
 import { PrintPortal } from "@/components/print-portal";
+import { groupTabLines } from "@/lib/tab-lines";
 
 interface BarOrderItem {
+  id: string;
+  item_type?: string;
+  notes?: string | null;
   item_name: string;
   quantity: number;
   unit_price: number;
@@ -98,7 +102,7 @@ function BarReceiptContent({
       </div>
 
       <div className="mb-3 border-b border-dashed border-gray-400 pb-3">
-        {items.map((item, i) => (
+        {groupTabLines(items).map((item, i) => (
           <div key={i} className="mb-1.5">
             <div className="flex justify-between">
               <span className="font-medium truncate pr-2 max-w-[160px]">

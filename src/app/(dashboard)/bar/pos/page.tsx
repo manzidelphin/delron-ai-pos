@@ -5,6 +5,7 @@ import { Search, Plus, CreditCard, SplitSquareHorizontal, Printer, X, Loader2, M
 import { useCustomerDisplay } from "@/hooks/use-customer-display";
 import { ShotModal } from "@/components/bar/shot-modal";
 import { TabItem } from "@/components/bar/tab-item";
+import { groupTabLines } from "@/lib/tab-lines";
 import { SplitBillModal } from "@/components/bar/split-bill-modal";
 import { TableCard } from "@/components/bar/table-card";
 import { BarReceipt } from "@/components/bar/bar-receipt";
@@ -121,7 +122,7 @@ export default function BarPOSPage() {
     if (!business?.id) return;
     const tabTotal = activeTab?.total ?? tabItems.reduce((s, i) => s + i.total_price, 0);
     broadcast({
-      items: tabItems.map((i) => ({
+      items: groupTabLines(tabItems).map((i) => ({
         name: i.serve_as === "shot" ? `${i.item_name} (shot)` : i.item_name,
         qty: i.quantity,
         unit_price: i.unit_price,
@@ -278,13 +279,14 @@ export default function BarPOSPage() {
     }
   };
 
-  const removeItem = async (id: string) => {
-    // Optimistic removal
-    const item = tabItems.find((i) => i.id === id);
-    if (!item) return;
+  const removeItem = async (ids: string[]) => {
+    // Optimistic removal of one cart line (it may combine several rows)
+    const removed = tabItems.filter((i) => ids.includes(i.id));
+    if (removed.length === 0) return;
+    const amount = removed.reduce((s, i) => s + Number(i.total_price), 0);
     localEdits.current++;
-    setTabItems((prev) => prev.filter((i) => i.id !== id));
-    setActiveTab((prev) => prev ? { ...prev, total: prev.total - item.total_price } : prev);
+    setTabItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+    setActiveTab((prev) => prev ? { ...prev, total: prev.total - amount } : prev);
     // Note: full delete API could be added; for now removal is UI-only before payment
     toast.success("Item removed from display");
   };
@@ -310,7 +312,7 @@ export default function BarPOSPage() {
     }
     setProcessing(true);
     try {
-      const itemsDesc = tabItems.map((i) => `${i.item_name} x${i.quantity}`).join(", ");
+      const itemsDesc = groupTabLines(tabItems).map((i) => `${i.item_name} x${i.quantity}`).join(", ");
       // Record the credit
       const creditRes = await fetch("/api/credits", {
         method: "POST",
@@ -638,8 +640,8 @@ export default function BarPOSPage() {
                   {hasBar && !hasRestaurant ? "Select drinks from the menu." : !hasBar ? "Select food from the menu." : "Select drinks or food from the menu."}
                 </p>
               ) : (
-                tabItems.map((item) => (
-                  <TabItem key={item.id} item={item} onRemove={removeItem} />
+                groupTabLines(tabItems).map((line) => (
+                  <TabItem key={line.ids.join(",")} item={line} onRemove={() => removeItem(line.ids)} />
                 ))
               )}
             </div>
