@@ -3,6 +3,7 @@
 import { formatRWF } from "@/lib/utils";
 import type { CartItem } from "@/types";
 import { PrintPortal } from "@/components/print-portal";
+import { MomoPayLine } from "@/components/pos/momo-pay-line";
 
 interface ReceiptProps {
   receiptNumber: string;
@@ -17,6 +18,8 @@ interface ReceiptProps {
   amountPaid?: number;
   change?: number;
   timestamp?: string;
+  /** MoMo Pay till code, printed under the total */
+  momoPayCode?: string | null;
 }
 
 // On-screen receipt plus a print-only copy (window.print() only shows #print-root).
@@ -44,6 +47,7 @@ function ReceiptContent({
   amountPaid,
   change,
   timestamp,
+  momoPayCode,
   id,
 }: ReceiptProps & { id?: string }) {
   const date = timestamp ? new Date(timestamp) : new Date();
@@ -131,6 +135,8 @@ function ReceiptContent({
           <span>{formatRWF(total)}</span>
         </div>
       </div>
+
+      <MomoPayLine code={momoPayCode} />
 
       {/* Payment — only known once the customer has selected & confirmed a method */}
       {paymentMethod && (

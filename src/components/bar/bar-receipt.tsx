@@ -2,6 +2,7 @@
 
 import { formatRWF } from "@/lib/utils";
 import { PrintPortal } from "@/components/print-portal";
+import { MomoPayLine } from "@/components/pos/momo-pay-line";
 import { groupTabLines } from "@/lib/tab-lines";
 
 interface BarOrderItem {
@@ -29,6 +30,8 @@ interface BarReceiptProps {
   change?: number;
   splitCount?: number;
   timestamp?: string;
+  /** MoMo Pay till code, printed under the total */
+  momoPayCode?: string | null;
 }
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -64,6 +67,7 @@ function BarReceiptContent({
   change,
   splitCount,
   timestamp,
+  momoPayCode,
   id,
 }: BarReceiptProps & { id?: string }) {
   const date = timestamp ? new Date(timestamp) : new Date();
@@ -131,6 +135,8 @@ function BarReceiptContent({
           </div>
         )}
       </div>
+
+      <MomoPayLine code={momoPayCode} />
 
       {paymentMethod && (
         <div className="text-xs space-y-0.5 mb-3">

@@ -27,11 +27,11 @@ interface BranchRow { id: string; name: string }
 // ─── Business Tab ───────────────────────────────────────────────
 function BusinessTab() {
   const { business, setBusiness } = useAuthStore();
-  const [form, setForm] = useState({ name: "", phone: "", email: "", location: "", momo_number: "", language: "en" as "en" | "rw" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", location: "", momo_number: "", momo_pay_code: "", language: "en" as "en" | "rw" });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (business) setForm({ name: business.name ?? "", phone: business.phone ?? "", email: business.email ?? "", location: business.location ?? "", momo_number: business.momo_number ?? "", language: business.language ?? "en" });
+    if (business) setForm({ name: business.name ?? "", phone: business.phone ?? "", email: business.email ?? "", location: business.location ?? "", momo_number: business.momo_number ?? "", momo_pay_code: business.momo_pay_code ?? "", language: business.language ?? "en" });
   }, [business]);
 
   const save = async () => {
@@ -59,6 +59,7 @@ function BusinessTab() {
           { label: "Email Address", key: "email" as const, placeholder: "business@email.com" },
           { label: "Location / Address", key: "location" as const, placeholder: "Kigali, Rwanda" },
           { label: "MoMo Number (for customer payments)", key: "momo_number" as const, placeholder: "0785 995 840" },
+          { label: "MoMo Pay code / till number (printed on receipts as *182*8*1*CODE#)", key: "momo_pay_code" as const, placeholder: "e.g. 123456" },
         ].map((f) => (
           <div key={f.key}>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">{f.label}</label>

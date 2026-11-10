@@ -74,6 +74,7 @@ export default function OnboardingPage() {
     phone: "",
     email: "",
     location: "",
+    momo_pay_code: "",
     password: "",
     modules: [],
     branch_count: 1,
@@ -107,6 +108,7 @@ export default function OnboardingPage() {
           email: data.email,
           password: data.password,
           location: data.location,
+          momo_pay_code: data.momo_pay_code,
           modules: data.modules,
           language: data.language,
         }),
@@ -238,6 +240,13 @@ export default function OnboardingPage() {
                     value={data.location}
                     onChange={(v) => set("location", v)}
                     placeholder="Kigali, Rwanda"
+                  />
+                </Field>
+                <Field label="MoMo Pay code / till number (optional)">
+                  <Input
+                    value={data.momo_pay_code}
+                    onChange={(v) => set("momo_pay_code", v)}
+                    placeholder="e.g. 123456 — printed on receipts as *182*8*1*CODE#"
                   />
                 </Field>
                 <Field label="Email address" error={errors.email}>

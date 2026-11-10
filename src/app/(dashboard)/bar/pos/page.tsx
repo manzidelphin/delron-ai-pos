@@ -791,6 +791,7 @@ export default function BarPOSPage() {
                   amountPaid={checkoutData.amountPaid}
                   change={checkoutData.change}
                   splitCount={checkoutData.splitCount}
+                  momoPayCode={business?.momo_pay_code}
                 />
               </div>
 
@@ -864,6 +865,7 @@ export default function BarPOSPage() {
                   <PaymentStep
                     total={checkoutData.total}
                     momoNumber={business?.momo_number}
+                    momoPayCode={business?.momo_pay_code}
                     processing={processing}
                     onConfirm={(method: SimplePaymentMethod, details) => processPayment(method, details, 1)}
                     onCredit={() => {

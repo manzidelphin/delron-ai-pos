@@ -63,6 +63,8 @@ export interface Business {
   phone: string | null;
   email: string | null;
   momo_number: string | null;
+  /** MTN MoMo Pay merchant code (till number), printed on receipts. */
+  momo_pay_code?: string | null;
   modules: BusinessModule[];
   plan: "free" | "starter" | "professional" | "enterprise";
   language: "en" | "rw";
@@ -385,6 +387,7 @@ export interface OnboardingData {
   phone: string;
   email: string;
   location: string;
+  momo_pay_code: string;
   password: string;
   modules: BusinessModule[];
   branch_count: number;

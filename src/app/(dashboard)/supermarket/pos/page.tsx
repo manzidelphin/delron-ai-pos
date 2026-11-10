@@ -619,6 +619,7 @@ export default function POSPage() {
                 amountPaid={receiptData.amountPaid}
                 change={receiptData.change}
                 timestamp={receiptData.timestamp}
+                momoPayCode={business?.momo_pay_code}
               />
             </div>
 
@@ -647,6 +648,7 @@ export default function POSPage() {
                 <PaymentStep
                   total={receiptData.total}
                   momoNumber={business?.momo_number}
+                  momoPayCode={business?.momo_pay_code}
                   processing={processing}
                   onConfirm={(method: SimplePaymentMethod, details) => processOrder(method, details, null)}
                   onCredit={() => setCreditModalOpen(true)}

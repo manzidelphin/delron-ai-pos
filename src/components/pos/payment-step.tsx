@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatRWF, cn } from "@/lib/utils";
 import { Loader2, ChevronLeft } from "lucide-react";
+import { momoPayDial } from "@/lib/momo-pay";
 import type { PaymentMethod } from "@/types";
 
 export type SimplePaymentMethod = Exclude<PaymentMethod, "credit">;
@@ -10,6 +11,8 @@ export type SimplePaymentMethod = Exclude<PaymentMethod, "credit">;
 interface PaymentStepProps {
   total: number;
   momoNumber?: string | null;
+  /** MoMo Pay till code: shown as the code to dial when MTN MoMo is chosen */
+  momoPayCode?: string | null;
   processing: boolean;
   onConfirm: (method: SimplePaymentMethod, details: { amount_paid: number; change: number }) => void;
   onCredit: () => void;
@@ -28,7 +31,7 @@ const METHODS: { key: SimplePaymentMethod; label: string; icon: string; color: s
  * supermarket and bar POS pages; the "credit" path is handed off to the
  * caller since each page keeps its own credit sale flow.
  */
-export function PaymentStep({ total, momoNumber, processing, onConfirm, onCredit }: PaymentStepProps) {
+export function PaymentStep({ total, momoNumber, momoPayCode, processing, onConfirm, onCredit }: PaymentStepProps) {
   const [method, setMethod] = useState<SimplePaymentMethod | null>(null);
   const [amountReceived, setAmountReceived] = useState("");
   const [confirmed, setConfirmed] = useState(false);
@@ -150,6 +153,11 @@ export function PaymentStep({ total, momoNumber, processing, onConfirm, onCredit
               Ask customer to send {formatRWF(total)}
               {momoNumber ? ` to ${momoNumber}` : ""}
             </p>
+            {method === "mtn_momo" && momoPayDial(momoPayCode) && (
+              <p className="mt-2 text-slate-200">
+                MoMo Pay: dial <span className="font-mono font-bold text-yellow-300">{momoPayDial(momoPayCode)}</span>
+              </p>
+            )}
           </div>
           <label className="flex items-center gap-2.5 text-sm text-slate-300 cursor-pointer select-none">
             <input

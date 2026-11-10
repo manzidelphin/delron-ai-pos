@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { cleanMomoPayCode } from "@/lib/momo-pay";
 import { sendNewSignupEmail, sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
@@ -14,6 +15,7 @@ export async function POST(req: NextRequest) {
       location,
       modules,
       language,
+      momo_pay_code,
     } = body;
 
     if (!email || !password || !full_name || !business_name) {
@@ -73,6 +75,8 @@ export async function POST(req: NextRequest) {
         plan: "free",
         language: language ?? "en",
         currency: "RWF",
+        // Only sent when given, so sign-up never depends on the column for businesses without a code
+        ...(cleanMomoPayCode(momo_pay_code) ? { momo_pay_code: cleanMomoPayCode(momo_pay_code) } : {}),
       })
       .select()
       .single();

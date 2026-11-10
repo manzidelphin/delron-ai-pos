@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { cleanMomoPayCode } from "@/lib/momo-pay";
 import { getAuthContext } from "@/lib/auth";
 
 export async function GET() {
@@ -32,11 +33,12 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json();
-  const allowed = ["name", "phone", "email", "location", "language", "modules", "daily_report_email", "momo_number"];
+  const allowed = ["name", "phone", "email", "location", "language", "modules", "daily_report_email", "momo_number", "momo_pay_code"];
   const update: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) update[key] = body[key];
   }
+  if ("momo_pay_code" in update) update.momo_pay_code = cleanMomoPayCode(String(update.momo_pay_code ?? "")) || null;
   update.updated_at = new Date().toISOString();
 
   const { data, error } = await supabase
