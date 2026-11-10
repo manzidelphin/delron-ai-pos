@@ -28,6 +28,21 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (body.is_fixed !== undefined) update.is_fixed = body.is_fixed === true;
   if (body.status !== undefined) {
     if (!STATUSES.includes(body.status)) return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    // A table with an unpaid bill can't be marked free: it would look empty while
+    // the bill (and its drinks) stays open.
+    if (body.status === "empty" || body.status === "reserved") {
+      const { data: openBills } = await supabase
+        .from("orders").select("total")
+        .eq("business_id", auth.businessId).eq("table_id", params.id)
+        .not("status", "in", "(completed,cancelled)");
+      if (openBills?.length) {
+        const unpaid = openBills.reduce((s, o) => s + Number(o.total ?? 0), 0);
+        return NextResponse.json(
+          { error: `This table has an open bill (RWF ${unpaid.toLocaleString()}). Pay it or put it on credit first.` },
+          { status: 409 }
+        );
+      }
+    }
     update.status = body.status;
   }
 

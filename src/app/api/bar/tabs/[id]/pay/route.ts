@@ -61,15 +61,25 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   // Free the table: a fixed table goes back to "empty"; any other table was opened
   // for these customers and disappears from the floor (hidden, not deleted, so
   // reports keep its number and name).
+  // Only when no other bill is still open on the table: freeing it while another
+  // bill was open left tables showing "Empty" with unpaid drinks on them.
   if (tab.table_id) {
-    const { data: table } = await supabase
-      .from("floor_tables").select("is_fixed")
-      .eq("id", tab.table_id).eq("business_id", auth.businessId).maybeSingle();
-    await supabase
-      .from("floor_tables")
-      .update(table?.is_fixed ? { status: "empty" } : { status: "empty", archived_at: new Date().toISOString() })
-      .eq("id", tab.table_id)
-      .eq("business_id", auth.businessId);
+    const { data: otherOpen } = await supabase
+      .from("orders").select("id")
+      .eq("business_id", auth.businessId).eq("table_id", tab.table_id)
+      .neq("id", params.id)
+      .not("status", "in", "(completed,cancelled)")
+      .limit(1);
+    if (!otherOpen?.length) {
+      const { data: table } = await supabase
+        .from("floor_tables").select("is_fixed")
+        .eq("id", tab.table_id).eq("business_id", auth.businessId).maybeSingle();
+      await supabase
+        .from("floor_tables")
+        .update(table?.is_fixed ? { status: "empty" } : { status: "empty", archived_at: new Date().toISOString() })
+        .eq("id", tab.table_id)
+        .eq("business_id", auth.businessId);
+    }
   }
 
   // Auto-mark everything still waiting (food AND drinks) as served so both the

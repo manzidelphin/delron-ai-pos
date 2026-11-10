@@ -18,8 +18,20 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // A table with an open bill is occupied, whatever its saved status says, so the
+  // screen never shows a table as free while drinks on it are unpaid.
+  const ids = (data ?? []).map((t) => t.id);
+  const { data: openBills } = ids.length
+    ? await supabase
+        .from("orders").select("table_id")
+        .eq("business_id", auth.businessId)
+        .in("table_id", ids)
+        .not("status", "in", "(completed,cancelled)")
+    : { data: [] as { table_id: string }[] };
+  const busy = new Set((openBills ?? []).map((o) => o.table_id));
+
   // Numeric order (table_number is text, so "10" would sort before "2").
-  const tables = (data ?? []).sort((a, b) => (parseInt(a.table_number) || 0) - (parseInt(b.table_number) || 0));
+  const tables = (data ?? []).map((t) => (busy.has(t.id) && t.status !== "bill_requested" ? { ...t, status: "occupied" } : t)).sort((a, b) => (parseInt(a.table_number) || 0) - (parseInt(b.table_number) || 0));
   return NextResponse.json({ tables, next_number: nextTableNumber(tables) });
 }
 
