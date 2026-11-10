@@ -1,18 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { TableCard } from "@/components/bar/table-card";
+import { TableFormModal, type FloorTableRow } from "@/components/bar/table-form-modal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-interface FloorTable {
-  id: string;
-  table_number: number;
-  capacity: number;
-  section: string | null;
-  status: "empty" | "occupied" | "bill_requested" | "reserved";
-}
 
 const STATUS_OPTIONS = ["empty", "occupied", "bill_requested", "reserved"] as const;
 const STATUS_LABELS: Record<string, string> = {
@@ -23,13 +16,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function BarTablesPage() {
-  const [tables, setTables] = useState<FloorTable[]>([]);
+  const [tables, setTables] = useState<FloorTableRow[]>([]);
+  const [nextNumber, setNextNumber] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editTable, setEditTable] = useState<FloorTable | null>(null);
-  const [form, setForm] = useState({ table_number: "", capacity: "4", section: "" });
-  const [saving, setSaving] = useState(false);
-  const [statusModal, setStatusModal] = useState<FloorTable | null>(null);
+  const [form, setForm] = useState<{ table: FloorTableRow | null } | null>(null);
+  const [statusModal, setStatusModal] = useState<FloorTableRow | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -37,6 +28,7 @@ export default function BarTablesPage() {
       const res = await fetch("/api/bar/tables");
       const json = await res.json();
       setTables(json.tables ?? []);
+      setNextNumber(json.next_number ?? 1);
     } catch {
       toast.error("Failed to load tables");
     } finally {
@@ -46,35 +38,7 @@ export default function BarTablesPage() {
 
   useEffect(() => { load(); }, []);
 
-  const openCreate = () => {
-    setEditTable(null);
-    setForm({ table_number: "", capacity: "4", section: "" });
-    setShowModal(true);
-  };
-
-  const save = async () => {
-    if (!form.table_number) return toast.error("Table number required");
-    setSaving(true);
-    try {
-      const url = editTable ? `/api/bar/tables/${editTable.id}` : "/api/bar/tables";
-      const method = editTable ? "PUT" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error((await res.json()).error);
-      toast.success(editTable ? "Table updated" : "Table created");
-      setShowModal(false);
-      load();
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Failed to save");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateStatus = async (table: FloorTable, status: string) => {
+  const updateStatus = async (table: FloorTableRow, status: string) => {
     try {
       const res = await fetch(`/api/bar/tables/${table.id}`, {
         method: "PUT",
@@ -89,8 +53,19 @@ export default function BarTablesPage() {
     }
   };
 
+  const removeTable = async (table: FloorTableRow) => {
+    try {
+      const res = await fetch(`/api/bar/tables/${table.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error((await res.json()).error);
+      toast.success(`Table ${table.table_number} removed`);
+      setStatusModal(null);
+      load();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to remove");
+    }
+  };
+
   const stats = {
-    total: tables.length,
     empty: tables.filter((t) => t.status === "empty").length,
     occupied: tables.filter((t) => t.status === "occupied").length,
     bill_requested: tables.filter((t) => t.status === "bill_requested").length,
@@ -98,18 +73,19 @@ export default function BarTablesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Table Management</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {stats.occupied} occupied · {stats.empty} empty · {stats.bill_requested} need bill
+            {stats.occupied} occupied · {stats.empty} empty · {stats.bill_requested} need bill.
+            Tables disappear once their bill is paid, except pinned ones.
           </p>
         </div>
         <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-colors"
+          onClick={() => setForm({ table: null })}
+          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-colors flex-shrink-0"
         >
-          <Plus className="w-4 h-4" /> Add Table
+          <Plus className="w-4 h-4" /> New Table
         </button>
       </div>
 
@@ -121,8 +97,8 @@ export default function BarTablesPage() {
         </div>
       ) : tables.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
-          <p className="text-lg font-medium">No tables yet</p>
-          <p className="text-sm mt-1">Add your first table to start managing the floor.</p>
+          <p className="text-lg font-medium">No tables open</p>
+          <p className="text-sm mt-1">Create a table when customers sit down. It disappears once the bill is paid.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -132,12 +108,14 @@ export default function BarTablesPage() {
         </div>
       )}
 
-      {/* Status change modal */}
+      {/* Status and actions */}
       {statusModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="glass-card rounded-2xl shadow-2xl w-full max-w-xs">
             <div className="flex items-center justify-between p-5 border-b border-border">
-              <h2 className="text-lg font-bold text-foreground">Table {statusModal.table_number}</h2>
+              <h2 className="text-lg font-bold text-foreground">
+                Table {statusModal.table_number}{statusModal.section ? ` · ${statusModal.section}` : ""}
+              </h2>
               <button onClick={() => setStatusModal(null)} className="text-muted-foreground hover:text-foreground">✕</button>
             </div>
             <div className="p-5 space-y-2">
@@ -158,54 +136,29 @@ export default function BarTablesPage() {
                 </button>
               ))}
               <button
-                onClick={() => { setEditTable(statusModal); setForm({ table_number: String(statusModal.table_number), capacity: String(statusModal.capacity), section: statusModal.section ?? "" }); setStatusModal(null); setShowModal(true); }}
+                onClick={() => { setForm({ table: statusModal }); setStatusModal(null); }}
                 className="w-full h-11 rounded-xl text-sm font-semibold bg-accent text-foreground hover:bg-accent/80 transition-all mt-2"
               >
                 Edit Table Details
+              </button>
+              <button
+                onClick={() => removeTable(statusModal)}
+                className="w-full h-11 rounded-xl text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Remove Table
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Create/Edit modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-sm">
-            <div className="flex items-center justify-between p-5 border-b border-border">
-              <h2 className="text-lg font-bold text-foreground">{editTable ? "Edit Table" : "Add Table"}</h2>
-              <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-foreground">✕</button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Table Number *</label>
-                <input type="number" value={form.table_number} onChange={(e) => setForm({ ...form, table_number: e.target.value })}
-                  autoFocus
-                  className="w-full h-10 px-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Capacity (seats)</label>
-                <input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })}
-                  className="w-full h-10 px-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Location / Section</label>
-                <input value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })}
-                  placeholder="e.g. Terrace, VIP Room"
-                  className="w-full h-10 px-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowModal(false)} className="flex-1 h-11 rounded-xl border border-border text-foreground hover:bg-accent transition-colors font-medium text-sm">
-                  Cancel
-                </button>
-                <button onClick={save} disabled={saving} className="flex-1 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
-                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {editTable ? "Update" : "Create"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {form && (
+        <TableFormModal
+          table={form.table}
+          nextNumber={nextNumber}
+          onSaved={() => { setForm(null); load(); }}
+          onClose={() => setForm(null)}
+        />
       )}
     </div>
   );

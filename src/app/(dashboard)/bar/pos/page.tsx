@@ -8,6 +8,7 @@ import { TabItem } from "@/components/bar/tab-item";
 import { groupTabLines, serveSuffix } from "@/lib/tab-lines";
 import { SplitBillModal } from "@/components/bar/split-bill-modal";
 import { TableCard } from "@/components/bar/table-card";
+import { TableFormModal } from "@/components/bar/table-form-modal";
 import { BarReceipt } from "@/components/bar/bar-receipt";
 import { PaymentStep, type SimplePaymentMethod } from "@/components/pos/payment-step";
 import { formatRWF, generateReceiptNumber } from "@/lib/utils";
@@ -28,9 +29,10 @@ interface MenuItem {
 
 interface FloorTable {
   id: string;
-  table_number: number;
+  table_number: string | number;
   capacity: number;
-  section: string | null;
+  section: string | null; // the table's name
+  is_fixed?: boolean;
   status: "empty" | "occupied" | "bill_requested" | "reserved";
 }
 
@@ -41,7 +43,7 @@ interface Tab {
   total: number;
   status: string;
   created_at: string;
-  floor_tables?: { table_number: number } | null;
+  floor_tables?: { table_number: string | number; section?: string | null } | null;
   waiter?: { id: string; name: string } | null;
 }
 
@@ -82,6 +84,9 @@ export default function BarPOSPage() {
   const { broadcast, openDisplay } = useCustomerDisplay(business?.id);
 
   const [tables,     setTables]    = useState<FloorTable[]>([]);
+  // New table window: the next free number is filled in; tables disappear once paid.
+  const [newTableOpen, setNewTableOpen] = useState(false);
+  const [nextTableNumber, setNextTableNumber] = useState(1);
   const [barItems,   setBarItems]  = useState<BarItem[]>([]);
   const [menuItems,  setMenuItems] = useState<MenuItem[]>([]);
   const [activeTab,  setActiveTab] = useState<Tab | null>(null);
@@ -155,6 +160,7 @@ export default function BarPOSPage() {
     if (core.status === "fulfilled") {
       const [tablesJson, itemsJson] = core.value;
       setTables(tablesJson.tables ?? []);
+      setNextTableNumber(tablesJson.next_number ?? 1);
       setBarItems(itemsJson.items ?? []);
     } else {
       toast.error("Failed to load POS data");
@@ -178,7 +184,11 @@ export default function BarPOSPage() {
       const [tablesRes, itemsRes, pendingRes] = await Promise.all([
         fetch("/api/bar/tables"), fetch("/api/bar/items"), fetch("/api/bar/tabs?status=pending"),
       ]);
-      if (tablesRes.ok) setTables((await tablesRes.json()).tables ?? []);
+      if (tablesRes.ok) {
+        const tablesJson = await tablesRes.json();
+        setTables(tablesJson.tables ?? []);
+        setNextTableNumber(tablesJson.next_number ?? 1);
+      }
       if (itemsRes.ok) setBarItems((await itemsRes.json()).items ?? []);
       if (pendingRes.ok) applyPendingTabs(await pendingRes.json());
     } catch { /* keep showing current data */ }
@@ -450,8 +460,14 @@ export default function BarPOSPage() {
     <div className="h-full flex gap-0 overflow-hidden">
       {/* Left: Tables */}
       <div className="w-56 shrink-0 border-r border-border bg-card/50 flex flex-col">
-        <div className="p-3 border-b border-border">
+        <div className="p-3 border-b border-border flex items-center justify-between gap-2">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Tables</p>
+          <button
+            onClick={() => setNewTableOpen(true)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> New
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {loading ? (
@@ -587,7 +603,9 @@ export default function BarPOSPage() {
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-foreground">
-                  {activeTab.floor_tables ? `Table ${activeTab.floor_tables.table_number}` : "Open Tab"}
+                  {activeTab.floor_tables
+                    ? `Table ${activeTab.floor_tables.table_number}${activeTab.floor_tables.section ? ` · ${activeTab.floor_tables.section}` : ""}`
+                    : "Open Tab"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {new Date(activeTab.created_at).toLocaleTimeString("en-RW", { hour: "2-digit", minute: "2-digit" })}
@@ -689,6 +707,22 @@ export default function BarPOSPage() {
           item={shotModal}
           onConfirm={addItem}
           onClose={() => setShotModal(null)}
+        />
+      )}
+
+      {newTableOpen && (
+        <TableFormModal
+          nextNumber={nextTableNumber}
+          onClose={() => setNewTableOpen(false)}
+          onSaved={(table) => {
+            setNewTableOpen(false);
+            const created = table as FloorTable;
+            setTables((prev) =>
+              [...prev, created].sort((a, b) => (parseInt(String(a.table_number)) || 0) - (parseInt(String(b.table_number)) || 0))
+            );
+            // Open the new table's tab straight away so drinks can be added.
+            openTab(created);
+          }}
         />
       )}
 

@@ -1,13 +1,14 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Users } from "lucide-react";
+import { Users, Pin } from "lucide-react";
 
 interface FloorTable {
   id: string;
-  table_number: number;
+  table_number: string | number;
   capacity: number;
-  section: string | null;
+  section: string | null; // the table's name
+  is_fixed?: boolean;
   status: "empty" | "occupied" | "bill_requested" | "reserved";
 }
 
@@ -37,8 +38,11 @@ export function TableCard({ table, activeTabTotal, onClick }: TableCardProps) {
     >
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-2xl font-black text-white">T{table.table_number}</p>
-          {table.section && <p className="text-xs text-slate-500">{table.section}</p>}
+          <p className="text-2xl font-black text-white flex items-center gap-1.5">
+            T{table.table_number}
+            {table.is_fixed && <Pin className="w-3.5 h-3.5 text-slate-500" aria-label="Fixed table" />}
+          </p>
+          {table.section && <p className="text-sm font-semibold text-slate-300 truncate max-w-[9rem]">{table.section}</p>}
         </div>
         <span className={cn("flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-full", cfg.text)}>
           <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", cfg.dot)} />

@@ -58,11 +58,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .update({ status: "completed", updated_at: new Date().toISOString() })
     .eq("id", params.id);
 
+  // Free the table: a fixed table goes back to "empty"; any other table was opened
+  // for these customers and disappears from the floor (hidden, not deleted, so
+  // reports keep its number and name).
   if (tab.table_id) {
+    const { data: table } = await supabase
+      .from("floor_tables").select("is_fixed")
+      .eq("id", tab.table_id).eq("business_id", auth.businessId).maybeSingle();
     await supabase
       .from("floor_tables")
-      .update({ status: "empty" })
-      .eq("id", tab.table_id);
+      .update(table?.is_fixed ? { status: "empty" } : { status: "empty", archived_at: new Date().toISOString() })
+      .eq("id", tab.table_id)
+      .eq("business_id", auth.businessId);
   }
 
   // Auto-mark everything still waiting (food AND drinks) as served so both the
