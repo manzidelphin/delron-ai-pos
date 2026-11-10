@@ -48,7 +48,7 @@ function ImpersonationBanner({ businessName }: { businessName: string }) {
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { isLoaded, impersonation } = useBusiness();
-  const { canAccess, hasModule, effectiveRole, business } = useAuthStore();
+  const { canAccess, hasModule, effectiveRole, business, isPlatformAdmin } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
   const fullScreen = isFullScreenRoute(pathname);
@@ -78,7 +78,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const isBlocked = mostSpecific.length > 0 && !mostSpecific.some(isAllowed);
 
   // Send blocked users to their own work screen (only owners/managers may see /dashboard).
-  const homePath = roleHomePath(effectiveRole(), business?.modules ?? []);
+  // A platform admin with no business of their own has no role here: send them back
+  // to the admin console rather than the PIN screen (roleHomePath's fallback).
+  const role = effectiveRole();
+  const homePath = !role && isPlatformAdmin ? "/admin" : roleHomePath(role, business?.modules ?? []);
   useEffect(() => {
     if (isBlocked && homePath !== pathname) router.replace(homePath);
   }, [isBlocked, homePath, pathname, router]);
