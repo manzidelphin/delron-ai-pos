@@ -23,8 +23,10 @@ export function branchLabel(businessName: string, branchName: string | null | un
 export const amount = (n: number) =>
   Math.round(Number(n) || 0).toLocaleString("en-US");
 
+// Always Kigali time: a till whose clock is set to UTC printed times 2 hours early.
+const TZ = "Africa/Kigali";
 const formatDate = (d: Date) =>
-  `${d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} ${d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+  `${d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: TZ })} ${d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: TZ })}`;
 
 export function ReceiptPaper({ id, children }: { id?: string; children: ReactNode }) {
   return (
@@ -69,25 +71,28 @@ export interface ReceiptLine {
   total: number;
 }
 
-/** Items as a table: full name, "qty x price", line total. */
+/**
+ * Items as one line each: quantity, full name (wraps if long), unit price, line total.
+ * The quantity is always printed, also when it is 1.
+ */
 export function ReceiptItems({ lines }: { lines: ReceiptLine[] }) {
   return (
     <div className="pb-1.5 mb-1.5 border-b border-dashed border-gray-500">
-      <div className="flex justify-between text-[10px] font-bold uppercase border-b border-gray-300 pb-0.5 mb-0.5">
-        <span>Item</span>
-        <span>RWF</span>
-      </div>
-      {lines.map((l, i) => (
-        <div key={i} className="py-[1px]">
-          <div className="flex justify-between gap-2">
-            <span className="font-semibold break-words min-w-0">{l.name}</span>
-            <span className="font-bold whitespace-nowrap">{amount(l.total)}</span>
+      <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-2 items-start">
+        <span className="text-[10px] font-bold uppercase">Qty</span>
+        <span className="text-[10px] font-bold uppercase">Item</span>
+        <span className="text-[10px] font-bold uppercase text-right">Price</span>
+        <span className="text-[10px] font-bold uppercase text-right">Total</span>
+        <span className="col-span-4 border-b border-gray-300 mt-0.5 mb-0.5" />
+        {lines.map((l, i) => (
+          <div key={i} className="contents">
+            <span className="py-[1px] whitespace-nowrap">{l.qty}</span>
+            <span className="py-[1px] font-semibold break-words min-w-0">{l.name}</span>
+            <span className="py-[1px] text-right whitespace-nowrap">{amount(l.unitPrice)}</span>
+            <span className="py-[1px] text-right font-bold whitespace-nowrap">{amount(l.total)}</span>
           </div>
-          {Number(l.qty) !== 1 && (
-            <div className="text-[10px] pl-2">{l.qty} x {amount(l.unitPrice)}</div>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
