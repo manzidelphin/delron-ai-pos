@@ -280,9 +280,9 @@ export default function MaterialsPage() {
   return (
     <div className="p-6 space-y-6">
       <PageHeader
-        title="Raw Materials"
+        title="Ingredients"
         badge={stats.total}
-        description="Bakery ingredients inventory"
+        description="Ingredients and their cost per unit — used by bakery and restaurant recipes"
         actions={
           <button onClick={() => { setTarget(null); setModal("add"); }}
             className="flex items-center gap-2 h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all">

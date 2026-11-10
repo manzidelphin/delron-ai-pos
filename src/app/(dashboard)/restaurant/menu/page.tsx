@@ -72,6 +72,11 @@ function ItemModal({
       : []
   );
   const [saving, setSaving] = useState(false);
+  // Typed cost for dishes without a (costed) recipe. Pre-filled when editing a dish
+  // that has a cost but no recipe.
+  const [manualCost, setManualCost] = useState(
+    item && !item.menu_recipes?.length && item.cost_price > 0 ? String(item.cost_price) : ""
+  );
 
   const computedCost = rows.reduce((sum, r) => {
     const mat = rawMaterials.find((m) => m.id === r.raw_material_id);
@@ -79,8 +84,12 @@ function ItemModal({
     return sum + mat.cost_per_unit * parseFloat(r.quantity_needed);
   }, 0);
 
-  const margin = price && computedCost
-    ? ((parseFloat(price) - computedCost) / parseFloat(price)) * 100
+  // The recipe's ingredient cost wins; otherwise the typed cost per portion.
+  const usingRecipeCost = computedCost > 0;
+  const effectiveCost = usingRecipeCost ? computedCost : Math.max(0, parseFloat(manualCost) || 0);
+
+  const margin = price && effectiveCost
+    ? ((parseFloat(price) - effectiveCost) / parseFloat(price)) * 100
     : null;
 
   const addRow = () => setRows((p) => [...p, { raw_material_id: "", quantity_needed: "", unit: "" }]);
@@ -109,7 +118,7 @@ function ItemModal({
         body: JSON.stringify({
           name: name.trim(), category,
           selling_price: price,
-          cost_price: computedCost,
+          cost_price: effectiveCost,
           prep_time_minutes: prepTime,
           is_active: isActive,
           ingredients: validRows.map((r) => ({
@@ -171,6 +180,22 @@ function ItemModal({
               </div>
             </div>
             <div>
+              <label className="text-sm font-medium text-slate-300 block mb-1.5">Cost per Portion (RWF)</label>
+              <input
+                type="number" min="0"
+                value={usingRecipeCost ? String(Math.round(computedCost)) : manualCost}
+                onChange={(e) => setManualCost(e.target.value)}
+                disabled={usingRecipeCost}
+                placeholder="What one portion costs you to make, e.g. 6000"
+                className="w-full h-11 px-4 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-60"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                {usingRecipeCost
+                  ? "Calculated from the recipe below."
+                  : "Used for profit in the Restaurant report. Or add a recipe below to calculate it from ingredients."}
+              </p>
+            </div>
+            <div>
               <label className="text-sm font-medium text-slate-300 block mb-2">Category</label>
               <div className="grid grid-cols-3 gap-2">
                 {CATS.map((c) => (
@@ -201,6 +226,11 @@ function ItemModal({
               </button>
             </div>
 
+            {rawMaterials.length === 0 && (
+              <p className="text-xs text-amber-200/80 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                No ingredients yet. Add them (with a cost per unit) in <span className="font-semibold">Restaurant → Ingredients</span>, then come back to build the recipe.
+              </p>
+            )}
             {rows.length === 0 ? (
               <p className="text-xs text-slate-500 text-center py-3">
                 No recipe — ingredient stock won&apos;t be deducted when ordered.
@@ -234,11 +264,11 @@ function ItemModal({
               </div>
             )}
 
-            {rows.length > 0 && (
+            {(rows.length > 0 || effectiveCost > 0) && (
               <div className="border-t border-amber-500/20 pt-3 grid grid-cols-3 gap-3 text-center text-sm">
                 <div>
-                  <p className="text-slate-500 text-xs">Recipe Cost</p>
-                  <p className="font-bold text-white">{formatRWF(computedCost)}</p>
+                  <p className="text-slate-500 text-xs">{usingRecipeCost ? "Recipe Cost" : "Cost per Portion"}</p>
+                  <p className="font-bold text-white">{formatRWF(effectiveCost)}</p>
                 </div>
                 <div>
                   <p className="text-slate-500 text-xs">Selling Price</p>
