@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 import { generateReceiptNumber } from "@/lib/utils";
+import { priceSale, saleItemRef, type SaleItemInput } from "@/lib/sale-pricing";
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthContext();
@@ -47,13 +48,36 @@ export async function POST(request: NextRequest) {
     due_date,
   } = body;
 
-  // Handle both field naming conventions from the POS
-  const discountAmt: number = body.discount_amount ?? body.discount ?? 0;
-  const totalAmt: number = body.total_amount ?? body.total ?? (subtotal - discountAmt);
+  // Prices and names come from this business's own products and baked items,
+  // never from the browser. The browser's total is only used to detect a stale screen.
+  const refs = Array.isArray(items) ? (items as SaleItemInput[]).map(saleItemRef) : [];
+  const productIds = refs.filter((r) => r?.type === "product").map((r) => r!.id);
+  const bakeryIds = refs.filter((r) => r?.type === "finished_good").map((r) => r!.id);
+  const [prodRes, fgRes] = await Promise.all([
+    productIds.length
+      ? supabase.from("products").select("id, name, price").eq("business_id", auth.businessId).in("id", productIds)
+      : Promise.resolve({ data: [] as { id: string; name: string; price: number }[] }),
+    bakeryIds.length
+      ? supabase.from("finished_goods").select("id, name, selling_price").eq("business_id", auth.businessId).in("id", bakeryIds)
+      : Promise.resolve({ data: [] as { id: string; name: string; selling_price: number }[] }),
+  ]);
+  const priced = priceSale(items, {
+    product: new Map((prodRes.data ?? []).map((p) => [p.id, { id: p.id, name: p.name, price: Number(p.price) }])),
+    finished_good: new Map((fgRes.data ?? []).map((g) => [g.id, { id: g.id, name: g.name, price: Number(g.selling_price) }])),
+  }, body.discount_amount ?? body.discount ?? 0);
+  if (!priced.ok) return NextResponse.json({ error: priced.error }, { status: priced.status });
 
-  if (!items?.length) {
-    return NextResponse.json({ error: "No items in order" }, { status: 400 });
+  const clientTotal = Number(body.total_amount ?? body.total);
+  if (Number.isFinite(clientTotal) && Math.abs(clientTotal - priced.total) > 1) {
+    return NextResponse.json(
+      { error: "Prices changed since this screen was loaded. Refresh and try again.", code: "price_changed", total: priced.total },
+      { status: 409 }
+    );
   }
+  const discountAmt = priced.discount;
+  const totalAmt = priced.total;
+  const pricedSubtotal = priced.subtotal;
+  void subtotal; // the browser's subtotal is not trusted
 
   const isCredit = !!(customer_name && due_date);
   const finalOrderType = isCredit ? "credit" : order_type;
@@ -78,7 +102,7 @@ export async function POST(request: NextRequest) {
       staff_id: auth.staffId,
       order_type: finalOrderType,
       status: "completed",
-      subtotal,
+      subtotal: pricedSubtotal,
       discount: discountAmt,
       tax: 0,
       total: totalAmt,
@@ -94,16 +118,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 2. Insert order items — accept both product_id/product_type and item_id/item_type
-  const orderItems = (items as Record<string, unknown>[]).map((item) => ({
-    order_id: order.id,
-    item_id: (item.item_id ?? item.product_id) as string,
-    item_type: (item.item_type ?? item.product_type ?? "product") as string,
-    item_name: item.item_name as string,
-    quantity: item.quantity as number,
-    unit_price: item.unit_price as number,
-    total_price: item.total_price as number,
-    notes: (item.notes as string | undefined) ?? null,
-  }));
+  const orderItems = priced.lines.map((line) => ({ order_id: order.id, ...line }));
 
   const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
   if (itemsError) {
@@ -168,39 +183,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 5. Deduct stock — products table for supermarket items, finished_goods for bakery items
-  for (const item of items as Record<string, unknown>[]) {
-    const itemId = (item.item_id ?? item.product_id) as string;
-    const itemType = (item.item_type ?? item.product_type ?? "product") as string;
-    const qty = item.quantity as number;
-    if (itemType === "product" && itemId) {
-      const { data: p } = await supabase
-        .from("products")
-        .select("quantity")
-        .eq("id", itemId)
-        .single();
-      if (p) {
-        await supabase
-          .from("products")
-          .update({ quantity: Math.max(0, (p.quantity as number) - qty) })
-          .eq("id", itemId);
-      }
-    } else if (itemType === "finished_good" && itemId) {
-      const { data: fg } = await supabase
-        .from("finished_goods")
-        .select("quantity")
-        .eq("id", itemId)
-        .single();
-      if (fg) {
-        await supabase
-          .from("finished_goods")
-          .update({
-            quantity: Math.max(0, (fg.quantity as number) - qty),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", itemId);
-      }
-    }
+  // 5. Deduct stock in one database step per item, checked against this business
+  //    (two tills selling the same item at once can no longer overwrite each other).
+  for (const line of priced.lines) {
+    const fn = line.item_type === "finished_good" ? "adjust_finished_good_stock" : "adjust_product_stock";
+    const { error: stockError } = await supabase.rpc(fn, { p_id: line.item_id, p_business: auth.businessId, p_delta: -line.quantity });
+    if (stockError) console.error("[orders] stock update failed:", line.item_name, stockError.message);
   }
 
   return NextResponse.json(
