@@ -5,7 +5,8 @@ import { Search, Plus, CreditCard, SplitSquareHorizontal, Printer, X, Loader2, M
 import { useCustomerDisplay } from "@/hooks/use-customer-display";
 import { ShotModal } from "@/components/bar/shot-modal";
 import { TabItem } from "@/components/bar/tab-item";
-import { groupTabLines, serveSuffix } from "@/lib/tab-lines";
+import { groupTabLines, serveSuffix, rowServe } from "@/lib/tab-lines";
+import { RemoveItemsModal, type RemoveTarget } from "@/components/bar/remove-items-modal";
 import { SplitBillModal } from "@/components/bar/split-bill-modal";
 import { TableCard } from "@/components/bar/table-card";
 import { TableFormModal } from "@/components/bar/table-form-modal";
@@ -107,6 +108,7 @@ export default function BarPOSPage() {
   const [catFilter, setCatFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [shotModal, setShotModal] = useState<BarItem | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
   const [splitModal, setSplitModal] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [saleComplete, setSaleComplete] = useState(false);
@@ -292,16 +294,44 @@ export default function BarPOSPage() {
     }
   };
 
-  const removeItem = async (ids: string[]) => {
-    // Optimistic removal of one cart line (it may combine several rows)
-    const removed = tabItems.filter((i) => ids.includes(i.id));
-    if (removed.length === 0) return;
-    const amount = removed.reduce((s, i) => s + Number(i.total_price), 0);
+  // Remove part of a bill line (it may combine several rows): asks how many and
+  // why, then the server updates the bill, returns unopened bottles to stock and
+  // logs it for the owner.
+  const removeItem = (line: OrderItem & { ids: string[] }) => {
+    if (!activeTab) return;
+    setRemoveTarget({
+      kind: "line",
+      tabId: activeTab.id,
+      ids: line.ids,
+      name: `${line.item_name}${serveSuffix(line)}`,
+      quantity: Number(line.quantity),
+      unitPrice: Number(line.unit_price),
+      poured: line.item_type !== "bar_item" || rowServe(line) !== "bottle",
+    });
+  };
+
+  const cancelTable = () => {
+    if (!activeTab) return;
+    const label = activeTab.floor_tables
+      ? `Table ${activeTab.floor_tables.table_number}${activeTab.floor_tables.section ? ` · ${activeTab.floor_tables.section}` : ""}`
+      : "Open tab";
+    setRemoveTarget({ kind: "table", tabId: activeTab.id, label, total: Number(activeTab.total), itemCount: tabItems.length });
+  };
+
+  const afterRemove = async ({ cancelled }: { tab_total: number; cancelled: boolean }) => {
+    const tabId = removeTarget?.tabId;
+    setRemoveTarget(null);
+    if (!tabId) return;
+    tabCache.current.delete(tabId);
     localEdits.current++;
-    setTabItems((prev) => prev.filter((i) => !ids.includes(i.id)));
-    setActiveTab((prev) => prev ? { ...prev, total: prev.total - amount } : prev);
-    // Note: full delete API could be added; for now removal is UI-only before payment
-    toast.success("Item removed from display");
+    if (cancelled) {
+      setActiveTab(null);
+      setTabItems([]);
+      setSelectedWaiterId(null);
+    } else {
+      await loadTab(tabId).catch(() => {});
+    }
+    refreshStock();
   };
 
   const handleCheckout = () => {
@@ -624,6 +654,13 @@ export default function BarPOSPage() {
                     <Monitor className="w-4 h-4" />
                   </button>
                 )}
+                <button
+                  onClick={cancelTable}
+                  title="Cancel this table"
+                  className="text-xs font-semibold px-2 py-1 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  Cancel table
+                </button>
                 <button onClick={() => { setActiveTab(null); setTabItems([]); setSelectedWaiterId(null); }} className="text-muted-foreground hover:text-foreground">
                   <X className="w-4 h-4" />
                 </button>
@@ -662,7 +699,7 @@ export default function BarPOSPage() {
                 </p>
               ) : (
                 groupTabLines(tabItems).map((line) => (
-                  <TabItem key={line.ids.join(",")} item={line} onRemove={() => removeItem(line.ids)} />
+                  <TabItem key={line.ids.join(",")} item={line} onRemove={() => removeItem(line)} />
                 ))
               )}
             </div>
@@ -705,6 +742,10 @@ export default function BarPOSPage() {
       </div>
 
       {/* Shot modal */}
+      {removeTarget && (
+        <RemoveItemsModal target={removeTarget} onDone={afterRemove} onClose={() => setRemoveTarget(null)} />
+      )}
+
       {shotModal && (
         <ShotModal
           item={shotModal}

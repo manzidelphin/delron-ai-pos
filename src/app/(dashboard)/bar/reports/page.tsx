@@ -21,6 +21,16 @@ interface ReportData {
     total_bottles_consumed: number;
     revenue: number;
   }>;
+  removed?: {
+    total_amount: number;
+    items: number;
+    by_staff: Array<{ name: string; amount: number; count: number }>;
+    rows: Array<{
+      created_at: string; table_label: string | null; item_name: string; serving: string | null;
+      quantity: number; amount: number; reason: string; note: string | null;
+      returned_to_stock: boolean; table_cancelled: boolean; staff_name: string | null;
+    }>;
+  };
 }
 
 export default function BarReportsPage() {
@@ -168,6 +178,66 @@ export default function BarReportsPage() {
               </tbody>
             </table>
           </div>
+        )}
+      </div>
+
+      {/* Removed items / cancelled tables: who, what, why */}
+      <div className="glass-card rounded-2xl p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-400" />
+            <h2 className="text-base font-bold text-foreground">Removed Items &amp; Cancelled Tables</h2>
+          </div>
+          {!loading && (
+            <p className="text-sm text-muted-foreground">
+              {data?.removed?.items ?? 0} item(s) · <b className="text-red-400">{formatRWF(data?.removed?.total_amount ?? 0)}</b> taken off bills
+            </p>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground mb-4">
+          Every drink or dish removed from an open bill, with the staff member and reason. Unopened bottles go back to stock; poured drinks and food don&apos;t.
+        </p>
+        {loading ? (
+          <div className="h-24 bg-muted/30 rounded-xl animate-pulse" />
+        ) : !(data?.removed?.rows ?? []).length ? (
+          <p className="text-muted-foreground text-sm">Nothing was removed in this period.</p>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(data?.removed?.by_staff ?? []).map((s) => (
+                <span key={s.name} className="text-xs px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-foreground">
+                  {s.name}: <b>{s.count}</b> item(s), {formatRWF(s.amount)}
+                </span>
+              ))}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    {["When", "Table", "Item", "Qty", "Value", "Reason", "By", "Stock"].map((h) => (
+                      <th key={h} className={cn("px-3 py-2 text-xs font-semibold text-muted-foreground uppercase", ["Qty", "Value"].includes(h) ? "text-right" : "text-left")}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.removed?.rows ?? []).map((r, i) => (
+                    <tr key={i} className="border-b border-border text-sm">
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        {new Date(r.created_at).toLocaleString("en-GB", { timeZone: "Africa/Kigali", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </td>
+                      <td className="px-3 py-2 text-foreground">{r.table_label ?? "—"}{r.table_cancelled && <span className="ml-1 text-[10px] text-red-400 font-bold">CANCELLED</span>}</td>
+                      <td className="px-3 py-2 text-foreground">{r.item_name}{r.serving && r.serving !== "bottle" && r.serving !== "food" ? ` (${r.serving})` : ""}</td>
+                      <td className="px-3 py-2 text-right text-foreground">{r.quantity}</td>
+                      <td className="px-3 py-2 text-right font-medium text-foreground">{formatRWF(r.amount)}</td>
+                      <td className="px-3 py-2 text-foreground">{r.reason}{r.note ? `: ${r.note}` : ""}</td>
+                      <td className="px-3 py-2 text-foreground">{r.staff_name ?? "—"}</td>
+                      <td className="px-3 py-2 text-xs">{r.returned_to_stock ? <span className="text-green-400">Returned</span> : <span className="text-amber-400">Waste</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -117,6 +117,25 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 10);
 
+  // Items staff removed from bills, or tables they cancelled, in this period.
+  const { data: voids, error: voidsError } = await supabase
+    .from("order_item_voids")
+    .select("created_at, table_label, item_name, serving, quantity, amount, reason, note, returned_to_stock, table_cancelled, staff_name")
+    .eq("business_id", auth.businessId)
+    .gte("created_at", from)
+    .lte("created_at", to)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (voidsError) console.error("[bar/reports] voids query error:", voidsError.message);
+  const voidRows = voids ?? [];
+  const byStaff = new Map<string, { name: string; amount: number; count: number }>();
+  for (const v of voidRows) {
+    const name = v.staff_name ?? "Unknown";
+    const e = byStaff.get(name) ?? { name, amount: 0, count: 0 };
+    e.amount += Number(v.amount); e.count += Number(v.quantity);
+    byStaff.set(name, e);
+  }
+
   return NextResponse.json({
     stats: {
       total_revenue: totalRevenue,
@@ -127,5 +146,11 @@ export async function GET(request: NextRequest) {
     daily_chart: dailyChart,
     top_items: topItems,
     variance,
+    removed: {
+      total_amount: voidRows.reduce((s, v) => s + Number(v.amount), 0),
+      items: voidRows.reduce((s, v) => s + Number(v.quantity), 0),
+      by_staff: Array.from(byStaff.values()).sort((a, b) => b.amount - a.amount),
+      rows: voidRows.slice(0, 100),
+    },
   });
 }
