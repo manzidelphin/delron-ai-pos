@@ -759,3 +759,65 @@ export async function sendDailyReportEmail(opts: {
     return false;
   }
 }
+
+// ── Owner: copy of the signed agreement ──────────────────────────────────────
+
+/** Sends the owner the PDF of the Terms of Service agreement they just accepted. */
+export async function sendAgreementEmail(opts: {
+  to:           string;
+  ownerName:    string;
+  businessName: string;
+  reference:    string;
+  pdf:          Buffer;
+}): Promise<boolean> {
+  const { to, ownerName, businessName, reference, pdf } = opts;
+  const firstName = ownerName.split(" ")[0] || ownerName;
+  const subject = `Your signed agreement with DELRON AI POS (${businessName})`;
+  const filename = `Agreement - ${businessName.replace(/[^\w\- ]+/g, "").trim() || "business"}.pdf`;
+
+  const html = `<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,Segoe UI,Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden">
+        <tr><td style="background:#0f172a;padding:20px 28px">
+          <p style="margin:0;color:#ffffff;font-size:18px;font-weight:800">DELRON AI POS</p>
+        </td></tr>
+        <tr><td style="padding:28px">
+          <p style="margin:0 0 14px;color:#111827;font-size:15px">Hello ${firstName},</p>
+          <p style="margin:0 0 14px;color:#374151;font-size:14px;line-height:1.6">
+            Thank you for accepting the DELRON AI POS Terms of Service and Privacy Policy on behalf of
+            <strong>${businessName}</strong>. Your signed agreement is attached to this email as a PDF.
+            Please keep it for your records.
+          </p>
+          <p style="margin:0 0 14px;color:#374151;font-size:14px">Reference: <strong>${reference}</strong></p>
+          <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.6">
+            Questions? Reply to this email or call ${SUPPORT_PHONE}.
+          </p>
+        </td></tr>
+        <tr><td style="padding:16px 28px;background:#f9fafb;color:#9ca3af;font-size:12px">
+          DELLON · DELRON AI POS · Kigali, Rwanda
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  if (!resend) {
+    console.log(`[Agreement Email] To: ${to} | Business: ${businessName} | Ref: ${reference} | PDF: ${pdf.length} bytes`);
+    return false;
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: WELCOME_FROM, replyTo: SUPPORT_EMAIL, to, subject, html,
+      attachments: [{ filename, content: pdf }],
+    });
+    if (error) { console.error("[email] Agreement FAILED — to:", to, "| error:", JSON.stringify(error)); return false; }
+    console.log("[email] Agreement sent — id:", data?.id, "| to:", to);
+    return true;
+  } catch (e) {
+    console.error("[email] Agreement exception:", e);
+    return false;
+  }
+}

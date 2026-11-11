@@ -50,8 +50,12 @@ async function loadLogo(): Promise<string | null> {
  * accepted, and a signature block with the business name in the signature place
  * plus the evidence of the electronic acceptance.
  */
-export async function buildAgreementPdf(d: AgreementData): Promise<jsPDF> {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+export async function buildAgreementPdf(
+  d: AgreementData,
+  /** Logo as a data URL; leave out in the browser (loaded from /brand), null for none. */
+  opts: { logoDataUrl?: string | null } = {}
+): Promise<jsPDF> {
+  const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const W = 210, M = 18, CW = W - M * 2, BOTTOM = 280;
   let y = M;
   const acc = d.acceptance;
@@ -68,7 +72,7 @@ export async function buildAgreementPdf(d: AgreementData): Promise<jsPDF> {
   const rule = () => { ensure(4); doc.setDrawColor(190); doc.setLineWidth(0.2); doc.line(M, y, W - M, y); y += 4; };
 
   // ── Header ──────────────────────────────────────────────
-  const logo = await loadLogo();
+  const logo = opts.logoDataUrl !== undefined ? opts.logoDataUrl : await loadLogo();
   if (logo) doc.addImage(logo, "PNG", M, y - 2, 16, 15.6);
   doc.setFont("helvetica", "bold"); doc.setFontSize(16);
   doc.text("SERVICE AGREEMENT", W - M, y + 4, { align: "right" });
