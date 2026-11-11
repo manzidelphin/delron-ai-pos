@@ -110,10 +110,23 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ error: sale.shortMessage }, { status: 422 });
   }
 
-  await supabase
-    .from("bar_items")
-    .update(sale.update)
-    .eq("id", bar_item_id);
+  // Take the stock off in one database step, checked against this business: the
+  // change (not a computed new value) is applied, so two tills selling the same
+  // drink at once can't overwrite each other.
+  const bottlesDelta = Number(sale.update.quantity_bottles) - Number(item.quantity_bottles ?? 0);
+  const shotsDelta = sale.update.shots_remaining !== undefined
+    ? Number(sale.update.shots_remaining) - Number(item.shots_remaining ?? 0)
+    : 0;
+  const { error: stockError } = await supabase.rpc("adjust_bar_stock", {
+    p_id: bar_item_id,
+    p_business: auth.businessId,
+    p_bottles_delta: bottlesDelta,
+    p_shots_delta: shotsDelta,
+  });
+  if (stockError) {
+    console.error("[bar/tabs/items] stock update failed:", stockError.message);
+    return NextResponse.json({ error: "Could not update stock. Please try again." }, { status: 500 });
+  }
 
   // Insert order item
   const { data: orderItem, error } = await supabase
