@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://www.delronpos.com/terms" },
 };
 
+// The same text is kept as plain text in src/lib/legal/terms.ts for the signed
+// agreement PDF. When these Terms change, update both and bump TERMS_VERSION.
 export default function TermsPage() {
   return (
     <div className="min-h-screen" style={{ background: "#07101f" }}>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cleanMomoPayCode } from "@/lib/momo-pay";
+import { recordAcceptance } from "@/lib/agreement";
 import { sendNewSignupEmail, sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
@@ -16,11 +17,20 @@ export async function POST(req: NextRequest) {
       modules,
       language,
       momo_pay_code,
+      terms_accepted,
     } = body;
 
     if (!email || !password || !full_name || !business_name) {
       return NextResponse.json(
         { error: "email, password, full_name and business_name are required" },
+        { status: 400 }
+      );
+    }
+
+    // The owner signs the Terms of Service and Privacy Policy by ticking the box.
+    if (terms_accepted !== true) {
+      return NextResponse.json(
+        { error: "Please accept the Terms of Service and Privacy Policy to continue" },
         { status: 400 }
       );
     }
@@ -129,6 +139,19 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    // 4. Keep the signed agreement (date, Terms version, IP, device). Never blocks
+    // sign-up: if it fails, the owner is simply asked to accept again at login.
+    const { error: agreementError } = await recordAcceptance(supabase, req, {
+      businessId: business.id,
+      businessName: business_name,
+      userId: user_id,
+      name: full_name,
+      email: email || null,
+      phone: phone || null,
+      method: "signup",
+    });
+    if (agreementError) console.error("[onboarding] agreement record error:", agreementError);
 
     // Await both emails inside try/catch — failure never blocks signup,
     // but awaiting ensures the function doesn't terminate before Resend responds.

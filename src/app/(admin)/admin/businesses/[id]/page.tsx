@@ -5,6 +5,7 @@ import { ArrowLeft, Users, GitBranch } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import ImpersonateButton from "@/components/admin/impersonate-button";
+import AgreementButton from "@/components/admin/agreement-button";
 import BillingTabs from "@/components/admin/billing-tabs";
 
 export const dynamic = "force-dynamic";
@@ -110,7 +111,10 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
             ))}
           </div>
         </div>
-        <ImpersonateButton businessId={business.id} businessName={business.name} />
+        <div className="flex flex-wrap items-center gap-2">
+          <AgreementButton businessId={business.id} businessName={business.name} />
+          <ImpersonateButton businessId={business.id} businessName={business.name} />
+        </div>
       </div>
 
       {/* Revenue cards */}

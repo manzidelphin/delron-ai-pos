@@ -109,6 +109,7 @@ export default function OnboardingPage() {
           password: data.password,
           location: data.location,
           momo_pay_code: data.momo_pay_code,
+          terms_accepted: termsAccepted,
           modules: data.modules,
           language: data.language,
         }),

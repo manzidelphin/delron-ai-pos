@@ -11,6 +11,7 @@ import TopBar from "./topbar";
 import AIChatWidget from "@/components/ai/ai-chat-widget";
 import { Shield, X } from "lucide-react";
 import OfflineBanner from "./offline-banner";
+import { TermsGate } from "./terms-gate";
 import TiltLayer from "./tilt-layer";
 import { isFullScreenRoute } from "@/lib/full-screen";
 
@@ -103,6 +104,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       <OfflineBanner />
       {impersonation && <ImpersonationBanner businessName={impersonation.business_name} />}
+      {!impersonation && <TermsGate />}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
         {sidebarOpen && (
