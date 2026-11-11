@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
+import { GEMINI_MODEL } from "@/lib/ai";
 
 const FALLBACK = "AI assistant is temporarily unavailable. Please try again in a moment.";
 
@@ -100,14 +101,19 @@ LAST 7 DAYS TOTAL REVENUE: ${weekRevenue.toLocaleString()} RWF
     // Instantiate inside the handler so any constructor error is caught below
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", systemInstruction });
+      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL, systemInstruction });
       const result = await model.generateContent(message);
       const aiResponse = result.response.text();
 
-      void supabase.from("ai_conversations").insert([
-        { business_id: businessId, user_id: staffId, role: "user",      message },
-        { business_id: businessId, user_id: staffId, role: "assistant", message: aiResponse },
+      // Keep the conversation. It must be awaited: a Supabase query that is never
+      // awaited is never sent (nothing was ever saved before). user_id is the login
+      // account (auth user), not the staff row; PIN-only staff have none.
+      const { data: asker } = await supabase.from("staff").select("user_id").eq("id", staffId).maybeSingle();
+      const { error: saveError } = await supabase.from("ai_conversations").insert([
+        { business_id: businessId, user_id: asker?.user_id ?? null, role: "user",      message },
+        { business_id: businessId, user_id: asker?.user_id ?? null, role: "assistant", message: aiResponse },
       ]);
+      if (saveError) console.error("[AI Chat] could not save conversation:", saveError.message);
 
       return NextResponse.json({ response: aiResponse });
     } catch (geminiErr) {

@@ -5,11 +5,11 @@ import {
   ArrowRight, Play, Check, X as XIcon, Zap, Brain,
   BarChart3, ShoppingCart, Cake, Beer, CreditCard,
   MessageSquare, Printer, Receipt, ChevronDown,
-  Utensils, Bot, Star, CheckCircle2, Clock, ClipboardCheck,
+  Utensils, Bot, CheckCircle2, Clock, ClipboardCheck,
 } from "lucide-react";
 
 export const metadata = {
-  title: "DELRON AI POS | Rwanda's First AI-Powered POS System",
+  title: "DELRON AI POS | AI-Powered POS for Rwandan Businesses",
   description:
     "AI-powered point-of-sale built for Rwandan supermarkets, bakeries, bars, and restaurants. Founded by Manzi Delphin. MTN MoMo, Kinyarwanda SMS, real-time analytics.",
   keywords: [
@@ -26,14 +26,14 @@ export const metadata = {
   openGraph: {
     type: "website",
     url: "https://www.delronpos.com",
-    title: "DELRON AI POS — Rwanda's First AI-Powered POS",
+    title: "DELRON AI POS — AI-Powered POS for Rwandan Businesses",
     description: "One system for your supermarket, bakery, bar, and restaurant. Built in Kigali by Manzi Delphin.",
     siteName: "DELRON AI POS",
     locale: "en_RW",
   },
   twitter: {
     card: "summary_large_image",
-    title: "DELRON AI POS — Rwanda's First AI-Powered POS",
+    title: "DELRON AI POS — AI-Powered POS for Rwandan Businesses",
     description: "AI-powered POS for Rwandan businesses. MTN MoMo, Kinyarwanda SMS, theft detection.",
     creator: "@delronpos",
   },
@@ -102,13 +102,6 @@ const jsonLd = {
       contactType: "customer support",
       areaServed: "RW",
     },
-  },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    reviewCount: "27",
-    bestRating: "5",
-    worstRating: "1",
   },
 };
 
@@ -262,7 +255,7 @@ export default async function MarketingPage() {
 
           {/* Headline */}
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-black leading-[1.05] tracking-tight mb-6">
-            Rwanda&apos;s First<br />
+            Rwanda&apos;s<br />
             <span style={{
               background:"linear-gradient(135deg,#60a5fa 0%,#a78bfa 45%,#34d399 100%)",
               WebkitBackgroundClip:"text", backgroundClip:"text", WebkitTextFillColor:"transparent",
@@ -270,9 +263,9 @@ export default async function MarketingPage() {
           </h1>
 
           <p className="text-slate-300 text-xl sm:text-2xl max-w-3xl mx-auto mb-12 leading-relaxed font-light">
-            One system for your supermarket, bakery, and bar.{" "}
+            One system for your supermarket, bakery, bar, and restaurant.{" "}
             <span className="text-white font-semibold">Powered by Google Gemini AI</span>{" "}
-            — daily briefings, theft detection, Kinyarwanda SMS, and real-time analytics.
+            — daily briefings, stock and shot tracking, MTN MoMo, and real-time reports.
           </p>
 
           {/* CTAs */}
@@ -283,16 +276,16 @@ export default async function MarketingPage() {
               Start Free Trial
               <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <Link href="/onboarding"
+            <a href="#features"
               className="inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-base border border-slate-600 text-slate-200 hover:border-blue-500/50 hover:text-white hover:bg-blue-500/5 transition-all">
               <Play className="w-4 h-4 fill-blue-400 text-blue-400" />
-              Watch Demo
-            </Link>
+              See What It Does
+            </a>
           </div>
 
           {/* Hero stats pill */}
           <div className="inline-flex items-center gap-8 sm:gap-12 border border-slate-700/60 bg-slate-800/30 backdrop-blur-sm rounded-2xl px-8 py-4">
-            {[{v:"10+",l:"Modules"},{v:"MTN",l:"MoMo Ready"},{v:"AI",l:"Powered"},{v:"🇷🇼",l:"Rwanda"}].map((s,i) => (
+            {[{v:"4",l:"Business types"},{v:"MTN",l:"MoMo Ready"},{v:"AI",l:"Powered"},{v:"🇷🇼",l:"Rwanda"}].map((s,i) => (
               <div key={i} className="text-center">
                 <div className="text-2xl font-black text-white">{s.v}</div>
                 <div className="text-slate-500 text-xs mt-0.5">{s.l}</div>
@@ -305,9 +298,9 @@ export default async function MarketingPage() {
       {/* ══════════════ 2. TRUST BAR ══════════════ */}
       <section className="border-y border-slate-800/50 bg-slate-900/50 py-5">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <p className="text-slate-600 text-xs uppercase tracking-widest mb-3">Trusted by businesses across Rwanda</p>
+          <p className="text-slate-600 text-xs uppercase tracking-widest mb-3">Built in Kigali for</p>
           <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-2">
-            {["🇷🇼 Kigali","Butare","Gisenyi","Musanze","Rubavu","Rwamagana","Nyanza"].map((city, i, arr) => (
+            {["Supermarkets","Bakeries","Bars","Restaurants"].map((city, i, arr) => (
               <span key={city} className="flex items-center gap-2">
                 <span className="text-slate-400 text-sm font-medium">{city}</span>
                 {i < arr.length - 1 && <span className="w-1 h-1 rounded-full bg-slate-700" />}
@@ -323,7 +316,7 @@ export default async function MarketingPage() {
           <div className="text-center mb-16 reveal">
             <p className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-3">The Platform</p>
             <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">Built Different. Built Better.</h2>
-            <p className="text-slate-400 max-w-xl mx-auto">A real system for real Rwandan businesses — supermarket, bakery, and bar, all in one dashboard.</p>
+            <p className="text-slate-400 max-w-xl mx-auto">A real system for real Rwandan businesses — supermarket, bakery, bar, and restaurant, all in one dashboard.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
@@ -338,7 +331,7 @@ export default async function MarketingPage() {
                     <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
                     <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
                   </div>
-                  <div className="flex-1 mx-2 bg-slate-800/80 rounded px-2 py-0.5 text-slate-500 text-[10px] text-center">delron.app/dashboard</div>
+                  <div className="flex-1 mx-2 bg-slate-800/80 rounded px-2 py-0.5 text-slate-500 text-[10px] text-center">delronpos.com/dashboard</div>
                 </div>
                 <div className="p-3 space-y-2.5">
                   <div className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">Dashboard · Today</div>
@@ -611,13 +604,13 @@ export default async function MarketingPage() {
                desc:"Live sales tracking, revenue charts, and KPI dashboards updated the moment a transaction is recorded."},
               {icon:<ShoppingCart className="w-5 h-5 text-emerald-400" />, b:"border-emerald-500/20 hover:border-emerald-500/40 bg-emerald-500/5",
                title:"Multi-Module POS",
-               desc:"One login for supermarket, bakery, and bar. Switch modules instantly — your staff stays in their lane."},
+               desc:"One login for supermarket, bakery, bar, and restaurant. Switch modules instantly — your staff stays in their lane."},
               {icon:<Cake className="w-5 h-5 text-amber-400" />, b:"border-amber-500/20 hover:border-amber-500/40 bg-amber-500/5",
                title:"Bakery Production Tracking",
                desc:"Plan daily bakes, track raw materials, monitor waste, and compare production vs. sales in real time."},
               {icon:<Beer className="w-5 h-5 text-rose-400" />, b:"border-rose-500/20 hover:border-rose-500/40 bg-rose-500/5",
                title:"Shot Variance & Theft Detection",
-               desc:"Track every bottle opened vs. shots sold. Alerts fire automatically when variance exceeds your threshold — catches theft before it compounds."},
+               desc:"Sell spirits as single, double, quarter or bottle, and compare bottles used with shots sold — so missing stock shows up in your reports."},
               {icon:<MessageSquare className="w-5 h-5 text-cyan-400" />, b:"border-cyan-500/20 hover:border-cyan-500/40 bg-cyan-500/5",
                title:"Kinyarwanda SMS",
                desc:"Credit reminders, stock alerts, and daily summaries sent via SMS in Kinyarwanda and English — no app required."},
@@ -628,14 +621,14 @@ export default async function MarketingPage() {
                title:"Barcode Label Printing",
                desc:"Generate and print product barcodes directly from the system. Scan to add items at the POS — zero manual entry."},
               {icon:<Receipt className="w-5 h-5 text-orange-400" />, b:"border-orange-500/20 hover:border-orange-500/40 bg-orange-500/5",
-               title:"RRA/EBM Receipts",
-               desc:"Generate RRA-compliant electronic receipts with built-in EBM support — stay tax-compliant automatically."},
+               title:"MoMo Pay on Receipts",
+               desc:"Your MTN MoMo Pay code is printed under the total on every receipt, so customers can pay by phone straight away."},
               {icon:<Clock className="w-5 h-5 text-violet-400" />, b:"border-violet-500/20 hover:border-violet-500/40 bg-violet-500/5",
                title:"Shift Management & Cash Reconciliation",
                desc:"Every staff member clocks in and out with automatic cash counting, stock variance detection, and SMS alerts to the owner when shortages occur."},
               {icon:<ClipboardCheck className="w-5 h-5 text-sky-400" />, b:"border-sky-500/20 hover:border-sky-500/40 bg-sky-500/5",
                title:"Daily Stock Reconciliation",
-               desc:"Restock and closing count workflows across every module — supermarket, bakery, and bar — with automatic theft and waste detection at end of day."},
+               desc:"Restock and closing count workflows across every module — supermarket, bakery, and bar — comparing expected and counted stock at the end of the day."},
             ].map((f,i) => (
               <div key={f.title} className={`border rounded-xl p-6 ${f.b} transition-all hover:-translate-y-0.5 reveal reveal-d${(i%3)+1}`}>
                 <div className="mb-4">{f.icon}</div>
@@ -739,7 +732,7 @@ export default async function MarketingPage() {
           <div className="text-center mb-16 reveal">
             <p className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-3">Why DELRON?</p>
             <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">How We Compare</h2>
-            <p className="text-slate-400">DELRON AI POS vs Traditional POS Systems vs Spreadsheets — across the 12 features that matter most.</p>
+            <p className="text-slate-400">DELRON AI POS vs Traditional POS Systems vs Spreadsheets — across the features that matter most.</p>
           </div>
           <div className="rounded-2xl border border-slate-700/60 overflow-hidden reveal">
             <table className="w-full">
@@ -765,7 +758,6 @@ export default async function MarketingPage() {
                     ["Multi-Module (Super + Bakery + Bar + Restaurant)",true,       false,     false],
                     ["Real-Time Sales Analytics",          true,       true,      false],
                     ["Staff Performance Tracking",         true,       "Partial", false],
-                    ["RRA/EBM Receipt Support",            true,       true,      false],
                     ["Multi-Branch Support",               true,       true,      false],
                     ["3-Month Free Trial",                 true,       false,     false],
                   ] as [string,boolean|string,boolean|string,boolean|string][]
@@ -789,51 +781,6 @@ export default async function MarketingPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════ 9. TESTIMONIALS ══════════════ */}
-      <section className="py-24 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16 reveal">
-            <p className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-3">Testimonials</p>
-            <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">Rwandan Business Owners Love It</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {name:"Jean-Pierre Habimana", role:"Supermarket Owner", loc:"Kigali, Kimironko",
-               initials:"JH", grad:"from-blue-600 to-blue-900",
-               quote:"The AI briefing alone is worth it. Every morning at 6 AM I see exactly what to restock, which cashier sold the most, and where the money went. I no longer need to be there to know everything.",
-               tag:"AI Daily Briefing"},
-              {name:"Marie-Claire Uwimana", role:"Bakery & Pastry Shop", loc:"Butare, Centre-Ville",
-               initials:"MU", grad:"from-amber-600 to-amber-900",
-               quote:"Before DELRON, I had no idea how much flour I was wasting on mandazi that didn't sell. Now I see every ingredient used vs. every item sold. My costs dropped 22% in the first month.",
-               tag:"Bakery Production Tracking"},
-              {name:"David Nkurunziza", role:"Bar & Club Owner", loc:"Gisenyi, Rubavu",
-               initials:"DN", grad:"from-emerald-700 to-emerald-900",
-               quote:"Shot variance caught my bartender over-serving by 18%. I confronted him with the data — numbers don't lie. That one feature paid for 6 months of the subscription in a single week.",
-               tag:"Shot Variance Detection"},
-            ].map((t,i) => (
-              <div key={t.name} className={`bg-slate-800/40 border border-slate-700/60 rounded-2xl p-6 flex flex-col hover:border-slate-600/60 transition-colors reveal reveal-d${i+1}`}>
-                <div className="flex gap-0.5 mb-5">
-                  {[...Array(5)].map((_,i) => <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />)}
-                </div>
-                <p className="text-slate-200 text-sm leading-relaxed flex-1 mb-6">&quot;{t.quote}&quot;</p>
-                <div className="border-t border-slate-700/50 pt-4 flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${t.grad} flex items-center justify-center text-white font-black text-sm flex-shrink-0`}>
-                    {t.initials}
-                  </div>
-                  <div>
-                    <p className="font-bold text-white text-sm">{t.name}</p>
-                    <p className="text-slate-400 text-xs">{t.role} · {t.loc}</p>
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <span className="text-[10px] text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">{t.tag}</span>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -921,17 +868,17 @@ export default async function MarketingPage() {
           <div className="space-y-3 reveal">
             {[
               {q:"Does DELRON work without internet?",
-               a:"Staff log in using their PIN on a local device. Core POS — sales, receipts, inventory updates — works with limited connectivity. AI features and SMS require an internet connection."},
+               a:"DELRON runs in your browser and needs an internet connection — a normal mobile data bundle is enough. If the connection drops, an offline page tells staff to reconnect; sales are not recorded while offline."},
               {q:"Can I use it for multiple branches?",
                a:"Yes. DELRON supports multi-branch management from a single owner account. Each branch has its own inventory, staff, and reporting — and the owner sees all branches from one dashboard."},
               {q:"Does it support MTN MoMo and Airtel Money?",
                a:"MoMo and Airtel Money integration is in the roadmap and available on Enterprise plans by request. Cash, card, and manual mobile payment recording is supported on all plans today."},
               {q:"Is my data secure?",
-               a:"All data is encrypted in transit and at rest using Supabase (PostgreSQL) with row-level security. Your data is never shared or sold. Automated hourly backups run continuously."},
+               a:"All data is encrypted in transit and at rest using Supabase (PostgreSQL) with row-level security. Your data is never shared or sold, and our database provider keeps regular backups."},
               {q:"Can the AI speak Kinyarwanda?",
                a:"Yes. The DELRON AI assistant (powered by Google Gemini) understands and responds in Kinyarwanda. Ask about your sales, inventory, or staff performance in Kinyarwanda and get a clear, accurate answer."},
               {q:"How is DELRON different from other POS systems?",
-               a:"Most POS systems are built for simple retail — they record a sale and print a receipt. DELRON goes further: AI daily briefings that analyse your data every morning, bakery production tracking with ingredient costing, shot variance detection that flags bartender theft before it compounds, and Kinyarwanda SMS alerts your staff actually read. Generic POS software treats a supermarket, bakery, and bar the same way — DELRON has dedicated modules with workflows specific to each business type. You also get a 3-month free trial with no credit card, and features most competitors charge extra for or don't offer at all."},
+               a:"Most POS systems are built for simple retail — they record a sale and print a receipt. DELRON goes further: AI daily briefings that analyse your data every morning, bakery production tracking with ingredient costing, spirits sold as single, double or quarter with shots tracked against bottles, and SMS alerts. Generic POS software treats a supermarket, bakery, bar, and restaurant the same way — DELRON has dedicated modules with workflows specific to each business type. You also get a 3-month free trial with no credit card, and features most competitors charge extra for or don't offer at all."},
               {q:"Can I install DELRON as an app on my computer or phone?",
                a:"Yes. DELRON is a Progressive Web App (PWA) — install it directly from your browser with no app store required. On Windows or Mac, click 'Install' in your browser's address bar. On Android, tap 'Add to Home Screen'. On iPhone, use Safari's Share menu → 'Add to Home Screen'. Once installed, it launches like a native app, works offline for core POS functions, and updates automatically — no manual downloads ever needed."},
             ].map(({q,a}) => (

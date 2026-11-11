@@ -316,7 +316,7 @@ export default function OnboardingPage() {
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Always included for free</p>
                 <div className="flex flex-wrap gap-2">
-                  {["DELRON AI Assistant", "Credit & Debt", "Staff Management", "Reports", "SMS Alerts", "RRA/EBM Receipts", "Multi-branch"].map((f) => (
+                  {["DELRON AI Assistant", "Credit & Debt", "Staff Management", "Reports", "SMS Alerts", "Multi-branch"].map((f) => (
                     <span key={f} className="text-xs px-2.5 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-full">✓ {f}</span>
                   ))}
                 </div>
