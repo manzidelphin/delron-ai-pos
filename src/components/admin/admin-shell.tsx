@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { Building2, LayoutDashboard, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IdleSignOut } from "@/components/layout/idle-sign-out";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -10,6 +11,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100">
+      {/* The admin portal sees every business: sign out after 30 min idle. */}
+      <IdleSignOut enabled />
       {/* Sidebar */}
       <aside className="w-56 flex-shrink-0 bg-zinc-900 border-r border-zinc-800 flex flex-col">
         <div className="h-16 px-4 border-b border-zinc-800 flex items-center gap-3">

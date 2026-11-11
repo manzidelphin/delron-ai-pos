@@ -2,18 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { signOutEverywhere } from "@/lib/sign-out";
 import { useAuthStore } from "@/store/auth-store";
 import { cn, getInitials } from "@/lib/utils";
 import { Menu, Bell, Sun, Moon, LogOut, ChevronDown, MapPin } from "lucide-react";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
-import { clearApiCache } from "@/lib/use-api";
 
 export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const { staff, activeOperator, currentBranch, branches, setCurrentBranch, reset } = useAuthStore();
+  const { staff, activeOperator, currentBranch, branches, setCurrentBranch } = useAuthStore();
   const displayStaff = activeOperator ?? staff;
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -34,13 +33,8 @@ export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   }, []);
 
   const handleLogout = async () => {
-    // Clear any PIN-operator cookie too, or the next person to log in on this
-    // device is treated by the server as that operator.
-    await fetch("/api/auth/pin-login", { method: "DELETE" }).catch(() => {});
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    reset();
-    await clearApiCache(); // never show this business's cached figures to the next user
+    // Same full sign-out as the idle timer (PIN cookie, session, cached figures).
+    await signOutEverywhere();
     toast.success("Logged out successfully");
     router.push("/login");
   };

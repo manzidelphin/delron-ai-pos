@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/auth-store";
+import { ACTIVITY_KEY } from "@/lib/sign-out";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, Shield } from "lucide-react";
 
@@ -29,6 +30,13 @@ export default function LoginPage() {
   const [maskedEmail, setMaskedEmail] = useState("");
   const [cooldown, setCooldown]       = useState(0);
   const inputRefs                     = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Explain an automatic sign-out after 30 minutes without activity.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("reason") === "idle") {
+      toast.info("You were signed out after 30 minutes of inactivity, for security. Please sign in again.");
+    }
+  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -56,6 +64,8 @@ export default function LoginPage() {
       // (cookie + store), otherwise the server keeps acting as that operator.
       await fetch("/api/auth/pin-login", { method: "DELETE" }).catch(() => {});
       useAuthStore.getState().clearOperator();
+      // A fresh login starts a fresh idle timer (an old timestamp would sign out at once).
+      try { localStorage.removeItem(ACTIVITY_KEY); } catch { /* storage blocked */ }
 
       // Check if 2FA is enabled for this account
       const checkRes = await fetch("/api/auth/2fa/check");

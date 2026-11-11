@@ -12,6 +12,7 @@ import AIChatWidget from "@/components/ai/ai-chat-widget";
 import { Shield, X } from "lucide-react";
 import OfflineBanner from "./offline-banner";
 import { TermsGate } from "./terms-gate";
+import { IdleSignOut } from "./idle-sign-out";
 import TiltLayer from "./tilt-layer";
 import { isFullScreenRoute } from "@/lib/full-screen";
 
@@ -105,6 +106,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       <OfflineBanner />
       {impersonation && <ImpersonationBanner businessName={impersonation.business_name} />}
       {!impersonation && <TermsGate />}
+      {/* Owners and managers (incl. an admin impersonating as owner) are signed out
+          after 30 min idle. PIN staff (cashier, bartender…) are never timed out. */}
+      <IdleSignOut enabled={role === "owner" || role === "manager"} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
         {sidebarOpen && (
