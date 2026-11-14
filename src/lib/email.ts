@@ -26,18 +26,24 @@ export async function sendOTPEmail(to: string, otp: string, businessName: string
         </div>
         <h2 style="color:#f8fafc;margin:0 0 8px;font-size:20px">DELRON AI POS</h2>
         <p style="color:#94a3b8;margin:0 0 24px;font-size:14px">${businessName}</p>
-        <p style="color:#cbd5e1;font-size:15px;margin:0 0 16px">Your two-factor authentication code is:</p>
+        <p style="color:#cbd5e1;font-size:15px;margin:0 0 16px">Your sign-in code is:</p>
         <div style="background:#0f172a;border-radius:12px;padding:20px;margin:0 0 20px;letter-spacing:12px;font-size:36px;font-weight:bold;color:#3b82f6;font-family:monospace">
           ${otp}
         </div>
         <p style="color:#64748b;font-size:13px;margin:0">This code expires in <strong style="color:#94a3b8">10 minutes</strong>.</p>
-        <p style="color:#64748b;font-size:13px;margin:8px 0 0">If you didn't request this code, ignore this email.</p>
+        <p style="color:#64748b;font-size:13px;margin:8px 0 0">Never share this code. DELRON staff will never ask for it.</p>
+        <p style="color:#f59e0b;font-size:13px;margin:8px 0 0">If you didn't just try to sign in, someone may know your password: change it now.</p>
       </div>
     </div>
   `;
 
   if (!resend) {
-    // Placeholder key — log OTP to server console for testing
+    // Never print sign-in codes on the live site: fail instead.
+    if (process.env.NODE_ENV === "production") {
+      console.error("[2FA OTP] RESEND_API_KEY missing in production: code not sent");
+      return false;
+    }
+    // Placeholder key on a developer's machine: log the code for testing
     console.log("════════════════════════════════════");
     console.log(`[2FA OTP] To: ${to}`);
     console.log(`[2FA OTP] Code: ${otp}`);

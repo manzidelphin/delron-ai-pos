@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { DEVICE_COOKIE, sha256Hex } from "@/lib/two-factor";
 
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -101,6 +102,37 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // ── Email code (2FA) for owners, managers and platform admins ──────────────
+  // Until this device has passed the emailed code, pages send them to the code
+  // step and data requests are refused. The code routes themselves (/api/auth/*)
+  // and public pages stay reachable. PIN staff never need it.
+  const twoFactorStatus = async (): Promise<string> => {
+    const token = request.cookies.get(DEVICE_COOKIE)?.value;
+    const { data, error } = await supabase.rpc("two_factor_status", {
+      p_token_hash: token ? await sha256Hex(token) : null,
+    });
+    if (error) console.error("[middleware] two_factor_status error:", error.message);
+    return error ? "required" : String(data); // fail closed
+  };
+  const needsCodeCheck =
+    !!user &&
+    !pathname.startsWith("/api/auth/") &&
+    (!isPublicRoute || pathname === "/login" || pathname.startsWith("/api/"));
+  const codeRequired = needsCodeCheck ? (await twoFactorStatus()) === "required" : false;
+
+  if (codeRequired && pathname !== "/login") {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Enter the code sent to your email to continue.", code: "two_factor_required" },
+        { status: 401 }
+      );
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "?verify=1";
+    return NextResponse.redirect(url);
+  }
+
   // Protect /admin routes: requires a record in platform_admins (independent of staff/business).
   if (user && pathname.startsWith("/admin") && !pathname.startsWith("/api/admin")) {
     const { data: adminRecord } = await supabase
@@ -120,7 +152,7 @@ export async function updateSession(request: NextRequest) {
   // A signed-in user on /login goes to their home. Without a business (staff row) the
   // dashboard would send them straight back here, so: platform admins go to /admin,
   // and anyone else is left on /login instead of bouncing in a loop.
-  if (user && pathname === "/login") {
+  if (user && pathname === "/login" && !codeRequired) {
     const { data: staffRow } = await supabase
       .from("staff").select("business_id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
     let target: string | null = staffRow ? "/dashboard" : null;

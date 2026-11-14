@@ -29,6 +29,7 @@ export default function LoginPage() {
   const [otpLoading, setOtpLoading]   = useState(false);
   const [maskedEmail, setMaskedEmail] = useState("");
   const [cooldown, setCooldown]       = useState(0);
+  const [trustDevice, setTrustDevice] = useState(false);
   const inputRefs                     = useRef<(HTMLInputElement | null)[]>([]);
 
   // Explain an automatic sign-out after 30 minutes without activity.
@@ -36,6 +37,29 @@ export default function LoginPage() {
     if (new URLSearchParams(window.location.search).get("reason") === "idle") {
       toast.info("You were signed out after 30 minutes of inactivity, for security. Please sign in again.");
     }
+  }, []);
+
+  // Sent here by the server (?verify=1): already signed in, but this device still
+  // needs the email code. Send one and show the code step straight away.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("verify") !== "1") return;
+    (async () => {
+      try {
+        const check = await (await fetch("/api/auth/2fa/check")).json() as { enabled: boolean; masked_email?: string };
+        if (!check.enabled) { window.location.href = "/dashboard"; return; }
+        setMaskedEmail(check.masked_email ?? "");
+        setStep("otp");
+        const sendRes = await fetch("/api/auth/2fa/send", { method: "POST" });
+        if (sendRes.ok) {
+          setCooldown(30);
+          toast.info("For security, enter the code we just emailed you.");
+        } else {
+          const e = await sendRes.json().catch(() => ({})) as { error?: string };
+          toast.error(e.error ?? "Could not send the code. Try \"Resend code\".");
+        }
+        setTimeout(() => inputRefs.current[0]?.focus(), 100);
+      } catch { /* stay on the login form */ }
+    })();
   }, []);
 
   useEffect(() => {
@@ -80,7 +104,8 @@ export default function LoginPage() {
       // 2FA enabled — send OTP and show verification screen
       const sendRes = await fetch("/api/auth/2fa/send", { method: "POST" });
       if (!sendRes.ok) {
-        toast.error("Failed to send verification code. Please try again.");
+        const e = await sendRes.json().catch(() => ({})) as { error?: string };
+        toast.error(e.error ?? "Failed to send verification code. Please try again.");
         await supabase.auth.signOut();
         return;
       }
@@ -119,7 +144,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/2fa/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: otp }),
+        body: JSON.stringify({ code: otp, trust: trustDevice }),
       });
       if (!res.ok) {
         const data = await res.json() as { error: string };
@@ -146,7 +171,8 @@ export default function LoginPage() {
       setTimeout(() => inputRefs.current[0]?.focus(), 50);
       toast.success("New code sent");
     } else {
-      toast.error("Failed to resend. Try again shortly.");
+      const e = await res.json().catch(() => ({})) as { error?: string };
+      toast.error(e.error ?? "Failed to resend. Try again shortly.");
     }
   };
 
@@ -290,6 +316,19 @@ export default function LoginPage() {
                   />
                 ))}
               </div>
+
+              <label className="flex items-start gap-2.5 text-sm text-slate-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={trustDevice}
+                  onChange={(e) => setTrustDevice(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-blue-500"
+                />
+                <span>
+                  Trust this device for 30 days
+                  <span className="block text-xs text-slate-500">Only on your own phone or computer, never on a shared one.</span>
+                </span>
+              </label>
 
               <button
                 onClick={() => verifyOTP()}
