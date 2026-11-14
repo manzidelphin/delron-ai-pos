@@ -21,9 +21,7 @@ export async function sendOTPEmail(to: string, otp: string, businessName: string
   const html = `
     <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
       <div style="background:#1e293b;border-radius:16px;padding:32px;text-align:center">
-        <div style="background:#3b82f6;width:48px;height:48px;border-radius:12px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center">
-          <span style="color:white;font-size:24px;font-weight:bold">D</span>
-        </div>
+        <img src="https://www.delronpos.com/brand/logo-mark.png" alt="DELRON" width="56" height="56" style="display:block;margin:0 auto 16px;border-radius:12px" />
         <h2 style="color:#f8fafc;margin:0 0 8px;font-size:20px">DELRON AI POS</h2>
         <p style="color:#94a3b8;margin:0 0 24px;font-size:14px">${businessName}</p>
         <p style="color:#cbd5e1;font-size:15px;margin:0 0 16px">Your sign-in code is:</p>

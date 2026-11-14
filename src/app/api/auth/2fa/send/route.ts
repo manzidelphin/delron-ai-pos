@@ -46,7 +46,13 @@ export async function POST() {
     return NextResponse.json({ error: "Failed to generate code" }, { status: 500 });
   }
 
-  const sent = await sendOTPEmail(to, code, business?.name ?? "DELRON AI POS");
+  // A platform admin has no business of their own: say so instead of a blank name.
+  let label = business?.name;
+  if (!label) {
+    const { data: admin2 } = await admin.from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+    label = admin2 ? "DELRON Admin console" : "Your DELRON account";
+  }
+  const sent = await sendOTPEmail(to, code, label);
   if (!sent) return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
 
   const masked = to.replace(/(.{1,3})(.*)(@.+)/, (_, a, b, c) => a + b.replace(/./g, "*") + c);
