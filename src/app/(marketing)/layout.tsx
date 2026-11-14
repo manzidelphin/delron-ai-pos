@@ -1,14 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import "@fontsource-variable/plus-jakarta-sans";
 import { Instagram, Mail, MapPin, Phone } from "lucide-react";
 import { MarketingNav } from "./marketing-nav";
 
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], display: "swap", weight: ["400", "500", "600", "700", "800"] });
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${jakarta.className} min-h-screen bg-white text-[#0B1F3A] antialiased`}>
+    <div className="min-h-screen bg-white text-[#0B1F3A] antialiased"
+      style={{ fontFamily: "'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif" }}>
       <MarketingNav />
 
       <main>{children}</main>
