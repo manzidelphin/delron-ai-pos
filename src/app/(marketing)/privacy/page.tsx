@@ -9,18 +9,18 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen" style={{ background: "#07101f" }}>
+    <div className="min-h-screen bg-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24">
 
         {/* Header */}
         <div className="mb-12">
-          <p className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-3">Legal</p>
-          <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">Privacy Policy</h1>
+          <p className="text-blue-700 text-xs font-bold uppercase tracking-widest mb-3">Legal</p>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mb-2">Privacy Policy</h1>
           <p className="text-slate-500 text-sm">Last updated: July 3, 2026</p>
-          <div className="mt-6 p-5 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-            <p className="text-slate-300 text-sm leading-relaxed">
+          <div className="mt-6 p-5 bg-blue-50 border border-blue-100 rounded-xl">
+            <p className="text-slate-700 text-sm leading-relaxed">
               This Privacy Policy explains how{" "}
-              <strong className="text-white">DELLON</strong>, operating
+              <strong className="text-slate-900">DELLON</strong>, operating
               DELRON AI POS, collects, uses, and protects your information.
             </p>
           </div>
@@ -104,7 +104,7 @@ export default function PrivacyPage() {
               <li>After cancellation: data is retained for 90 days then permanently deleted</li>
               <li>
                 You may request immediate deletion by emailing{" "}
-                <a href="mailto:info@delronpos.com" className="text-blue-400 hover:text-blue-300 underline">
+                <a href="mailto:info@delronpos.com" className="text-blue-700 hover:text-blue-900 underline">
                   info@delronpos.com
                 </a>
               </li>
@@ -121,7 +121,7 @@ export default function PrivacyPage() {
             </ul>
             <p>
               To exercise these rights, contact{" "}
-              <a href="mailto:info@delronpos.com" className="text-blue-400 hover:text-blue-300 underline">
+              <a href="mailto:info@delronpos.com" className="text-blue-700 hover:text-blue-900 underline">
                 info@delronpos.com
               </a>
             </p>
@@ -156,7 +156,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section n="10" title="CONTACT">
-            <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5 space-y-2 not-prose">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-2 not-prose">
               <ContactRow label="Email" value="support@delronpos.com" href="mailto:support@delronpos.com" />
               <ContactRow label="Phone" value="+250 785 995 840" href="tel:+250785995840" />
               <ContactRow label="Address" value="kg 270, Kanserege, Kamutwa, Kacyiru, Gasabo, Kigali, Rwanda" />
@@ -166,9 +166,9 @@ export default function PrivacyPage() {
 
         </div>
 
-        <div className="mt-14 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="text-slate-600 text-xs">© 2026 DELLON · Kigali, Rwanda</p>
-          <Link href="/terms" className="text-blue-400 hover:text-blue-300 text-xs underline">
+        <div className="mt-14 pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <p className="text-slate-500 text-xs">© 2026 DELLON · Kigali, Rwanda</p>
+          <Link href="/terms" className="text-blue-700 hover:text-blue-900 text-xs underline">
             Terms of Service →
           </Link>
         </div>
@@ -179,12 +179,12 @@ export default function PrivacyPage() {
 
 function Section({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
   return (
-    <div className="border-t border-slate-800/80 pt-8">
-      <h2 className="text-base font-black text-white mb-4 flex items-center gap-2">
-        <span className="text-blue-400 tabular-nums">{n}.</span>
+    <div className="border-t border-slate-200 pt-8">
+      <h2 className="text-base font-black text-slate-900 mb-4 flex items-center gap-2">
+        <span className="text-blue-700 tabular-nums">{n}.</span>
         {title}
       </h2>
-      <div className="text-slate-400 text-sm leading-relaxed space-y-4 [&_ul]:space-y-2 [&_ul]:pl-4 [&_li]:relative [&_li]:pl-3 [&_li]:before:absolute [&_li]:before:left-0 [&_li]:before:content-['·'] [&_li]:before:text-blue-500 [&_strong]:text-slate-200">
+      <div className="text-slate-600 text-sm leading-relaxed space-y-4 [&_ul]:space-y-2 [&_ul]:pl-4 [&_li]:relative [&_li]:pl-3 [&_li]:before:absolute [&_li]:before:left-0 [&_li]:before:content-['·'] [&_li]:before:text-blue-500 [&_strong]:text-slate-800">
         {children}
       </div>
     </div>
@@ -194,7 +194,7 @@ function Section({ n, title, children }: { n: string; title: string; children: R
 function SubSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <p className="text-slate-300 font-semibold text-xs uppercase tracking-wider">{label}</p>
+      <p className="text-slate-700 font-semibold text-xs uppercase tracking-wider">{label}</p>
       {children}
     </div>
   );
@@ -205,9 +205,9 @@ function ContactRow({ label, value, href }: { label: string; value: string; href
     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm">
       <span className="text-slate-500 font-medium w-24 flex-shrink-0">{label}</span>
       {href ? (
-        <a href={href} className="text-blue-400 hover:text-blue-300 transition-colors">{value}</a>
+        <a href={href} className="text-blue-700 hover:text-blue-900 transition-colors">{value}</a>
       ) : (
-        <span className="text-slate-300">{value}</span>
+        <span className="text-slate-700">{value}</span>
       )}
     </div>
   );
