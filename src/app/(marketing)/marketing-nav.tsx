@@ -64,6 +64,9 @@ export function MarketingNav() {
         </div>
       </div>
 
+      {/* Scroll progress (driven by the landing page's motion script) */}
+      <div id="lp-progress" className="absolute left-0 bottom-0 h-[2px] w-full origin-left bg-[#1D4ED8]" style={{ transform: "scaleX(0)" }} aria-hidden="true" />
+
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-[#E3E8EF] px-4 py-3">
           {LINKS.map((l) => (
