@@ -306,3 +306,43 @@
   .motion-page .glass-card:hover { translate: none !important; }
   .motion-page button:active { scale: none !important; }
 }
+
+/* Every card in a grid (Bar Items, Products, Tables, Menu, Staff…) comes in one
+   after another, whatever its style. Pages that animate with Framer Motion mark
+   their root .no-auto-motion-scope and are left alone. */
+.motion-page .grid > *:not(.no-auto-motion) {
+  animation: card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.motion-page .grid > :nth-child(1)  { animation-delay: 0.04s; }
+.motion-page .grid > :nth-child(2)  { animation-delay: 0.09s; }
+.motion-page .grid > :nth-child(3)  { animation-delay: 0.14s; }
+.motion-page .grid > :nth-child(4)  { animation-delay: 0.19s; }
+.motion-page .grid > :nth-child(5)  { animation-delay: 0.24s; }
+.motion-page .grid > :nth-child(6)  { animation-delay: 0.29s; }
+.motion-page .grid > :nth-child(7)  { animation-delay: 0.34s; }
+.motion-page .grid > :nth-child(8)  { animation-delay: 0.39s; }
+.motion-page .grid > :nth-child(9)  { animation-delay: 0.44s; }
+.motion-page .grid > :nth-child(10) { animation-delay: 0.48s; }
+.motion-page .grid > :nth-child(n+11) { animation-delay: 0.52s; }
+
+/* Big rounded cards in a grid lift under the mouse. */
+.motion-page .grid > [class*="rounded-2xl"]:not(.no-auto-motion) {
+  transition: translate 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+@media (hover: hover) {
+  .motion-page .grid > [class*="rounded-2xl"]:not(.no-auto-motion):hover {
+    translate: 0 -4px;
+    box-shadow: 0 20px 44px -20px rgba(59, 130, 246, 0.45);
+  }
+}
+
+/* Dashboard (and any page marked so) keeps only its own Framer Motion animation. */
+.motion-page .no-auto-motion-scope .grid > *,
+.motion-page .no-auto-motion-scope .glass-card,
+.motion-page .no-auto-motion-scope tbody tr { animation: none; }
+.motion-page .no-auto-motion-scope .grid > [class*="rounded-2xl"]:hover { translate: none; box-shadow: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-page .grid > * { animation: none !important; }
+  .motion-page .grid > [class*="rounded-2xl"]:hover { translate: none !important; }
+}

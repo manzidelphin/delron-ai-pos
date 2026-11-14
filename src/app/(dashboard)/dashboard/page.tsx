@@ -221,7 +221,7 @@ export default function DashboardPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="relative">
-        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-6">
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="no-auto-motion-scope space-y-6">
           {/* Header */}
           <motion.div variants={riseIn} className="flex flex-wrap items-end justify-between gap-3">
             <div>
