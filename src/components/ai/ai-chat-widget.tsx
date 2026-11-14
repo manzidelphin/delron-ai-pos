@@ -2,17 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAIStore } from "@/store/ai-store";
-import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
 import { Zap, X, Send, Loader2, Trash2, ChevronDown } from "lucide-react";
 
 const QUICK_QUESTIONS = [
   "Revenue today",
-  "Low stock items",
+  "Best sellers this week",
+  "Who sold the most yesterday?",
+  "What is out of stock?",
   "Who owes us money?",
-  "Top selling product",
-  "Open bar tabs",
-  "Bakery production today",
+  "Cash shortages this week",
 ];
 
 function MessageBubble({
@@ -27,7 +26,7 @@ function MessageBubble({
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
+          "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line break-words",
           isUser
             ? "bg-blue-600 text-white rounded-br-sm"
             : "bg-slate-700 text-slate-100 rounded-bl-sm"
@@ -59,7 +58,6 @@ function TypingIndicator() {
 export default function AIChatWidget({ hideLauncher = false }: { hideLauncher?: boolean }) {
   const { isOpen, messages, isLoading, input, setOpen, addMessage, setLoading, setInput, clearMessages } =
     useAIStore();
-  const { business } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [hasAlerts] = useState(true); // Could be driven by real data
@@ -80,6 +78,12 @@ export default function AIChatWidget({ hideLauncher = false }: { hideLauncher?: 
     const msg = (text ?? input).trim();
     if (!msg || isLoading) return;
 
+    // Earlier turns (without the greeting) so follow-ups like "and yesterday?" work.
+    const history = messages
+      .filter((m) => m.id !== "welcome")
+      .slice(-12)
+      .map((m) => ({ role: m.role, content: m.content }));
+
     setInput("");
     addMessage({ role: "user", content: msg });
     setLoading(true);
@@ -88,7 +92,7 @@ export default function AIChatWidget({ hideLauncher = false }: { hideLauncher?: 
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg, businessId: business?.id }),
+        body: JSON.stringify({ message: msg, history }),
       });
 
       if (!res.ok) throw new Error("AI request failed");

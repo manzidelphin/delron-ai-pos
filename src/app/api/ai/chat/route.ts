@@ -1,10 +1,26 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, type Content, type Part } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 import { GEMINI_MODEL } from "@/lib/ai";
+import { kigaliNowText, kigaliToday, runAITool, toolsFor, type AIToolContext } from "@/lib/ai-tools";
 
 const FALLBACK = "AI assistant is temporarily unavailable. Please try again in a moment.";
+const MAX_TOOL_ROUNDS = 6;
+const MAX_HISTORY = 12;
+
+type HistoryMessage = { role: "user" | "assistant"; content: string };
+
+/** Earlier turns of this conversation, in Gemini's format (must start with the user). */
+function toGeminiHistory(raw: unknown): Content[] {
+  if (!Array.isArray(raw)) return [];
+  const msgs = raw
+    .filter((m): m is HistoryMessage => !!m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim() !== "")
+    .slice(-MAX_HISTORY)
+    .map((m) => ({ role: m.role === "user" ? "user" : "model", parts: [{ text: m.content.slice(0, 4000) }] }));
+  while (msgs.length && msgs[0].role !== "user") msgs.shift();
+  return msgs;
+}
 
 export async function POST(req: NextRequest) {
   // Outer catch — ensures we always return valid JSON, never an empty body
@@ -13,13 +29,12 @@ export async function POST(req: NextRequest) {
     if (auth.error) return auth.error;
 
     const body = await req.json().catch(() => ({}));
-    const { message } = body as { message?: string };
+    const { message, history } = body as { message?: string; history?: unknown };
 
     if (!message?.trim()) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
 
-    // Check API key before doing anything expensive
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.error("[AI Chat] GEMINI_API_KEY is not set in environment");
@@ -27,91 +42,58 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createAdminClient();
-    const { businessId, staffId } = auth;
-    const today = new Date().toISOString().split("T")[0];
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { businessId, staffId, role } = auth;
+    const fullAccess = role === "owner" || role === "manager";
 
-    const [
-      todayOrders,
-      lowStockProducts,
-      lowStockBarItems,
-      lowStockMaterials,
-      openCredits,
-      overdueCredits,
-      todayProduction,
-      openTabs,
-      recentTransactions,
-    ] = await Promise.all([
-      supabase.from("transactions").select("total, module_source, created_at").eq("business_id", businessId).gte("created_at", today),
-      supabase.from("products").select("name, quantity, min_quantity, unit").eq("business_id", businessId).limit(10),
-      supabase.from("bar_items").select("name, quantity_bottles, min_quantity").eq("business_id", businessId).limit(10),
-      supabase.from("raw_materials").select("name, quantity, min_quantity, unit").eq("business_id", businessId).limit(10),
-      supabase.from("credits").select("customer_name, balance, due_date, status").eq("business_id", businessId).neq("status", "paid").limit(20),
-      supabase.from("credits").select("customer_name, customer_phone, balance").eq("business_id", businessId).eq("status", "overdue").limit(10),
-      supabase.from("production_logs").select("quantity_produced, finished_good_id").eq("business_id", businessId).gte("created_at", today),
-      supabase.from("orders").select("total, table_id, status").eq("business_id", businessId).eq("status", "pending").limit(10),
-      supabase.from("transactions").select("total, module_source, created_at").eq("business_id", businessId).gte("created_at", sevenDaysAgo).order("created_at", { ascending: false }),
+    const [{ data: biz }, { data: me }] = await Promise.all([
+      supabase.from("businesses").select("name, modules").eq("id", businessId).maybeSingle(),
+      supabase.from("staff").select("name, user_id").eq("id", staffId).maybeSingle(),
     ]);
+    const modules = Array.isArray(biz?.modules) ? (biz!.modules as string[]).join(", ") : "";
 
-    const todayRevenue = (todayOrders.data ?? []).reduce((s, t) => s + (t.total ?? 0), 0);
-    const weekRevenue = (recentTransactions.data ?? []).reduce((s, t) => s + (t.total ?? 0), 0);
-    const totalOutstanding = (openCredits.data ?? []).reduce((s, c) => s + (c.balance ?? 0), 0);
+    const systemInstruction = `You are DELRON AI, the assistant inside DELRON POS for the business "${biz?.name ?? "this business"}" in Rwanda.
+Modules in use: ${modules || "unknown"}.
+Right now in Kigali it is ${kigaliNowText()} (today is ${kigaliToday()}). Resolve words like "today", "yesterday", "this week" (Monday to today), "last month" into exact YYYY-MM-DD dates yourself.
+You are talking to ${me?.name ?? "a staff member"} (role: ${role}).${fullAccess ? "" : " This person is not an owner or manager: they can see items, open tabs and only their own sales. If they ask for anything else, say only the owner or a manager can see it."}
 
-    const todayByModule = (todayOrders.data ?? []).reduce((acc: Record<string, number>, t) => {
-      if (t.module_source) acc[t.module_source] = (acc[t.module_source] ?? 0) + t.total;
-      return acc;
-    }, {});
+How to answer:
+- Use the tools to look up real data for every question about sales, stock, prices, customers, staff, shifts, tabs, waste or orders. Never guess or invent numbers, names or items. Call several tools, or the same tool several times (for example two periods to compare), when needed.
+- If a tool returns nothing, say there is no record for that period instead of making something up. If a tool returns an error, say the data could not be loaded.
+- Reply in the language the user writes in (Kinyarwanda or English). Keep answers short and clear, with the key number first. Use simple lists for several items.
+- Write money as "12,500 RWF". Mention the period you looked at when it is not obvious.
+- You can also give practical advice (what to restock, which product sells best, which staff has cash shortages) based on the data you looked up.
+- Plain text only: no markdown tables, no headings, no bold markers.`;
 
-    const lowProducts = (lowStockProducts.data ?? []).filter(p => p.quantity <= p.min_quantity);
-    const lowBar = (lowStockBarItems.data ?? []).filter(i => i.quantity_bottles <= i.min_quantity);
-    const lowMaterials = (lowStockMaterials.data ?? []).filter(m => m.quantity <= m.min_quantity);
+    const ctx: AIToolContext = { admin: supabase, businessId, staffId, fullAccess };
 
-    const systemInstruction = `You are DELRON AI, the smart business assistant for this business. You have access to real-time business data.
-Always respond helpfully, clearly, and concisely. You can respond in English or Kinyarwanda depending on what language the user writes in.
-Always format money as "X,XXX RWF".
-
-CURRENT BUSINESS DATA (RIGHT NOW):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TODAY'S REVENUE: ${todayRevenue.toLocaleString()} RWF
-By module:
-${Object.entries(todayByModule).map(([m, v]) => `  - ${m}: ${Number(v).toLocaleString()} RWF`).join("\n") || "  No sales yet today"}
-
-STOCK ALERTS:
-Low stock products (${lowProducts.length}):
-${lowProducts.map(p => `  - ${p.name}: ${p.quantity} ${p.unit} left (min: ${p.min_quantity})`).join("\n") || "  None"}
-
-Low bar items (${lowBar.length}):
-${lowBar.map(i => `  - ${i.name}: ${i.quantity_bottles} bottles left`).join("\n") || "  None"}
-
-Low bakery ingredients (${lowMaterials.length}):
-${lowMaterials.map(m => `  - ${m.name}: ${m.quantity} ${m.unit} left`).join("\n") || "  None"}
-
-CREDITS & DEBTS:
-Total outstanding: ${totalOutstanding.toLocaleString()} RWF
-Open credits: ${openCredits.data?.length ?? 0}
-Overdue credits: ${overdueCredits.data?.length ?? 0}
-${(overdueCredits.data ?? []).map(c => `  - ${c.customer_name}: ${Number(c.balance).toLocaleString()} RWF overdue`).join("\n")}
-
-OPEN BAR TABS: ${openTabs.data?.length ?? 0} tables
-TODAY'S PRODUCTION LOGS: ${todayProduction.data?.length ?? 0} batches
-
-LAST 7 DAYS TOTAL REVENUE: ${weekRevenue.toLocaleString()} RWF
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-
-    // Instantiate inside the handler so any constructor error is caught below
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL, systemInstruction });
-      const result = await model.generateContent(message);
-      const aiResponse = result.response.text();
+      const model = genAI.getGenerativeModel({
+        model: GEMINI_MODEL,
+        systemInstruction,
+        tools: [{ functionDeclarations: toolsFor(fullAccess) }],
+      });
+      const chat = model.startChat({ history: toGeminiHistory(history) });
 
-      // Keep the conversation. It must be awaited: a Supabase query that is never
-      // awaited is never sent (nothing was ever saved before). user_id is the login
-      // account (auth user), not the staff row; PIN-only staff have none.
-      const { data: asker } = await supabase.from("staff").select("user_id").eq("id", staffId).maybeSingle();
+      let result = await chat.sendMessage(message.slice(0, 4000));
+      for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+        const calls = result.response.functionCalls() ?? [];
+        if (!calls.length) break;
+        const parts: Part[] = await Promise.all(
+          calls.map(async (c) => ({
+            functionResponse: { name: c.name, response: await runAITool(ctx, c.name, (c.args ?? {}) as Record<string, unknown>) },
+          }))
+        );
+        result = await chat.sendMessage(parts);
+      }
+
+      const aiResponse = result.response.text().trim() || "I couldn't find an answer to that. Try asking in a different way.";
+
+      // Keep the conversation. user_id is the login account (auth user), not the
+      // staff row; PIN-only staff have none.
       const { error: saveError } = await supabase.from("ai_conversations").insert([
-        { business_id: businessId, user_id: asker?.user_id ?? null, role: "user",      message },
-        { business_id: businessId, user_id: asker?.user_id ?? null, role: "assistant", message: aiResponse },
+        { business_id: businessId, user_id: me?.user_id ?? null, role: "user", message },
+        { business_id: businessId, user_id: me?.user_id ?? null, role: "assistant", message: aiResponse },
       ]);
       if (saveError) console.error("[AI Chat] could not save conversation:", saveError.message);
 
