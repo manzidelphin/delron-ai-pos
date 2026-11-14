@@ -825,3 +825,90 @@ export async function sendAgreementEmail(opts: {
     return false;
   }
 }
+
+// ── Owners & managers: low stock ─────────────────────────────────────────────
+
+type StockEmailItem = { area: string; name: string; left: number; min: number; unit: string; suggestedOrder: number };
+
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+const fmtQty = (n: number) => (Math.round(n * 100) / 100).toLocaleString("en-US");
+
+function stockRows(items: StockEmailItem[], colour: string) {
+  let lastArea = "";
+  return items.map((i) => {
+    const head = i.area !== lastArea
+      ? `<tr><td colspan="4" style="padding:14px 0 6px;color:#64748b;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(i.area)}</td></tr>`
+      : "";
+    lastArea = i.area;
+    return `${head}<tr>
+      <td style="padding:7px 0;border-bottom:1px solid #f1f5f9;color:#111827;font-size:14px;font-weight:600">${escapeHtml(i.name)}</td>
+      <td style="padding:7px 0;border-bottom:1px solid #f1f5f9;color:${colour};font-size:14px;font-weight:700;text-align:right">${fmtQty(i.left)} ${escapeHtml(i.unit)}</td>
+      <td style="padding:7px 0;border-bottom:1px solid #f1f5f9;color:#6b7280;font-size:13px;text-align:right">min ${fmtQty(i.min)}</td>
+      <td style="padding:7px 0;border-bottom:1px solid #f1f5f9;color:#2563eb;font-size:13px;text-align:right">order ~${fmtQty(i.suggestedOrder)}</td>
+    </tr>`;
+  }).join("");
+}
+
+function stockEmailShell(title: string, subtitle: string, body: string) {
+  return `<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,Segoe UI,Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0"><tr><td align="center">
+    <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden">
+      <tr><td style="background:#0f172a;padding:18px 28px">
+        <img src="https://www.delronpos.com/brand/logo-mark.png" alt="DELRON" width="36" height="36" style="vertical-align:middle;border-radius:8px" />
+        <span style="color:#fff;font-size:16px;font-weight:800;vertical-align:middle;margin-left:10px">DELRON AI POS</span>
+      </td></tr>
+      <tr><td style="padding:24px 28px">
+        <p style="margin:0 0 4px;color:#111827;font-size:18px;font-weight:800">${title}</p>
+        <p style="margin:0 0 16px;color:#6b7280;font-size:13px">${subtitle}</p>
+        ${body}
+        <p style="margin:24px 0 0"><a href="https://www.delronpos.com/dashboard" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:11px 20px;border-radius:8px">Open DELRON to restock</a></p>
+      </td></tr>
+      <tr><td style="padding:14px 28px;background:#f9fafb;color:#9ca3af;font-size:12px">
+        You get this because you are an owner or manager. Turn it off in Settings → Notifications.
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+}
+
+/** Morning summary: everything out of stock or low, grouped by area. */
+export async function sendLowStockDigestEmail(opts: { to: string[]; businessName: string; out: StockEmailItem[]; low: StockEmailItem[] }): Promise<boolean> {
+  const { to, businessName, out, low } = opts;
+  if (!to.length || (!out.length && !low.length)) return false;
+  const subject = `${businessName}: ${out.length ? `${out.length} out of stock, ` : ""}${low.length} running low`;
+  const section = (title: string, colour: string, items: StockEmailItem[]) => items.length
+    ? `<p style="margin:18px 0 0;color:${colour};font-size:14px;font-weight:800">${title} (${items.length})</p>
+       <table width="100%" cellpadding="0" cellspacing="0">${stockRows(items, colour)}</table>`
+    : "";
+  const html = stockEmailShell(
+    `Stock check for ${escapeHtml(businessName)}`,
+    "Items to restock today. Suggested order brings each item back to twice its minimum.",
+    section("Out of stock", "#dc2626", out) + section("Running low", "#d97706", low)
+  );
+  if (!resend) { console.log(`[Low Stock Email] To: ${to.join(", ")} | ${subject}`); return false; }
+  try {
+    const { error } = await resend.emails.send({ from: WELCOME_FROM, replyTo: SUPPORT_EMAIL, to, subject, html });
+    if (error) { console.error("[email] Low stock FAILED:", JSON.stringify(error)); return false; }
+    return true;
+  } catch (e) { console.error("[email] Low stock exception:", e); return false; }
+}
+
+/** Instant alert: an item just ran out during the day. */
+export async function sendOutOfStockEmail(opts: { to: string[]; businessName: string; itemName: string; area: string }): Promise<boolean> {
+  const { to, businessName, itemName, area } = opts;
+  if (!to.length) return false;
+  const time = new Date().toLocaleTimeString("en-GB", { timeZone: "Africa/Kigali", hour: "2-digit", minute: "2-digit" });
+  const subject = `Out of stock: ${itemName} at ${businessName}`;
+  const html = stockEmailShell(
+    `${escapeHtml(itemName)} is now out of stock`,
+    `${escapeHtml(businessName)} · ${escapeHtml(area)} · last one sold at ${time} (Kigali time)`,
+    `<p style="margin:0;color:#374151;font-size:14px;line-height:1.6">Restock it so staff can keep selling. You will get at most one alert per item per day; tomorrow morning's stock email lists everything that is low.</p>`
+  );
+  if (!resend) { console.log(`[Out of Stock Email] To: ${to.join(", ")} | ${subject}`); return false; }
+  try {
+    const { error } = await resend.emails.send({ from: WELCOME_FROM, replyTo: SUPPORT_EMAIL, to, subject, html });
+    if (error) { console.error("[email] Out of stock FAILED:", JSON.stringify(error)); return false; }
+    return true;
+  } catch (e) { console.error("[email] Out of stock exception:", e); return false; }
+}

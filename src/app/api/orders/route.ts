@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyIfRanOut } from "@/lib/low-stock";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth";
 import { generateReceiptNumber } from "@/lib/utils";
@@ -187,8 +188,12 @@ export async function POST(request: NextRequest) {
   //    (two tills selling the same item at once can no longer overwrite each other).
   for (const line of priced.lines) {
     const fn = line.item_type === "finished_good" ? "adjust_finished_good_stock" : "adjust_product_stock";
-    const { error: stockError } = await supabase.rpc(fn, { p_id: line.item_id, p_business: auth.businessId, p_delta: -line.quantity });
+    const { data: newQty, error: stockError } = await supabase.rpc(fn, { p_id: line.item_id, p_business: auth.businessId, p_delta: -line.quantity });
     if (stockError) console.error("[orders] stock update failed:", line.item_name, stockError.message);
+    // Supermarket product just ran out: email the owner and managers (once per item per day).
+    else if (line.item_type === "product") {
+      await notifyIfRanOut(supabase, { businessId: auth.businessId, itemType: "product", itemId: line.item_id, newQuantity: newQty === null ? null : Number(newQty), soldQuantity: line.quantity });
+    }
   }
 
   return NextResponse.json(

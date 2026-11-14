@@ -306,41 +306,46 @@ function NotificationsTab() {
   const [smsToggles, setSmsToggles] = useState({ credit_created: true, credit_overdue: true, low_stock: true, daily_summary: true, large_transaction: false });
   const [smsSaving, setSmsSaving] = useState(false);
 
-  // daily_report_email is persisted to the businesses table
-  const [reportEmail, setReportEmail]   = useState(true);
-  const [reportEmailSaving, setReportEmailSaving] = useState(false);
-  const [reportEmailLoaded, setReportEmailLoaded] = useState(false);
+  // Email switches saved on the businesses table (both on by default).
+  type EmailPref = "daily_report_email" | "low_stock_email";
+  const [emailPrefs, setEmailPrefs] = useState<Record<EmailPref, boolean>>({ daily_report_email: true, low_stock_email: true });
+  const [emailSaving, setEmailSaving] = useState<EmailPref | null>(null);
+  const [emailLoaded, setEmailLoaded] = useState(false);
 
   useEffect(() => { if (business?.phone) setOwnerPhone(business.phone); }, [business]);
 
-  // Load the current daily_report_email value from the API
   useEffect(() => {
     fetch("/api/settings/business")
       .then((r) => r.json())
-      .then((d: { daily_report_email?: boolean }) => {
-        setReportEmail(d.daily_report_email !== false); // default true
-        setReportEmailLoaded(true);
+      .then((d: Partial<Record<EmailPref, boolean>>) => {
+        setEmailPrefs({ daily_report_email: d.daily_report_email !== false, low_stock_email: d.low_stock_email !== false });
+        setEmailLoaded(true);
       })
-      .catch(() => setReportEmailLoaded(true));
+      .catch(() => setEmailLoaded(true));
   }, []);
 
-  const toggleReportEmail = async (next: boolean) => {
-    setReportEmail(next);
-    setReportEmailSaving(true);
+  const toggleEmail = async (key: EmailPref, next: boolean, label: string) => {
+    setEmailPrefs((p) => ({ ...p, [key]: next }));
+    setEmailSaving(key);
     try {
       const res = await fetch("/api/settings/business", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ daily_report_email: next }),
+        body: JSON.stringify({ [key]: next }),
       });
       if (!res.ok) throw new Error();
-      toast.success(next ? "Daily report email enabled" : "Daily report email disabled");
+      toast.success(`${label} ${next ? "enabled" : "disabled"}`);
     } catch {
-      setReportEmail(!next); // revert on failure
+      setEmailPrefs((p) => ({ ...p, [key]: !next })); // revert on failure
       toast.error("Failed to update notification settings");
     }
-    setReportEmailSaving(false);
+    setEmailSaving(null);
   };
+
+  const EMAIL_TOGGLES: { key: EmailPref; label: string; desc: string }[] = [
+    { key: "daily_report_email", label: "Daily report email", desc: "Receive a snapshot of today's revenue, top products, and any cash variances at 23:55 Rwanda time" },
+    { key: "low_stock_email", label: "Low stock email", desc: "Owner and managers get a morning list of low and out-of-stock items, plus an email the moment an item runs out" },
+  ];
 
   const saveSms = async () => {
     setSmsSaving(true);
@@ -364,26 +369,27 @@ function NotificationsTab() {
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-semibold text-white mb-1">Email Notifications</h3>
-          <p className="text-sm text-slate-400">Automated emails sent to the owner account</p>
+          <p className="text-sm text-slate-400">Automated emails to the owner (and managers for stock alerts)</p>
         </div>
-        <div className={cn("flex items-center gap-4 p-4 bg-slate-800 border rounded-xl transition-all", reportEmail ? "border-blue-500/30" : "border-slate-700")}>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white">Daily report email</p>
-            <p className="text-xs text-slate-400">
-              Receive a snapshot of today&apos;s revenue, top products, and any cash variances at 23:55 Rwanda time
-            </p>
+        {EMAIL_TOGGLES.map((t) => (
+          <div key={t.key} className={cn("flex items-center gap-4 p-4 bg-slate-800 border rounded-xl transition-all", emailPrefs[t.key] ? "border-blue-500/30" : "border-slate-700")}>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white">{t.label}</p>
+              <p className="text-xs text-slate-400">{t.desc}</p>
+            </div>
+            {!emailLoaded || emailSaving === t.key ? (
+              <Loader2 className="w-5 h-5 animate-spin text-blue-400 flex-shrink-0" />
+            ) : (
+              <button
+                onClick={() => toggleEmail(t.key, !emailPrefs[t.key], t.label)}
+                aria-label={t.label}
+                className={cn("w-11 h-6 rounded-full border transition-all relative flex-shrink-0", emailPrefs[t.key] ? "bg-blue-500 border-blue-400" : "bg-slate-700 border-slate-600")}
+              >
+                <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow", emailPrefs[t.key] ? "left-[calc(100%-22px)]" : "left-0.5")} />
+              </button>
+            )}
           </div>
-          {!reportEmailLoaded || reportEmailSaving ? (
-            <Loader2 className="w-5 h-5 animate-spin text-blue-400 flex-shrink-0" />
-          ) : (
-            <button
-              onClick={() => toggleReportEmail(!reportEmail)}
-              className={cn("w-11 h-6 rounded-full border transition-all relative flex-shrink-0", reportEmail ? "bg-blue-500 border-blue-400" : "bg-slate-700 border-slate-600")}
-            >
-              <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow", reportEmail ? "left-[calc(100%-22px)]" : "left-0.5")} />
-            </button>
-          )}
-        </div>
+        ))}
       </div>
 
       {/* SMS notifications */}

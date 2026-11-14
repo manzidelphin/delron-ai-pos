@@ -109,3 +109,6 @@ export async function POST(req: Request) {
   console.log("[cron/daily-report] Completed for", date, results);
   return NextResponse.json({ success: true, date, results });
 }
+
+// Vercel's cron scheduler calls this with GET (it never sends POST).
+export const GET = POST;

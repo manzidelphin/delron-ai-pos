@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { notifyIfRanOut } from "@/lib/low-stock";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/auth";
 import { barSale, needsBarPreparation, normalizeServe } from "@/lib/bar";
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const shotsDelta = sale.update.shots_remaining !== undefined
     ? Number(sale.update.shots_remaining) - Number(item.shots_remaining ?? 0)
     : 0;
-  const { error: stockError } = await supabase.rpc("adjust_bar_stock", {
+  const { data: bottlesLeft, error: stockError } = await supabase.rpc("adjust_bar_stock", {
     p_id: bar_item_id,
     p_business: auth.businessId,
     p_bottles_delta: bottlesDelta,
@@ -127,6 +128,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     console.error("[bar/tabs/items] stock update failed:", stockError.message);
     return NextResponse.json({ error: "Could not update stock. Please try again." }, { status: 500 });
   }
+  // The drink just ran out: email the owner and managers (once per item per day).
+  await notifyIfRanOut(supabase, {
+    businessId: auth.businessId, itemType: "bar_item", itemId: bar_item_id,
+    newQuantity: bottlesLeft === null ? null : Number(bottlesLeft), soldQuantity: -bottlesDelta,
+  });
 
   // Insert order item
   const { data: orderItem, error } = await supabase

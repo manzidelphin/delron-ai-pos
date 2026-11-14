@@ -1,6 +1,8 @@
 ﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { sendSMS, SMS_TEMPLATES } from "@/lib/sms";
+import { collectLowStock, stockAlertRecipients } from "@/lib/low-stock";
+import { sendLowStockDigestEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   // Verify cron secret to prevent unauthorized calls
@@ -23,7 +25,7 @@ export async function POST(req: Request) {
 
   const { data: businesses } = await supabase
     .from("businesses")
-    .select("id, name, phone, owner_id");
+    .select("id, name, phone, owner_id, low_stock_email");
 
   if (!businesses?.length) {
     return NextResponse.json({ message: "No businesses found" });
@@ -88,50 +90,24 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Low stock alerts
-    const [{ data: products }, { data: barItems }, { data: materials }] =
-      await Promise.all([
-        supabase
-          .from("products")
-          .select("name, quantity, min_quantity, unit")
-          .eq("business_id", business.id),
-        supabase
-          .from("bar_items")
-          .select("name, quantity_bottles, min_quantity")
-          .eq("business_id", business.id),
-        supabase
-          .from("raw_materials")
-          .select("name, quantity, min_quantity, unit")
-          .eq("business_id", business.id),
-      ]);
+    // 3. Low stock: one email to the owner and managers, and one summary SMS
+    //    (it used to send one SMS per item, and included switched-off items).
+    const stock = await collectLowStock(supabase, business.id);
+    const lowCount = stock.out.length + stock.low.length;
+    result.low_stock_alerts = lowCount;
+
+    if (lowCount > 0 && business.low_stock_email !== false) {
+      const to = await stockAlertRecipients(supabase, business.id);
+      await sendLowStockDigestEmail({ to, businessName: business.name, out: stock.out, low: stock.low });
+    }
 
     if (business.phone) {
-      const lowProducts = (products ?? []).filter((p) => p.quantity <= p.min_quantity);
-      const lowBar = (barItems ?? []).filter(
-        (i) => i.quantity_bottles <= i.min_quantity
-      );
-      const lowMaterials = (materials ?? []).filter((m) => m.quantity <= m.min_quantity);
-
-      for (const item of lowProducts) {
-        void sendSMS(
+      if (lowCount > 0) {
+        const names = [...stock.out, ...stock.low].slice(0, 4).map((i) => i.name).join(", ");
+        await sendSMS(
           business.phone,
-          SMS_TEMPLATES.lowStockAlert(item.name, item.quantity, item.unit, business.name)
+          `${business.name}: ${stock.out.length} out of stock, ${stock.low.length} low (${names}${lowCount > 4 ? "…" : ""}). Check your email or DELRON to restock.`
         );
-        result.low_stock_alerts++;
-      }
-      for (const item of lowBar) {
-        void sendSMS(
-          business.phone,
-          SMS_TEMPLATES.lowStockAlert(item.name, item.quantity_bottles, "bottles", business.name)
-        );
-        result.low_stock_alerts++;
-      }
-      for (const item of lowMaterials) {
-        void sendSMS(
-          business.phone,
-          SMS_TEMPLATES.lowStockAlert(item.name, item.quantity, item.unit, business.name)
-        );
-        result.low_stock_alerts++;
       }
 
       // 5. Near-expiry baked goods
@@ -197,7 +173,7 @@ export async function POST(req: Request) {
         SMS_TEMPLATES.dailySummary(
           business.name,
           yesterdayRevenue,
-          lowProducts.length + lowBar.length + lowMaterials.length,
+          lowCount,
           overdueCredits?.length ?? 0
         )
       );
@@ -208,3 +184,6 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ success: true, results });
 }
+
+// Vercel's cron scheduler calls this with GET (it never sends POST).
+export const GET = POST;
