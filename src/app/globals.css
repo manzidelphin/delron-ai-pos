@@ -219,3 +219,17 @@
     padding: 1mm 2mm;
   }
 }
+
+/* Dashboard bars rising one after another (RisingBar). */
+@keyframes bar-rise {
+  from { transform: scaleY(0); opacity: 0.2; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+.bar-rise {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: bar-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar-rise { animation: none; }
+}

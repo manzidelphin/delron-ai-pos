@@ -20,9 +20,16 @@ export const staggerContainer: Variants = {
   show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
 };
 
+// Each card comes in blurred and slightly low, then sharpens into place.
+// The blur is removed at the end (a leftover filter would cost GPU work and
+// break fixed-position pop-ups inside cards).
 export const riseIn: Variants = {
-  hidden: { opacity: 0, y: 18, scale: 0.98 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 26 } },
+  hidden: { opacity: 0, y: 18, scale: 0.98, filter: "blur(6px)" },
+  show: {
+    opacity: 1, y: 0, scale: 1, filter: "blur(0px)",
+    transition: { type: "spring", stiffness: 260, damping: 26, filter: { duration: 0.35, ease: "easeOut" } },
+    transitionEnd: { filter: "none" },
+  },
 };
 
 /* ── Accent colours shared by cards, icons and glows ───────────────────────── */
@@ -181,5 +188,22 @@ export function LiveDot({ className }: { className?: string }) {
       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
       <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
     </span>
+  );
+}
+
+/**
+ * Bar shape for recharts: each bar rises from the axis, one after another
+ * (CSS animation, delay by position). Use with isAnimationActive={false}.
+ */
+export function RisingBar(props: { x?: number; y?: number; width?: number; height?: number; fill?: string; index?: number }) {
+  const { x = 0, y = 0, width = 0, height = 0, fill, index = 0 } = props;
+  if (height <= 0 || width <= 0) return null;
+  const r = Math.min(6, width / 2, height);
+  return (
+    <rect
+      x={x} y={y} width={width} height={height} rx={r} ry={r} fill={fill}
+      className="bar-rise"
+      style={{ animationDelay: `${0.25 + index * 0.045}s` }}
+    />
   );
 }

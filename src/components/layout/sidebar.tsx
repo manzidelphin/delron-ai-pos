@@ -8,9 +8,13 @@ import { useAIStore } from "@/store/ai-store";
 import { Zap, ChevronLeft, Lock, Shield } from "lucide-react";
 import { EndShiftButton } from "@/components/shift/end-shift-button";
 import { NAV_ITEMS } from "@/config/nav-items";
+import { useRef, useState } from "react";
+import { NavPill } from "./nav-pill";
 
 export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
   const pathname = usePathname();
+  const navListRef = useRef<HTMLDivElement>(null);
+  const [activeEl, setActiveEl] = useState<HTMLButtonElement | null>(null);
   const router = useRouter();
   const { business, staff, activeOperator, clearOperator, hasModule, canAccess, isPlatformAdmin } = useAuthStore();
   const { setOpen: openAI } = useAIStore();
@@ -57,7 +61,10 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto py-3 px-2">
+       {/* The highlight is one pill that slides between items (NavPill). */}
+       <div ref={navListRef} className="relative space-y-0.5">
+        <NavPill container={navListRef} target={activeEl} deps={[isOpen, pathname, visibleItems.length]} />
         {visibleItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/dashboard" && item.href !== "/" && pathname.startsWith(item.href) && item.href.length > 1);
           return (
@@ -73,6 +80,7 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
                 <div className="my-1 mx-2 h-px bg-sidebar-border/40" />
               )}
               <button
+                ref={isActive ? setActiveEl : undefined}
                 onClick={() => router.push(item.href)}
                 // Start loading the page as soon as the pointer/finger is on the item.
                 onMouseEnter={() => router.prefetch(item.href)}
@@ -80,18 +88,17 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
                 onFocus={() => router.prefetch(item.href)}
                 title={!isOpen ? (item.labelFn ? item.labelFn(hasModule) : item.label) : undefined}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  isActive ? "bg-sidebar-accent text-sidebar-primary shadow-sm" : "text-sidebar-foreground/70"
+                  "relative z-10 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200",
+                  isActive ? "text-sidebar-primary" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                 )}
               >
                 <span className="flex-shrink-0">{item.icon}</span>
                 {isOpen && <span className="truncate">{item.labelFn ? item.labelFn(hasModule) : item.label}</span>}
-                {isActive && isOpen && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary flex-shrink-0" />}
               </button>
             </div>
           );
         })}
+       </div>
       </nav>
 
       {/* Platform Admin link — visible to any user in the platform_admins table */}

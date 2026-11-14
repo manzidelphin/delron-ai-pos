@@ -18,7 +18,7 @@ import {
 import { useRouter } from "next/navigation";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import {
-  ACCENT, CountUp, GlassCard, GlassIcon, LiveDot, SectionTitle,
+  ACCENT, CountUp, GlassCard, RisingBar, GlassIcon, LiveDot, SectionTitle,
   riseIn, staggerContainer, type Accent,
 } from "@/components/dashboard/glass";
 
@@ -321,6 +321,7 @@ export default function DashboardPage() {
                         <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                         <Tooltip {...chartTooltip} formatter={(v: number) => [formatRWF(v), "Revenue"]} />
                         <Area type="monotone" dataKey="revenue" stroke="url(#rev7stroke)" strokeWidth={2.5} fill="url(#rev7)"
+                          animationBegin={250} animationDuration={1200} animationEasing="ease-out"
                           dot={{ r: 3, fill: "#0f172a", stroke: "#60a5fa", strokeWidth: 2 }}
                           activeDot={{ r: 6, fill: "#60a5fa", stroke: "rgba(96,165,250,0.35)", strokeWidth: 8 }} />
                       </AreaChart>
@@ -454,7 +455,7 @@ export default function DashboardPage() {
                         <XAxis dataKey="hour" tick={{ fill: "#94a3b8", fontSize: 9 }} interval={3} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                         <Tooltip {...chartTooltip} formatter={(v: number) => [formatRWF(v), "Revenue"]} />
-                        <Bar dataKey="revenue" fill="url(#hourBar)" radius={[6, 6, 2, 2]} />
+                        <Bar dataKey="revenue" fill="url(#hourBar)" isAnimationActive={false} shape={<RisingBar />} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
