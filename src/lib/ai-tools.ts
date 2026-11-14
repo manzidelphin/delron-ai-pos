@@ -359,7 +359,7 @@ export const AI_TOOL_DECLARATIONS: FunctionDeclaration[] = [
     description: "Staff shifts: when they worked, their sales, expected vs counted cash and the cash difference (shortage or surplus).",
     parameters: { type: SchemaType.OBJECT, properties: { from: DATE, to: DATE, staff_name: { type: SchemaType.STRING } } },
   },
-  { name: "get_open_tabs", description: "Bar and restaurant tables with an open (unpaid) bill right now, with their items and totals.", parameters: { type: SchemaType.OBJECT, properties: {} } },
+  { name: "get_open_tabs", description: "Bar and restaurant tables with an open (unpaid) bill right now, with their items and totals." },
   {
     name: "get_removed_items",
     description: "Items removed from bar or restaurant bills and cancelled tables, with the reason and who removed them.",
@@ -380,7 +380,7 @@ export const AI_TOOL_DECLARATIONS: FunctionDeclaration[] = [
     description: "Special orders taken from customers (for example cakes), with due date, price, deposit and status.",
     parameters: { type: SchemaType.OBJECT, properties: { status: { type: SchemaType.STRING } } },
   },
-  { name: "get_staff", description: "Staff list with roles, branches and whether they are active.", parameters: { type: SchemaType.OBJECT, properties: {} } },
+  { name: "get_staff", description: "Staff list with roles, branches and whether they are active." },
 ];
 
 /** Tools only owners and managers may use. */
