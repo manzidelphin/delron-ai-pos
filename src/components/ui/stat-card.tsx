@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { AnimatedValue } from "@/components/ui/animated-value";
 
 interface StatCardProps {
   label: string;
@@ -59,7 +60,7 @@ export function StatCard({
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
+      <p className="text-2xl font-bold text-white"><AnimatedValue value={value} /></p>
       <p className="text-sm text-slate-400 mt-0.5">{label}</p>
       {changeLabel && (
         <p className="text-xs text-slate-500 mt-1">{changeLabel}</p>

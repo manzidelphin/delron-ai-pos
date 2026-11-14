@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { GrowBar, CHART_MOTION } from "@/components/ui/chart-motion";
 import { useApi } from "@/lib/use-api";
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -185,7 +186,7 @@ export default function BarReportPage() {
                   <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 10 }} tickFormatter={(v) => v.slice(5)} />
                   <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                   <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} formatter={(v: number) => [formatRWF(v), "Revenue"]} />
-                  <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} dot={false} />
+                  <Line {...CHART_MOTION} type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -194,7 +195,7 @@ export default function BarReportPage() {
               <h2 className="font-semibold text-white mb-4">Revenue by Category</h2>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
-                  <Pie data={data.by_category} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={40} paddingAngle={3}>
+                  <Pie {...CHART_MOTION} data={data.by_category} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={40} paddingAngle={3}>
                     {data.by_category.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} formatter={(v: number) => [formatRWF(v), "Revenue"]} />
@@ -214,7 +215,7 @@ export default function BarReportPage() {
                   <XAxis type="number" tick={{ fill: "#94a3b8", fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                   <YAxis dataKey="name" type="category" tick={{ fill: "#94a3b8", fontSize: 9 }} width={100} />
                   <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} formatter={(v: number) => [formatRWF(v), "Revenue"]} />
-                  <Bar dataKey="revenue" fill="#22c55e" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="revenue" fill="#22c55e" radius={[0, 4, 4, 0]} isAnimationActive={false} shape={<GrowBar horizontal />} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -227,7 +228,7 @@ export default function BarReportPage() {
                   <XAxis dataKey="hour" tick={{ fill: "#94a3b8", fontSize: 9 }} />
                   <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                   <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} formatter={(v: number) => [formatRWF(v), "Revenue"]} />
-                  <Bar dataKey="revenue" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="revenue" fill="#a855f7" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={<GrowBar />} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { GrowBar } from "@/components/ui/chart-motion";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { formatRWF } from "@/lib/utils";
@@ -318,7 +319,7 @@ export default function InventoryPage() {
                     tickFormatter={(v: string) => v.length > 12 ? v.slice(0, 12) + "…" : v}
                   />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]} isAnimationActive={false} shape={<GrowBar horizontal />}>
                     {categoryChart.map((_entry, index) => (
                       <Cell key={index} fill={BAR_COLORS[index % BAR_COLORS.length]} fillOpacity={0.85} />
                     ))}

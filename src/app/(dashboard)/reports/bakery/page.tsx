@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { GrowBar } from "@/components/ui/chart-motion";
 import { useApi } from "@/lib/use-api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -187,8 +188,8 @@ export default function BakeryReportPage() {
                   labelStyle={{ color: "#e2e8f0" }}
                 />
                 <Legend formatter={(v) => <span className="text-slate-300 text-xs capitalize">{v}</span>} />
-                <Bar dataKey="produced" name="Produced" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="wasted" name="Wasted" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="produced" name="Produced" fill="#3b82f6" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={<GrowBar />} />
+                <Bar dataKey="wasted" name="Wasted" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={<GrowBar />} />
               </BarChart>
             </ResponsiveContainer>
           </div>

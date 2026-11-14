@@ -1,6 +1,7 @@
 "use client";
 
 import { useApi } from "@/lib/use-api";
+import { GrowBar } from "@/components/ui/chart-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Wine, Users, TrendingUp, AlertTriangle, RefreshCw } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
@@ -92,7 +93,7 @@ export default function BarDashboardPage() {
                   labelStyle={{ color: "#94a3b8" }}
                   formatter={(v: number) => [formatRWF(v), "Revenue"]}
                 />
-                <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={<GrowBar />} />
               </BarChart>
             </ResponsiveContainer>
           )}

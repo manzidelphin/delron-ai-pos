@@ -99,7 +99,7 @@ export function GlassCard({ children, className, accent = "blue", tilt = false, 
         transition={{ type: "spring", stiffness: 300, damping: 22 }}
         className={cn(
           // shared glass style (globals.css) + hover border
-          "glass-card relative h-full overflow-hidden rounded-2xl",
+          "glass-card no-auto-motion relative h-full overflow-hidden rounded-2xl",
           "transition-colors duration-300 hover:border-white/20"
         )}
       >

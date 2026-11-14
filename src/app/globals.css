@@ -233,3 +233,76 @@
 @media (prefers-reduced-motion: reduce) {
   .bar-rise { animation: none; }
 }
+
+/* ═══════════════════════════════════════════
+   MOTION LAYER for management pages (dashboard shell adds .motion-page;
+   POS and kitchen screens don't get it, so they stay instant).
+   Animations use fill-mode "backwards": once finished they leave no transform
+   or filter behind (hover effects and fixed pop-ups keep working).
+   ═══════════════════════════════════════════ */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+@keyframes row-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Cards come in blurred and low, then sharpen, one after another. */
+.motion-page .glass-card:not(.no-auto-motion) {
+  animation: card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  transition: translate 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.motion-page :nth-child(1) > .glass-card:not(.no-auto-motion), .motion-page .glass-card:nth-child(1):not(.no-auto-motion) { animation-delay: 0.03s; }
+.motion-page :nth-child(2) > .glass-card:not(.no-auto-motion), .motion-page .glass-card:nth-child(2):not(.no-auto-motion) { animation-delay: 0.09s; }
+.motion-page :nth-child(3) > .glass-card:not(.no-auto-motion), .motion-page .glass-card:nth-child(3):not(.no-auto-motion) { animation-delay: 0.15s; }
+.motion-page :nth-child(4) > .glass-card:not(.no-auto-motion), .motion-page .glass-card:nth-child(4):not(.no-auto-motion) { animation-delay: 0.21s; }
+.motion-page :nth-child(5) > .glass-card:not(.no-auto-motion), .motion-page .glass-card:nth-child(5):not(.no-auto-motion) { animation-delay: 0.27s; }
+.motion-page :nth-child(6) > .glass-card:not(.no-auto-motion), .motion-page .glass-card:nth-child(6):not(.no-auto-motion) { animation-delay: 0.33s; }
+.motion-page :nth-child(n+7) > .glass-card:not(.no-auto-motion), .motion-page .glass-card:nth-child(n+7):not(.no-auto-motion) { animation-delay: 0.38s; }
+
+/* Cards lift a little under the mouse (not on touch screens). */
+@media (hover: hover) {
+  .motion-page .glass-card:not(.no-auto-motion):hover {
+    translate: 0 -3px;
+    box-shadow: 0 18px 40px -18px rgba(59, 130, 246, 0.35);
+  }
+}
+
+/* Table rows slide in one after another (first 15; the rest appear together). */
+.motion-page tbody tr { animation: row-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.motion-page tbody tr:nth-child(1)  { animation-delay: 0.10s; }
+.motion-page tbody tr:nth-child(2)  { animation-delay: 0.13s; }
+.motion-page tbody tr:nth-child(3)  { animation-delay: 0.16s; }
+.motion-page tbody tr:nth-child(4)  { animation-delay: 0.19s; }
+.motion-page tbody tr:nth-child(5)  { animation-delay: 0.22s; }
+.motion-page tbody tr:nth-child(6)  { animation-delay: 0.25s; }
+.motion-page tbody tr:nth-child(7)  { animation-delay: 0.28s; }
+.motion-page tbody tr:nth-child(8)  { animation-delay: 0.31s; }
+.motion-page tbody tr:nth-child(9)  { animation-delay: 0.34s; }
+.motion-page tbody tr:nth-child(10) { animation-delay: 0.37s; }
+.motion-page tbody tr:nth-child(n+11) { animation-delay: 0.40s; }
+.motion-page tbody tr { transition: background-color 0.15s ease; }
+
+/* Buttons give a small press feedback. */
+/* Uses the separate "scale" property so buttons positioned with transforms don't jump. */
+.motion-page button:not(:disabled) { transition-property: color, background-color, border-color, box-shadow, scale, opacity; }
+.motion-page button:not(:disabled):active { scale: 0.97; }
+
+/* Growing bars (GrowBar): upright bars rise, sideways bars grow from the left. */
+@keyframes bar-grow-x {
+  from { transform: scaleX(0); opacity: 0.2; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+.bar-grow-x {
+  transform-box: fill-box;
+  transform-origin: left;
+  animation: bar-grow-x 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-page .glass-card, .motion-page tbody tr, .bar-grow-x { animation: none !important; }
+  .motion-page .glass-card:hover { translate: none !important; }
+  .motion-page button:active { scale: none !important; }
+}

@@ -9,6 +9,7 @@ import {
   Loader2, Plus, Pencil, Trash2, CheckCircle, XCircle, KeyRound, Eye, EyeOff,
 } from "lucide-react";
 import type { UserRole } from "@/types";
+import { TabPill } from "@/components/ui/tab-pill";
 
 type Tab = "business" | "modules" | "staff" | "notifications" | "receipt" | "security";
 
@@ -603,7 +604,8 @@ export default function SettingsPage() {
         <div className="md:w-52 flex-shrink-0">
           <nav className="space-y-0.5">
             {visibleTabs.map((t) => (
-              <button key={t.key} onClick={() => setTab(t.key)} className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left", tab === t.key ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white hover:bg-slate-800")}>
+              <button key={t.key} onClick={() => setTab(t.key)} className={cn("relative isolate w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left", tab === t.key ? "text-white" : "text-slate-400 hover:text-white hover:bg-slate-800")}>
+                {tab === t.key && <TabPill group="settings" className="bg-blue-600" />}
                 {t.icon}{t.label}
               </button>
             ))}

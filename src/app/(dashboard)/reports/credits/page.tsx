@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { GrowBar, CHART_MOTION } from "@/components/ui/chart-motion";
 import { useApi } from "@/lib/use-api";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
@@ -190,8 +191,8 @@ export default function CreditsReportPage() {
                   <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                   <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} formatter={(v: number) => [formatRWF(v)]} />
                   <Legend formatter={(v) => <span className="text-slate-300 text-xs capitalize">{v}</span>} />
-                  <Bar dataKey="given" name="Given" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="collected" name="Collected" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="given" name="Given" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={<GrowBar />} />
+                  <Bar dataKey="collected" name="Collected" fill="#22c55e" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={<GrowBar />} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -200,7 +201,7 @@ export default function CreditsReportPage() {
               <h2 className="font-semibold text-white mb-4">Credit Status Distribution</h2>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
-                  <Pie data={data.status_dist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={40} paddingAngle={3}>
+                  <Pie {...CHART_MOTION} data={data.status_dist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={40} paddingAngle={3}>
                     {data.status_dist.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} />
@@ -220,7 +221,7 @@ export default function CreditsReportPage() {
                   <XAxis type="number" tick={{ fill: "#94a3b8", fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                   <YAxis dataKey="name" type="category" tick={{ fill: "#94a3b8", fontSize: 9 }} width={110} />
                   <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} formatter={(v: number) => [formatRWF(v), "Owed"]} />
-                  <Bar dataKey="amount" fill="#ef4444" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="amount" fill="#ef4444" radius={[0, 4, 4, 0]} isAnimationActive={false} shape={<GrowBar horizontal />} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

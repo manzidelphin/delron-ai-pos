@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthStore } from "@/store/auth-store";
+import { GrowBar } from "@/components/ui/chart-motion";
 import { useApi } from "@/lib/use-api";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
@@ -100,9 +101,9 @@ export default function BakeryDashboard() {
                   labelStyle={{ color: "#f8fafc" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="produced" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Produced" />
-                <Bar dataKey="sold" fill="#10b981" radius={[4, 4, 0, 0]} name="Sold" />
-                <Bar dataKey="wasted" fill="#ef4444" radius={[4, 4, 0, 0]} name="Wasted" />
+                <Bar dataKey="produced" fill="#3b82f6" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={<GrowBar />} name="Produced" />
+                <Bar dataKey="sold" fill="#10b981" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={<GrowBar />} name="Sold" />
+                <Bar dataKey="wasted" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={<GrowBar />} name="Wasted" />
               </BarChart>
             </ResponsiveContainer>
           )}

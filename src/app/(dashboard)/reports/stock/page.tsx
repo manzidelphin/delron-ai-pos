@@ -7,6 +7,7 @@ import { formatRWF } from "@/lib/utils";
 import { Package, AlertTriangle, DollarSign, FileDown, TableProperties, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { TabPill } from "@/components/ui/tab-pill";
 import { useAuthStore } from "@/store/auth-store";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -319,10 +320,11 @@ export default function StockReportPage() {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-all",
-              tab === t.key ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"
+              "relative isolate px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              tab === t.key ? "text-white" : "text-slate-400 hover:text-slate-200"
             )}
           >
+            {tab === t.key && <TabPill group="stock-report" />}
             {t.label}
           </button>
         ))}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { GrowBar } from "@/components/ui/chart-motion";
 import { useApi } from "@/lib/use-api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, ShoppingBag, AlertTriangle } from "lucide-react";
@@ -95,7 +96,7 @@ export default function BarReportsPage() {
                   contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }}
                   formatter={(v: number) => [formatRWF(v), "Revenue"]}
                 />
-                <Bar dataKey="revenue" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" fill="#22c55e" radius={[4, 4, 0, 0]} isAnimationActive={false} shape={<GrowBar />} />
               </BarChart>
             </ResponsiveContainer>
           )}
