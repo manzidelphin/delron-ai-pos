@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { format, startOfDay, startOfWeek, startOfMonth } from "date-fns";
-import { ArrowLeft, Users, GitBranch } from "lucide-react";
+import { ArrowLeft, Users, GitBranch, Phone } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import ImpersonateButton from "@/components/admin/impersonate-button";
@@ -65,6 +65,9 @@ async function getBusinessDetail(id: string) {
   return {
     business: bizRes.data,
     owner_email: ownerUser?.email ?? null,
+    owner_phone:
+      staffRes.data?.find((s) => s.role === "owner" && s.phone?.trim())?.phone?.trim()
+      ?? ((biz.phone as string | null)?.trim() || null),
     staff: staffRes.data ?? [],
     branches: branchRes.data ?? [],
     payments: paymentsRes.data ?? [],
@@ -90,7 +93,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
   const data = await getBusinessDetail(params.id);
   if (!data) notFound();
 
-  const { business, owner_email, staff, branches, payments, invoices, billing, revenue, transaction_count } = data;
+  const { business, owner_email, owner_phone, staff, branches, payments, invoices, billing, revenue, transaction_count } = data;
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-10">
@@ -103,6 +106,17 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
           </Link>
           <h1 className="text-2xl font-bold text-white">{business.name}</h1>
           <p className="text-zinc-400 mt-1">{owner_email ?? "Owner email unknown"}</p>
+          {owner_phone ? (
+            <a
+              href={`tel:${owner_phone.replace(/\s/g, "")}`}
+              className="inline-flex items-center gap-1.5 text-sm text-violet-300 hover:text-violet-200 mt-1"
+            >
+              <Phone className="w-3.5 h-3.5" />
+              {owner_phone}
+            </a>
+          ) : (
+            <p className="text-sm text-zinc-600 mt-1">No phone number on file</p>
+          )}
           <div className="flex flex-wrap gap-2 mt-3">
             {(business.modules as string[]).map((m) => (
               <span key={m} className={cn("px-2.5 py-1 rounded-lg text-xs font-medium border", MODULE_COLORS[m] ?? "bg-zinc-700 text-zinc-300 border-zinc-600")}>
@@ -196,7 +210,14 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                       {s.role}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">{s.email ?? s.phone ?? "—"}</td>
+                  <td className="px-4 py-3 text-zinc-400">
+                    <div>{s.email ?? "—"}</div>
+                    {s.phone && (
+                      <a href={`tel:${s.phone.replace(/\s/g, "")}`} className="text-xs text-violet-300 hover:text-violet-200">
+                        {s.phone}
+                      </a>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={cn("px-2 py-0.5 rounded-full text-xs", s.user_id ? "bg-blue-500/20 text-blue-300" : "bg-zinc-700/60 text-zinc-500")}>
                       {s.user_id ? "session" : "pin-only"}

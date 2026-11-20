@@ -18,7 +18,7 @@ async function getBusinesses(): Promise<BusinessRow[]> {
   const ids = businesses.map((b) => b.id);
 
   const [staffRes, txnRes, usersRes] = await Promise.all([
-    admin.from("staff").select("business_id").in("business_id", ids).eq("is_active", true),
+    admin.from("staff").select("business_id, role, phone").in("business_id", ids).eq("is_active", true),
     admin.from("transactions").select("business_id, created_at").in("business_id", ids).order("created_at", { ascending: false }),
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ]);
@@ -33,11 +33,20 @@ async function getBusinesses(): Promise<BusinessRow[]> {
     if (!lastActivityMap.has(t.business_id)) lastActivityMap.set(t.business_id, t.created_at);
   });
 
+  // Owner's own phone from sign-up; the business phone if the owner record has none.
+  const ownerPhoneMap = new Map<string, string>();
+  staffRes.data?.forEach((s) => {
+    if (s.role === "owner" && s.phone?.trim() && !ownerPhoneMap.has(s.business_id)) {
+      ownerPhoneMap.set(s.business_id, s.phone.trim());
+    }
+  });
+
   const emailMap = new Map(usersRes.data.users.map((u) => [u.id, u.email ?? null]));
 
   return businesses.map((b) => ({
     ...b,
     owner_email: emailMap.get(b.owner_id) ?? null,
+    owner_phone: ownerPhoneMap.get(b.id) ?? ((b.phone as string | null)?.trim() || null),
     staff_count: staffCountMap.get(b.id) ?? 0,
     last_activity: lastActivityMap.get(b.id) ?? null,
     // billing — use DB values, fall back to defaults if migration not yet run

@@ -3,13 +3,14 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface BusinessRow {
   id: string;
   name: string;
   owner_email: string | null;
+  owner_phone: string | null;
   modules: string[];
   plan: string;
   created_at: string;
@@ -80,7 +81,8 @@ export default function BusinessesTable({ businesses }: { businesses: BusinessRo
       list = list.filter(
         (b) =>
           b.name.toLowerCase().includes(q) ||
-          (b.owner_email ?? "").toLowerCase().includes(q)
+          (b.owner_email ?? "").toLowerCase().includes(q) ||
+          (b.owner_phone ?? "").replace(/\s/g, "").includes(q.replace(/\s/g, ""))
       );
     }
 
@@ -115,7 +117,7 @@ export default function BusinessesTable({ businesses }: { businesses: BusinessRo
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <input
             type="text"
-            placeholder="Search name or owner email…"
+            placeholder="Search name, owner email or phone…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 pr-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 w-64"
@@ -189,7 +191,21 @@ export default function BusinessesTable({ businesses }: { businesses: BusinessRo
                   className="border-b border-zinc-800/60 last:border-0 hover:bg-zinc-800/40 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3 font-medium text-white">{b.name}</td>
-                  <td className="px-4 py-3 text-zinc-400 max-w-[180px] truncate">{b.owner_email ?? "—"}</td>
+                  <td className="px-4 py-3 max-w-[220px]">
+                    <div className="text-zinc-400 truncate">{b.owner_email ?? "—"}</div>
+                    {b.owner_phone ? (
+                      <a
+                        href={`tel:${b.owner_phone.replace(/\s/g, "")}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 text-xs text-violet-300 hover:text-violet-200 mt-0.5"
+                      >
+                        <Phone className="w-3 h-3" />
+                        {b.owner_phone}
+                      </a>
+                    ) : (
+                      <div className="text-xs text-zinc-600 mt-0.5">No phone</div>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {b.modules.length === 0
