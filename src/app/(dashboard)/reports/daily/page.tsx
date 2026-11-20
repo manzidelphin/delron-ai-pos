@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatRWF } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
-import type { DailyReportData } from "@/lib/daily-report";
+import type { DailyReportData, ProductSoldRow } from "@/lib/daily-report";
 import {
   Calendar, FileDown, TableProperties, Loader2, RefreshCw,
   CheckCircle2, Clock, DollarSign, ShoppingCart, Users,
@@ -25,16 +25,33 @@ interface Snapshot {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const MODULE_COLORS: Record<string, string> = {
-  supermarket: "bg-blue-500/10 text-blue-400",
-  bakery:      "bg-amber-500/10 text-amber-400",
-  bar:         "bg-purple-500/10 text-purple-400",
-  restaurant:  "bg-green-500/10 text-green-400",
-};
-
 function fmtNum(n: number | null | undefined): string {
   if (n === null || n === undefined) return "—";
   return parseFloat(n.toFixed(3)).toString();
+}
+
+// Drinks and food are listed separately, never mixed; the total adds them up.
+type SaleGroupKey = "drinks" | "food" | "other";
+const SALE_GROUPS: { key: SaleGroupKey; title: string; empty: string }[] = [
+  { key: "drinks", title: "Drinks",      empty: "No drinks sold" },
+  { key: "food",   title: "Food",        empty: "No food sold" },
+  { key: "other",  title: "Other items", empty: "No other items sold" },
+];
+
+function saleGroupOf(p: ProductSoldRow): SaleGroupKey {
+  if (p.item_type === "bar_item") return "drinks";
+  if (p.item_type === "menu_item" || p.item_type === "finished_good") return "food";
+  return "other";
+}
+
+/** Drinks and Food always (they sit side by side); Other only when something was sold there. */
+function groupSales(rows: ProductSoldRow[]) {
+  const groups = SALE_GROUPS.map((g) => {
+    const items = rows.filter((p) => saleGroupOf(p) === g.key);
+    return { ...g, items, total: items.reduce((sum, p) => sum + p.revenue, 0) };
+  }).filter((g) => g.key !== "other" || g.items.length > 0);
+  const grandTotal = groups.reduce((sum, g) => sum + g.total, 0);
+  return { groups, grandTotal };
 }
 
 function todayStr(): string {
@@ -163,26 +180,18 @@ export default function DailyReportPage() {
       const subtitle = isSnapshot
         ? `Snapshot: ${new Date(selectedSnapshot!.generated_at).toLocaleString("en-RW")} — ${selectedSnapshot!.generated_by_name ?? "Auto-generated"}`
         : `Live data as of ${new Date(viewData.as_of).toLocaleString("en-RW")} — not yet locked`;
+      const { groups, grandTotal } = groupSales(viewData.products_sold);
+      const groupColumns = [
+        { header: "Item",     key: "item" },
+        { header: "Qty Sold", key: "sold" },
+        { header: "Stock Left", key: "closing" },
+        { header: "Sold By",  key: "staff" },
+        { header: "Revenue",  key: "revenue" },
+      ];
       await exportToPDF(
         `Daily Report — ${date}`,
-        viewData.products_sold.map((p) => ({
-          item:    p.item_name,
-          module:  p.module,
-          opening: fmtNum(p.opening_stock),
-          sold:    fmtNum(p.qty_sold),
-          closing: fmtNum(p.closing_stock),
-          revenue: formatRWF(p.revenue),
-          staff:   p.sold_by,
-        })),
-        [
-          { header: "Item",          key: "item" },
-          { header: "Module",        key: "module" },
-          { header: "Opening Stock", key: "opening" },
-          { header: "Qty Sold",      key: "sold" },
-          { header: "Closing Stock", key: "closing" },
-          { header: "Revenue",       key: "revenue" },
-          { header: "Sold By",       key: "staff" },
-        ],
+        [],
+        groupColumns,
         business?.name,
         subtitle,
         [
@@ -190,7 +199,24 @@ export default function DailyReportPage() {
           { label: "Transactions",   value: String(viewData.kpis.total_transactions) },
           { label: "Items Sold",     value: String(viewData.kpis.total_items_sold) },
           { label: "Shifts Today",   value: String(viewData.kpis.shifts_today) },
-        ]
+        ],
+        groups.map((g) => ({
+          title: g.title,
+          data: g.items.map((p) => ({
+            item:    p.item_name,
+            sold:    fmtNum(p.qty_sold),
+            closing: fmtNum(p.closing_stock),
+            staff:   p.sold_by,
+            revenue: formatRWF(p.revenue),
+          })),
+          columns: groupColumns,
+          totalLabel: `${g.title} total`,
+          totalValue: formatRWF(g.total),
+        })),
+        {
+          label: `Total (${groups.map((g) => g.title.toLowerCase()).join(" + ")})`,
+          value: formatRWF(grandTotal),
+        }
       );
     } finally { setExporting(false); }
   };
@@ -201,26 +227,28 @@ export default function DailyReportPage() {
     try {
       const { exportToExcel } = await import("@/lib/export");
       await exportToExcel(`Daily Report ${date}`, [
-        {
-          name: "Products Sold",
-          data: viewData.products_sold.map((p) => ({
-            item: p.item_name, module: p.module,
-            opening: p.opening_stock ?? "",
-            sold: p.qty_sold,
-            closing: p.closing_stock ?? "",
-            revenue: p.revenue,
-            sold_by: p.sold_by,
-          })),
+        ...groupSales(viewData.products_sold).groups.map((g) => ({
+          name: g.title,
+          data: [
+            ...g.items.map((p) => ({
+              item: p.item_name,
+              opening: p.opening_stock ?? "",
+              sold: p.qty_sold,
+              closing: p.closing_stock ?? "",
+              revenue: p.revenue,
+              sold_by: p.sold_by,
+            })),
+            { item: `${g.title} total`, opening: "", sold: "", closing: "", revenue: g.total, sold_by: "" },
+          ],
           columns: [
             { header: "Item",          key: "item" },
-            { header: "Module",        key: "module" },
             { header: "Opening Stock", key: "opening" },
             { header: "Qty Sold",      key: "sold" },
             { header: "Closing Stock", key: "closing" },
             { header: "Revenue (RWF)", key: "revenue" },
             { header: "Sold By",       key: "sold_by" },
           ],
-        },
+        })),
         {
           name: "Staff Breakdown",
           data: viewData.staff_breakdown.map((s) => ({
@@ -365,62 +393,89 @@ export default function DailyReportPage() {
         ))}
       </div>
 
-      {/* Products Sold Table */}
-      <div className="glass-card rounded-xl overflow-hidden">
-        <div className="p-5 border-b border-slate-700 flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-white">Products Sold</h2>
-            <p className="text-xs text-slate-400 mt-0.5">All active modules combined</p>
+      {/* Products Sold: drinks and food side by side, never mixed */}
+      {(() => {
+        if (loading) {
+          return (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {["Drinks", "Food"].map((t) => (
+                <div key={t} className="glass-card rounded-xl overflow-hidden">
+                  <div className="p-5 border-b border-slate-700"><h2 className="font-semibold text-white">{t}</h2></div>
+                  <table className="w-full text-sm"><tbody>
+                    {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} cols={5} />)}
+                  </tbody></table>
+                </div>
+              ))}
+            </div>
+          );
+        }
+        if (!viewData || viewData.products_sold.length === 0) {
+          return (
+            <div className="glass-card rounded-xl text-center py-12 text-slate-500">
+              <ShoppingCart className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+              No sales recorded for {date}
+            </div>
+          );
+        }
+        const { groups, grandTotal } = groupSales(viewData.products_sold);
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              {groups.map((g) => (
+                <div key={g.key} className="glass-card rounded-xl overflow-hidden">
+                  <div className="p-5 border-b border-slate-700 flex items-center justify-between gap-3">
+                    <div>
+                      <h2 className="font-semibold text-white">{g.title}</h2>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {g.items.length} item{g.items.length !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <span className="text-lg font-bold text-blue-400 whitespace-nowrap">{formatRWF(g.total)}</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-700 bg-slate-900/50">
+                          <th className="px-4 py-3 text-left  text-slate-400 font-medium text-xs whitespace-nowrap">Item</th>
+                          <th className="px-4 py-3 text-right text-slate-400 font-medium text-xs whitespace-nowrap">Qty Sold</th>
+                          <th className="px-4 py-3 text-right text-slate-400 font-medium text-xs whitespace-nowrap">Stock Left</th>
+                          <th className="px-4 py-3 text-left  text-slate-400 font-medium text-xs whitespace-nowrap">Sold By</th>
+                          <th className="px-4 py-3 text-right text-slate-400 font-medium text-xs whitespace-nowrap">Revenue</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700/50">
+                        {g.items.length === 0 ? (
+                          <tr><td colSpan={5} className="text-center py-8 text-slate-500 text-sm">{g.empty}</td></tr>
+                        ) : g.items.map((p, i) => (
+                          <tr key={i} className="hover:bg-slate-700/20 transition-colors">
+                            <td className="px-4 py-3 font-medium text-white">{p.item_name}</td>
+                            <td className="px-4 py-3 text-right text-white font-bold font-mono text-xs">{fmtNum(p.qty_sold)}</td>
+                            <td className="px-4 py-3 text-right text-slate-400 font-mono text-xs">{fmtNum(p.closing_stock)}</td>
+                            <td className="px-4 py-3 text-left  text-slate-400 text-xs whitespace-nowrap">{p.sold_by}</td>
+                            <td className="px-4 py-3 text-right font-semibold text-blue-400 whitespace-nowrap">{formatRWF(p.revenue)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t border-slate-700 bg-slate-900/50">
+                          <td colSpan={4} className="px-4 py-3 text-right text-slate-300 font-semibold text-xs">{g.title} total</td>
+                          <td className="px-4 py-3 text-right font-bold text-white whitespace-nowrap">{formatRWF(g.total)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="glass-card rounded-xl px-5 py-4 flex items-center justify-between gap-3">
+              <span className="font-semibold text-white">
+                Total ({groups.map((g) => g.title.toLowerCase()).join(" + ")})
+              </span>
+              <span className="text-xl font-black text-white whitespace-nowrap">{formatRWF(grandTotal)}</span>
+            </div>
           </div>
-          {!loading && viewData && (
-            <span className="text-xs text-slate-500">{viewData.products_sold.length} item{viewData.products_sold.length !== 1 ? "s" : ""}</span>
-          )}
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-700 bg-slate-900/50">
-                <th className="px-4 py-3 text-left   text-slate-400 font-medium text-xs whitespace-nowrap">Item</th>
-                <th className="px-4 py-3 text-left   text-slate-400 font-medium text-xs whitespace-nowrap">Module</th>
-                <th className="px-4 py-3 text-right  text-slate-400 font-medium text-xs whitespace-nowrap">Opening Stock</th>
-                <th className="px-4 py-3 text-right  text-slate-400 font-medium text-xs whitespace-nowrap">Qty Sold</th>
-                <th className="px-4 py-3 text-right  text-slate-400 font-medium text-xs whitespace-nowrap">Closing Stock</th>
-                <th className="px-4 py-3 text-right  text-slate-400 font-medium text-xs whitespace-nowrap">Revenue</th>
-                <th className="px-4 py-3 text-left   text-slate-400 font-medium text-xs whitespace-nowrap">Sold By</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700/50">
-              {loading
-                ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={7} />)
-                : !viewData || viewData.products_sold.length === 0
-                ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-12 text-slate-500">
-                      <ShoppingCart className="w-8 h-8 mx-auto mb-2 text-slate-600" />
-                      No sales recorded for {date}
-                    </td>
-                  </tr>
-                )
-                : viewData.products_sold.map((p, i) => (
-                  <tr key={i} className="hover:bg-slate-700/20 transition-colors">
-                    <td className="px-4 py-3 font-medium text-white whitespace-nowrap">{p.item_name}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${MODULE_COLORS[p.module] ?? "bg-slate-700 text-slate-300"}`}>
-                        {p.module}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-400 font-mono text-xs">{fmtNum(p.opening_stock)}</td>
-                    <td className="px-4 py-3 text-right text-white font-bold font-mono text-xs">{fmtNum(p.qty_sold)}</td>
-                    <td className="px-4 py-3 text-right text-slate-400 font-mono text-xs">{fmtNum(p.closing_stock)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-blue-400 whitespace-nowrap">{formatRWF(p.revenue)}</td>
-                    <td className="px-4 py-3 text-left  text-slate-400 text-xs whitespace-nowrap">{p.sold_by}</td>
-                  </tr>
-                ))
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Staff Breakdown */}
       <div className="glass-card rounded-xl overflow-hidden">
